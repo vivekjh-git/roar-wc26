@@ -118,7 +118,7 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
       </div>
 
       {/* Search & Filter Header */}
-      <div className="flex flex-col gap-4 bg-[#111827]/40 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-xl">
+      <div className="flex flex-col gap-4 bg-[#111827]/40 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-xl relative z-40">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search bar */}
           <div className="relative flex-1">
@@ -167,7 +167,7 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute left-0 right-0 mt-2 bg-[#0d1526] border border-white/10 rounded-xl shadow-2xl z-20 py-1.5 overflow-hidden max-h-[250px] overflow-y-auto"
+                    className="absolute left-0 right-0 mt-2 bg-[#080d1a] border border-white/10 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden max-h-[250px] overflow-y-auto"
                   >
                     <button
                       onClick={() => {
