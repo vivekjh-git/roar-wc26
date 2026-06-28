@@ -616,18 +616,6 @@ function FeaturedLiveCard({
   );
 }
 
-const getTodayAPIString = () => {
-  const d = new Date();
-  const utc = d.getTime() + d.getTimezoneOffset() * 60000;
-  const npt = new Date(utc + (3600000 * 5.75));
-  const year = npt.getFullYear();
-  const month = String(npt.getMonth() + 1).padStart(2, "0");
-  const day = String(npt.getDate()).padStart(2, "0");
-  return `${month}/${day}/${year} 12:00`;
-};
-
-const DUMMY_DATE_STR = getTodayAPIString();
-
 export default function BracketTab({ games, teams, stadiums, onTeamClick }: BracketTabProps) {
   const teamMap = useMemo(() => Object.fromEntries(teams.map((t) => [t.id, t])), [teams]);
   const stadiumMap = useMemo(() => Object.fromEntries((stadiums || []).map((s) => [s.id, s])), [stadiums]);
@@ -635,30 +623,9 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
   const [carouselIdx, setCarouselIdx] = useState(0);
 
   const todayGames = useMemo(() => {
-    let filtered = games.filter(g => {
+    const filtered = games.filter(g => {
       return isMatchToday(g.local_date);
     });
-    
-    // Inject a dummy live match for testing display
-    if (games.length >= 2) {
-      const dummyMatch: Game = {
-        id: "999",
-        type: "group",
-        group: "Group Stage",
-        matchday: "1",
-        home_team_id: games[0]?.home_team_id || "",
-        away_team_id: games[1]?.home_team_id || "",
-        home_score: "2",
-        away_score: "1",
-        home_scorers: "Messi 10', Di Maria 45'",
-        away_scorers: "Mbappe 30'",
-        stadium_id: games[0]?.stadium_id || "",
-        time_elapsed: "75",
-        finished: "FALSE",
-        local_date: DUMMY_DATE_STR,
-      };
-      filtered = [dummyMatch, ...filtered];
-    }
     
     return filtered.sort((a, b) => {
       const aLive = a.time_elapsed !== "notstarted" && a.finished !== "TRUE" ? 1 : 0;
