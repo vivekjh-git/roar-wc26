@@ -10,33 +10,42 @@ export default function WidgetPage() {
   const [data, setData] = useState<AllData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch("/api/wc/all", { cache: "no-store" });
-      if (res.ok) {
-        const json = await res.json() as AllData;
-        setData(json);
-      }
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void fetchData();
+    let mounted = true;
+
+    const fetchInitialData = async () => {
+      try {
+        const res = await fetch("/api/wc/all", { cache: "no-store" });
+        if (res.ok) {
+          const json = await res.json() as AllData;
+          if (mounted) setData(json);
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    void fetchInitialData();
+
     const interval = setInterval(async () => {
       try {
         const res = await fetch("/api/wc/games", { cache: "no-store" });
         if (res.ok) {
           const newGames = await res.json();
-          setData((prev: AllData | null) => prev ? { ...prev, games: newGames } : null);
+          if (mounted) {
+            setData((prev: AllData | null) => prev ? { ...prev, games: newGames } : null);
+          }
         }
       } catch (e) {}
     }, 10000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const teamMap = useMemo(() => {
     if (!data) return {} as Record<string, Team>;
@@ -122,7 +131,7 @@ export default function WidgetPage() {
             {isLive ? (
               <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 text-[10px] font-bold uppercase tracking-wider">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                LIVE {targetGame.time_elapsed.replace(/live/i, '').trim()}'
+                LIVE {targetGame.time_elapsed.replace(/live/i, '').trim()}&apos;
               </span>
             ) : finished ? (
               <span className="px-2 py-0.5 rounded-full bg-white/10 text-gray-400 border border-white/5 text-[10px] font-bold uppercase tracking-wider">
