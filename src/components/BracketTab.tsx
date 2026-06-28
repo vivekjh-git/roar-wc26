@@ -493,7 +493,7 @@ function FeaturedLiveCard({
         {/* Score */}
         <div className="relative flex flex-col items-center justify-center px-0.5 sm:px-4 shrink-0 min-w-[70px] sm:min-w-[120px] z-10">
           {/* Tiger Watermark background centered directly behind the score, unaffected by card height changes */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.08] w-28 h-28 sm:w-36 sm:h-36 flex items-center justify-center z-0 overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.08] w-28 h-28 sm:w-36 sm:h-36 flex items-center justify-center z-0 overflow-hidden rounded-full">
             <img src="/tiger.png" alt="" className="w-full h-full object-contain select-none mix-blend-screen" />
           </div>
 
