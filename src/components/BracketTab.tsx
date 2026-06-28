@@ -1353,7 +1353,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
 
             {/* Scrollable tree */}
             <div className="w-full overflow-x-auto rounded-2xl border border-white/5 bg-[#080d19]/50 backdrop-blur-md p-4 shadow-2xl select-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-              <div className={`flex gap-0 items-center justify-center mx-auto py-4 h-[675px] ${getMinWidthClass()}`}>
+              <div className={`flex gap-0 items-center w-max mx-auto px-4 py-4 h-[675px] ${getMinWidthClass()}`}>
                 {startRound === 'r32' && (
                   <>
                     <div className="flex flex-col justify-around h-full animate-fade-in">
