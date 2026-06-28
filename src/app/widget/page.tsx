@@ -1,10 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import type { Game, Team, Stadium } from "@/lib/api";
 import type { AllData } from "@/app/page";
 import { formatMatchDateNPT } from "@/lib/date-utils";
 import Image from "next/image";
+import { motion } from "framer-motion";
+
+const newsItems = [
+  "BREAKING: Brazil sets new attendance record in thrilling Quarter-Final!",
+  "UPCOMING: Argentina faces France in a highly anticipated rematch tomorrow.",
+  "RECORD: Lionel Messi becomes the first player to score in 6 World Cups.",
+  "INJURY UPDATE: Key midfielder for Spain ruled out of the semi-finals.",
+  "LIVE: Dramatic penalty shootout underway in the Round of 16!"
+];
 
 function useWidgetData() {
   const [data, setData] = useState<AllData | null>(null);
@@ -139,7 +148,7 @@ export default function WidgetPage() {
               href="/" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className={`flex-shrink-0 snap-center relative w-[280px] h-[130px] p-3.5 match-card border shadow-xl flex flex-col justify-between overflow-hidden bg-black transition-all hover:scale-[1.01] active:scale-95 ${isLive ? "border-red-500/50" : "border-white/10"}`}
+              className={`flex-shrink-0 snap-start relative w-[280px] h-[125px] p-3 match-card border shadow-xl flex flex-col justify-between overflow-hidden bg-black transition-all hover:scale-[1.01] active:scale-95 ${isLive ? "border-red-500/50" : "border-white/10"}`}
               style={{ 
                 background: isLive ? "linear-gradient(135deg, #2a0a0a 0%, #0a0f1e 100%)" : "linear-gradient(135deg, #1a2744 0%, #0a0f1e 100%)",
                 borderRadius: '16px'
@@ -154,16 +163,16 @@ export default function WidgetPage() {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-1.5">
                   {isLive ? (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 text-[9px] font-bold uppercase tracking-wider">
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 text-[8px] font-bold uppercase tracking-wider">
                       <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse"></span>
                       LIVE {game.time_elapsed.replace(/live/i, '').trim()}&apos;
                     </span>
                   ) : finished ? (
-                    <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-gray-400 border border-white/5 text-[9px] font-bold uppercase tracking-wider">
+                    <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-gray-400 border border-white/5 text-[8px] font-bold uppercase tracking-wider">
                       FT
                     </span>
                   ) : (
-                    <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[9px] font-bold uppercase tracking-wider">
+                    <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[8px] font-bold uppercase tracking-wider">
                       PRE
                     </span>
                   )}
@@ -214,13 +223,39 @@ export default function WidgetPage() {
                 </div>
               </div>
               
-              {/* Bottom Date/Stadium */}
-              <div className="text-[7px] text-gray-600 uppercase tracking-widest text-center mt-1">
+              {/* Bottom Date */}
+              <div className="text-[7px] text-gray-600 uppercase tracking-widest text-center">
                 {nptDate.split(", ")[0]}
               </div>
             </a>
           );
         })}
+      </div>
+
+      {/* Miniature News Ticker */}
+      <div className="w-full bg-red-950/20 text-red-400 text-[7px] font-mono uppercase tracking-widest py-0.5 flex whitespace-nowrap border-t border-white/5 mt-1 overflow-hidden">
+        <motion.div
+          className="flex gap-8 items-center min-w-fit pr-8"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
+        >
+          <div className="flex gap-8 items-center">
+            {newsItems.map((news, i) => (
+              <React.Fragment key={i}>
+                <span>{news}</span>
+                <span className="w-1 h-1 bg-red-500 rounded-full" />
+              </React.Fragment>
+            ))}
+          </div>
+          <div className="flex gap-8 items-center">
+            {newsItems.map((news, i) => (
+              <React.Fragment key={`dup-${i}`}>
+                <span>{news}</span>
+                <span className="w-1 h-1 bg-red-500 rounded-full" />
+              </React.Fragment>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </div>
   );
