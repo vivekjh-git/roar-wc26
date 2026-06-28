@@ -729,6 +729,19 @@ function MatchCarouselSection({
   const [carouselIdx, setCarouselIdx] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const container = carouselRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const cardWidth = container.clientWidth;
+      if (cardWidth === 0) return;
+      const idx = Math.round(container.scrollLeft / cardWidth);
+      setCarouselIdx(idx);
+    };
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [games.length]);
+
   if (games.length === 0) {
     return (
       <section className="relative z-10 -mt-2 mb-6">
@@ -756,19 +769,6 @@ function MatchCarouselSection({
     container.scrollTo({ left: clamped * cardWidth, behavior: "smooth" });
     setCarouselIdx(clamped);
   };
-
-  useEffect(() => {
-    const container = carouselRef.current;
-    if (!container) return;
-    const onScroll = () => {
-      const cardWidth = container.clientWidth;
-      if (cardWidth === 0) return;
-      const idx = Math.round(container.scrollLeft / cardWidth);
-      setCarouselIdx(idx);
-    };
-    container.addEventListener("scroll", onScroll, { passive: true });
-    return () => container.removeEventListener("scroll", onScroll);
-  }, [games.length]);
 
   return (
     <section className="relative z-10 -mt-2 mb-6">
