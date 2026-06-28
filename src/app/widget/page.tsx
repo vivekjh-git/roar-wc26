@@ -56,13 +56,8 @@ function useWidgetDerivedData(data: AllData | null) {
     return Object.fromEntries(data.teams.map((t: Team) => [t.id, t]));
   }, [data]);
 
-  const stadiumMap = useMemo(() => {
-    if (!data) return {} as Record<string, Stadium>;
-    return Object.fromEntries((data.stadiums || []).map((s: Stadium) => [s.id, s]));
-  }, [data]);
-
-  const targetGame = useMemo(() => {
-    if (!data) return null;
+  const targetGames = useMemo(() => {
+    if (!data) return [];
     const games = data.games;
     
     const sortGames = (a: Game, b: Game) => {
@@ -82,133 +77,145 @@ function useWidgetDerivedData(data: AllData | null) {
     };
 
     const sortedGames = [...games].sort(sortGames);
-    return sortedGames[0] || null;
+    return sortedGames.slice(0, 5);
   }, [data]);
 
-  return { teamMap, stadiumMap, targetGame };
+  return { teamMap, targetGames };
 }
 
 export default function WidgetPage() {
   const { data, loading } = useWidgetData();
-  const { teamMap, stadiumMap, targetGame } = useWidgetDerivedData(data);
+  const { teamMap, targetGames } = useWidgetDerivedData(data);
 
   if (loading) {
     return (
-      <div className="w-full h-screen flex items-center justify-center p-2 sm:p-4 bg-transparent">
-        <div className="animate-pulse w-full max-w-sm h-48 bg-white/5 rounded-2xl"></div>
+      <div className="w-full h-screen flex items-center justify-center p-4 bg-transparent">
+        <div className="animate-pulse w-full max-w-sm h-40 bg-white/5 rounded-2xl"></div>
       </div>
     );
   }
 
-  if (!targetGame || !data) {
+  if (targetGames.length === 0 || !data) {
     return null;
   }
 
-  const homeTeam = teamMap[targetGame.home_team_id];
-  const awayTeam = teamMap[targetGame.away_team_id];
-  const stadium = stadiumMap[targetGame.stadium_id];
-  const finished = targetGame.finished === "TRUE";
-  const isLive = targetGame.time_elapsed !== "notstarted" && targetGame.time_elapsed !== "finished" && !finished;
-  
-  const homeName = homeTeam?.name_en || targetGame.home_team_label || targetGame.home_team_name_en || "TBD";
-  const awayName = awayTeam?.name_en || targetGame.away_team_label || targetGame.away_team_name_en || "TBD";
-  const hs = parseInt(targetGame.home_score) || 0;
-  const as_ = parseInt(targetGame.away_score) || 0;
-  
-  const nptDate = formatMatchDateNPT(targetGame.local_date, targetGame.stadium_id);
-  
   return (
-    <div className="w-full h-screen flex items-center justify-center p-2 sm:p-4 bg-transparent overflow-hidden">
-      <a 
-        href="/" 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className={`block relative w-full max-w-sm h-full max-h-56 p-4 match-card border shadow-xl flex flex-col justify-center overflow-hidden bg-black transition-all hover:scale-[1.02] active:scale-95 ${isLive ? "border-red-500/50" : "border-white/10"}`}
-        style={{ 
-          background: isLive ? "linear-gradient(135deg, #2a0a0a 0%, #0a0f1e 100%)" : "linear-gradient(135deg, #1a2744 0%, #0a0f1e 100%)",
-          borderRadius: '16px'
-        }}
-      >
-        {/* Background styling for Live */}
-        {isLive && (
-          <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse pointer-events-none"></div>
-        )}
-        
-        {/* Top Banner */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
-            {isLive ? (
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 text-[10px] font-bold uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                LIVE {targetGame.time_elapsed.replace(/live/i, '').trim()}&apos;
-              </span>
-            ) : finished ? (
-              <span className="px-2 py-0.5 rounded-full bg-white/10 text-gray-400 border border-white/5 text-[10px] font-bold uppercase tracking-wider">
-                Full Time
-              </span>
-            ) : (
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold uppercase tracking-wider">
-                Upcoming
-              </span>
-            )}
-            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Group {targetGame.group}</span>
-          </div>
-          <div className="text-[9px] text-gray-500 font-mono tracking-widest text-right">
-            {nptDate.split(", ")[0]}<br/>
-            {nptDate.split(", ")[1]}
-          </div>
+    <div className="w-full h-screen flex flex-col p-3 bg-transparent overflow-hidden select-none">
+      {/* Header with Logo */}
+      <div className="flex items-center justify-between mb-2 px-1.5">
+        <div className="flex items-center gap-1.5">
+          <Image src="/tiger.png" alt="Logo" width={18} height={18} className="object-contain" />
+          <span className="text-[10px] font-black uppercase tracking-widest gold-text">ROAR FIFA</span>
         </div>
-        
-        {/* Teams and Score */}
-        <div className="flex items-center justify-between mb-2">
-          {/* Home Team */}
-          <div className="flex flex-col items-center gap-2 w-[40%]">
-            <div className="relative w-12 h-12 rounded-full overflow-hidden border border-white/10 shadow-lg bg-black/50 p-1">
-              {homeTeam?.flag ? (
-                <Image src={homeTeam.flag} alt={homeName} fill className="object-cover rounded-full" sizes="48px" />
-              ) : (
-                <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-full text-[9px] text-gray-500 font-bold uppercase tracking-wider">TBD</div>
-              )}
-            </div>
-            <span className="text-[10px] font-black text-center leading-tight uppercase tracking-widest">{homeName}</span>
-          </div>
+        <span className="text-[8px] text-gray-500 font-mono tracking-widest">NPT TIME</span>
+      </div>
+
+      {/* Horizontal Carousel */}
+      <div 
+        className="flex-1 flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {targetGames.map((game) => {
+          const homeTeam = teamMap[game.home_team_id];
+          const awayTeam = teamMap[game.away_team_id];
+          const finished = game.finished === "TRUE";
+          const isLive = game.time_elapsed !== "notstarted" && game.time_elapsed !== "finished" && !finished;
           
-          {/* Score/VS */}
-          <div className="flex flex-col items-center justify-center w-[20%]">
-            {targetGame.time_elapsed === "notstarted" ? (
-              <div className="text-xl font-black text-gray-500/50">VS</div>
-            ) : (
-              <div className="flex flex-col items-center gap-0">
-                <div className="flex items-center gap-2">
-                  <span className={`text-3xl font-black ${finished && hs > as_ ? "text-white" : finished ? "text-gray-400" : "text-white"}`}>{hs}</span>
-                  <span className="text-gray-600">-</span>
-                  <span className={`text-3xl font-black ${finished && as_ > hs ? "text-white" : finished ? "text-gray-400" : "text-white"}`}>{as_}</span>
+          const homeName = homeTeam?.fifa_code || game.home_team_label || game.home_team_name_en?.substring(0, 3).toUpperCase() || "TBD";
+          const awayName = awayTeam?.fifa_code || game.away_team_label || game.away_team_name_en?.substring(0, 3).toUpperCase() || "TBD";
+          const hs = parseInt(game.home_score) || 0;
+          const as_ = parseInt(game.away_score) || 0;
+          const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
+
+          return (
+            <a 
+              key={game.id}
+              href="/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className={`flex-shrink-0 snap-center relative w-[280px] h-[130px] p-3.5 match-card border shadow-xl flex flex-col justify-between overflow-hidden bg-black transition-all hover:scale-[1.01] active:scale-95 ${isLive ? "border-red-500/50" : "border-white/10"}`}
+              style={{ 
+                background: isLive ? "linear-gradient(135deg, #2a0a0a 0%, #0a0f1e 100%)" : "linear-gradient(135deg, #1a2744 0%, #0a0f1e 100%)",
+                borderRadius: '16px'
+              }}
+            >
+              {/* Background styling for Live */}
+              {isLive && (
+                <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse pointer-events-none"></div>
+              )}
+              
+              {/* Top Banner */}
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-1.5">
+                  {isLive ? (
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 text-[9px] font-bold uppercase tracking-wider">
+                      <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse"></span>
+                      LIVE {game.time_elapsed.replace(/live/i, '').trim()}&apos;
+                    </span>
+                  ) : finished ? (
+                    <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-gray-400 border border-white/5 text-[9px] font-bold uppercase tracking-wider">
+                      FT
+                    </span>
+                  ) : (
+                    <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[9px] font-bold uppercase tracking-wider">
+                      PRE
+                    </span>
+                  )}
+                  <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Grp {game.group}</span>
+                </div>
+                <div className="text-[8px] text-gray-500 font-mono tracking-widest text-right leading-tight">
+                  {nptDate.split(", ")[1]}
                 </div>
               </div>
-            )}
-          </div>
-          
-          {/* Away Team */}
-          <div className="flex flex-col items-center gap-2 w-[40%]">
-            <div className="relative w-12 h-12 rounded-full overflow-hidden border border-white/10 shadow-lg bg-black/50 p-1">
-              {awayTeam?.flag ? (
-                <Image src={awayTeam.flag} alt={awayName} fill className="object-cover rounded-full" sizes="48px" />
-              ) : (
-                <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-full text-[9px] text-gray-500 font-bold uppercase tracking-wider">TBD</div>
-              )}
-            </div>
-            <span className="text-[10px] font-black text-center leading-tight uppercase tracking-widest">{awayName}</span>
-          </div>
-        </div>
-        
-        {/* Stadium/Location */}
-        {stadium && (
-          <div className="mt-auto pt-3 border-t border-white/10 flex items-center justify-center gap-1.5 text-gray-500">
-            <span>🏟️</span>
-            <span className="text-[8px] uppercase tracking-widest">{stadium.name_en}</span>
-          </div>
-        )}
-      </a>
+              
+              {/* Teams and Score */}
+              <div className="flex items-center justify-between my-auto">
+                {/* Home Team */}
+                <div className="flex flex-col items-center gap-1 w-[40%]">
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/10 shadow bg-black/50 p-0.5">
+                    {homeTeam?.flag ? (
+                      <Image src={homeTeam.flag} alt={homeName} fill className="object-cover rounded-full" sizes="32px" />
+                    ) : (
+                      <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-full text-[8px] text-gray-500">TBD</div>
+                    )}
+                  </div>
+                  <span className="text-[9px] font-black text-center leading-tight uppercase tracking-wider truncate w-full">{homeName}</span>
+                </div>
+                
+                {/* Score/VS */}
+                <div className="flex flex-col items-center justify-center w-[20%]">
+                  {game.time_elapsed === "notstarted" ? (
+                    <div className="text-xs font-black text-gray-500/50">VS</div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-xl font-black ${finished && hs > as_ ? "text-white" : finished ? "text-gray-400" : "text-white"}`}>{hs}</span>
+                      <span className="text-gray-600 text-xs">-</span>
+                      <span className={`text-xl font-black ${finished && as_ > hs ? "text-white" : finished ? "text-gray-400" : "text-white"}`}>{as_}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Away Team */}
+                <div className="flex flex-col items-center gap-1 w-[40%]">
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/10 shadow bg-black/50 p-0.5">
+                    {awayTeam?.flag ? (
+                      <Image src={awayTeam.flag} alt={awayName} fill className="object-cover rounded-full" sizes="32px" />
+                    ) : (
+                      <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-full text-[8px] text-gray-500">TBD</div>
+                    )}
+                  </div>
+                  <span className="text-[9px] font-black text-center leading-tight uppercase tracking-wider truncate w-full">{awayName}</span>
+                </div>
+              </div>
+              
+              {/* Bottom Date/Stadium */}
+              <div className="text-[7px] text-gray-600 uppercase tracking-widest text-center mt-1">
+                {nptDate.split(", ")[0]}
+              </div>
+            </a>
+          );
+        })}
+      </div>
     </div>
   );
 }
