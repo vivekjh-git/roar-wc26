@@ -526,25 +526,39 @@ function FeaturedLiveCard({
         </button>
       </div>
 
-      {/* Scorers Area (Always rendered to keep height uniform) */}
-      <div className="mt-3 sm:mt-5 pt-3 sm:pt-4 border-t border-white/5 sm:border-t-white/10 grid grid-cols-2 gap-2 sm:gap-4 relative z-10 min-h-[32px] sm:min-h-[48px]">
-        <div className="text-[9px] sm:text-xs text-gray-400 text-center leading-relaxed truncate px-1 min-w-0 flex flex-col items-center justify-center">
+      {/* Scorers Area (Always rendered with fixed height to keep cards perfectly uniform) */}
+      <div className="mt-3 sm:mt-5 pt-3 sm:pt-4 border-t border-white/5 sm:border-t-white/10 grid grid-cols-2 gap-2 sm:gap-4 relative z-10 h-10 sm:h-12 overflow-y-auto no-scrollbar">
+        <div className={`text-gray-400 text-center leading-tight truncate px-1 min-w-0 flex flex-col items-center justify-center gap-0.5
+          ${(homeScorersStr ? homeScorersStr.split(", ").length : 0) > 1 ? "text-[8px] sm:text-[10px]" : "text-[9px] sm:text-xs"}`}
+        >
           {homeScorersStr ? homeScorersStr.split(", ").map((s, i) => (
-            <div key={i} className="inline-flex items-center justify-center gap-1.5 truncate max-w-full">
-              <svg className="w-2.5 h-2.5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <circle cx="12" cy="12" r="9" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6M12 9v6" />
+            <div key={i} className="inline-flex items-center justify-center gap-1 truncate max-w-full">
+              <svg className="w-2.5 h-2.5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <circle cx="12" cy="12" r="10" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m12 2-2 4 4 0-2-4Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m10 6-4 2 2 3.5 2-5.5Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m14 6 4 2-2 3.5-2-5.5Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m8 11.5 2 4.5h4l2-4.5-2-3.5h-4l-2 3.5Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m10 16-2 6 2-6Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m14 16 2 6-2-6Z" />
               </svg>
               <span className="truncate">{s}</span>
             </div>
           )) : ""}
         </div>
-        <div className="text-[9px] sm:text-xs text-gray-400 text-center leading-relaxed truncate px-1 min-w-0 flex flex-col items-center justify-center">
+        <div className={`text-gray-400 text-center leading-tight truncate px-1 min-w-0 flex flex-col items-center justify-center gap-0.5
+          ${(awayScorersStr ? awayScorersStr.split(", ").length : 0) > 1 ? "text-[8px] sm:text-[10px]" : "text-[9px] sm:text-xs"}`}
+        >
           {awayScorersStr ? awayScorersStr.split(", ").map((s, i) => (
-            <div key={i} className="inline-flex items-center justify-center gap-1.5 truncate max-w-full">
-              <svg className="w-2.5 h-2.5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <circle cx="12" cy="12" r="9" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6M12 9v6" />
+            <div key={i} className="inline-flex items-center justify-center gap-1 truncate max-w-full">
+              <svg className="w-2.5 h-2.5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <circle cx="12" cy="12" r="10" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m12 2-2 4 4 0-2-4Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m10 6-4 2 2 3.5 2-5.5Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m14 6 4 2-2 3.5-2-5.5Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m8 11.5 2 4.5h4l2-4.5-2-3.5h-4l-2 3.5Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m10 16-2 6 2-6Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m14 16 2 6-2-6Z" />
               </svg>
               <span className="truncate">{s}</span>
             </div>
