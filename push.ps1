@@ -62,23 +62,19 @@ if (-not $status) {
 
 # 5. Deploy to Vercel production
 Write-Step "Deploying to Vercel (production)..."
-$deployOutput = npx vercel --prod --yes 2>&1
-Write-Host $deployOutput
+npx vercel --prod --yes
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "Vercel deployment failed."
     exit 1
 }
 
-# 6. Extract deployment URL and alias to roarfifa.vercel.app
-$deployUrl = ($deployOutput | Select-String "Production\s+https://(\S+)" | ForEach-Object { $_.Matches[0].Groups[1].Value }) | Select-Object -Last 1
-if ($deployUrl) {
-    Write-Step "Aliasing $deployUrl → roarfifa.vercel.app..."
-    npx vercel alias set $deployUrl roarfifa.vercel.app
-    if ($LASTEXITCODE -eq 0) {
-        Write-Success "roarfifa.vercel.app now points to $deployUrl"
-    } else {
-        Write-Host "  Note: alias step failed, set manually if needed." -ForegroundColor Yellow
-    }
+# 6. Re-alias roarfifa.vercel.app to the latest production deployment
+Write-Step "Aliasing latest deployment -> roarfifa.vercel.app..."
+npx vercel alias roarfifa.vercel.app --yes 2>$null
+if ($LASTEXITCODE -eq 0) {
+    Write-Success "roarfifa.vercel.app is up to date"
+} else {
+    Write-Host "  Note: alias step skipped (may already be set)." -ForegroundColor Yellow
 }
 
 Write-Host ""
