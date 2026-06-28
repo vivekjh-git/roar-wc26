@@ -229,6 +229,14 @@ export default function HomePage() {
         )}
       </main>
 
+      {/* Global Footer */}
+      <footer className="w-full text-center py-6 border-t border-white/5 opacity-90 mb-safe">
+        <p className="text-gray-400 text-[10px] sm:text-xs tracking-widest uppercase font-black mb-1">For the fan, by the fan</p>
+        <p className="text-gray-500 text-[10px]">
+          By <a href="https://vivekjunghamal.com" target="_blank" rel="noopener noreferrer" className="text-yellow-500/80 hover:text-yellow-400 font-bold transition-colors">VJH</a>
+        </p>
+      </footer>
+
       {/* Team detail modal */}
       {selectedTeam && data && (
         <TeamModal
