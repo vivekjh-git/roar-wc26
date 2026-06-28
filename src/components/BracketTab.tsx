@@ -263,7 +263,7 @@ function MatchCard({
   const homeWin = finished && hs > as_;
   const awayWin = finished && as_ > hs;
 
-  const nptDate = formatMatchDateNPT(game.local_date);
+  const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
   
   // Format scorers for display
   const homeScorersStr = parseScorers(game.home_scorers).map(s => {
