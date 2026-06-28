@@ -769,12 +769,14 @@ function MatchCarouselSection({
         )}
       </div>
       
-      <div className="relative w-full overflow-hidden rounded-2xl border border-white/5 cursor-grab active:cursor-grabbing touch-pan-y">
-        <motion.div 
-          className="flex items-stretch h-full"
+      {/* Carousel — each slide is independently scrollable so expanded details never bleed */}
+      <div className="relative w-full overflow-hidden rounded-2xl border border-white/5">
+        <motion.div
+          className="flex"
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
+          dragElastic={0.15}
+          dragMomentum={false}
           onDragEnd={(e, { offset }) => {
             if (offset.x < -50) {
               setCarouselIdx((prev) => (prev + 1) % games.length);
@@ -783,13 +785,27 @@ function MatchCarouselSection({
             }
           }}
           animate={{ x: `-${carouselIdx * 100}%` }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          transition={{ type: "spring", stiffness: 320, damping: 32, mass: 0.8 }}
         >
           {games.map((game, idx) => (
-            <div key={game.id} className="w-full flex-shrink-0 flex items-stretch">
-              <div className="w-full">
-                <FeaturedLiveCard game={game} teamMap={teamMap} stadiumMap={stadiumMap} onTeamClick={onTeamClick} allGames={allGames} isActive={carouselIdx === idx} />
-              </div>
+            <div
+              key={game.id}
+              className="w-full flex-shrink-0"
+              style={{
+                /* Each slide scrolls independently; hidden slides are inert */
+                overflowY: carouselIdx === idx ? "auto" : "hidden",
+                maxHeight: carouselIdx === idx ? "75dvh" : undefined,
+                pointerEvents: carouselIdx === idx ? "auto" : "none",
+              }}
+            >
+              <FeaturedLiveCard
+                game={game}
+                teamMap={teamMap}
+                stadiumMap={stadiumMap}
+                onTeamClick={onTeamClick}
+                allGames={allGames}
+                isActive={carouselIdx === idx}
+              />
             </div>
           ))}
         </motion.div>
