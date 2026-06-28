@@ -387,6 +387,40 @@ function FeaturedLiveCard({
   const awayScorersStr = parseScorers(game.away_scorers).map(s => s.replace(/['"]/g, "").trim()).join(", ");
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
+  // Live Commentary State
+  const [commentary, setCommentary] = useState("");
+  const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (finished) {
+      setCommentary(`Match has ended. Full time result: ${homeName} ${hs} - ${as_} ${awayName}.`);
+      setBallPos({ x: 0, y: 0 });
+    } else if (isLive) {
+      const commentaries = [
+        `${homeName} is keeping possession in the midfield...`,
+        `${awayName} pushes forward on the counter attack!`,
+        `A dangerous cross into the box!`,
+        `Solid defensive block by ${homeName}.`,
+        `The referee signals for a foul. Free kick to ${awayName}.`,
+        `${homeName} plays a beautiful through ball into the final third...`,
+        `Great intensity in the middle of the park.`
+      ];
+      setCommentary(commentaries[Math.floor(Math.random() * commentaries.length)]);
+      
+      const interval = setInterval(() => {
+        setCommentary(commentaries[Math.floor(Math.random() * commentaries.length)]);
+        setBallPos({
+          x: Math.floor(Math.random() * 160) - 80,
+          y: Math.floor(Math.random() * 40) - 20
+        });
+      }, 6000);
+      return () => clearInterval(interval);
+    } else {
+      setCommentary("Match will begin soon. Waiting for kickoff...");
+      setBallPos({ x: 0, y: 0 });
+    }
+  }, [finished, isLive, homeName, awayName, hs, as_]);
+
   return (
     <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border shadow-lg w-full h-full flex flex-col ${isLive ? "border-red-500/50" : "border-white/10"}`}
       style={{ background: isLive ? "linear-gradient(135deg, #2a0a0a 0%, #0a0f1e 100%)" : "linear-gradient(135deg, #1a2744 0%, #0a0f1e 100%)" }}
@@ -430,8 +464,13 @@ function FeaturedLiveCard({
             <span className="text-lg sm:text-2xl text-gray-600 font-black mb-1">:</span>
             <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-yellow-400" : "text-gray-500"}`}>{finished || isLive ? as_ : "-"}</span>
           </div>
-          <div className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1.5 bg-black/40 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full border border-white/5 text-center flex flex-col leading-tight relative z-10">
-            {finished ? "Full Time" : isLive ? "In Progress" : (
+          <div className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1.5 bg-black/40 px-2.5 sm:px-3 py-1 rounded-full border border-white/5 text-center flex flex-col leading-tight relative z-10">
+            {finished ? (
+              <>
+                <span className="text-yellow-400">Full Time</span>
+                <span className="text-[7px] sm:text-[8px] text-gray-500 font-medium tracking-normal mt-0.5 normal-case">Played: {nptDate}</span>
+              </>
+            ) : isLive ? "In Progress" : (
               <>
                 <span>{nptDate.split(", ")[0]}</span>
                 <span className="text-gray-400">{nptDate.split(", ")[1]}</span>
@@ -518,23 +557,28 @@ function FeaturedLiveCard({
               </div>
               
               <div className="flex-1 p-3 relative z-10 overflow-hidden flex flex-col justify-end">
-                <motion.div 
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  key={isLive ? game.time_elapsed : "ft"}
-                  className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
-                >
-                  <span className="text-yellow-400 mr-2">{isLive ? game.time_elapsed : "90'"}</span>
-                  {game.home_team_name_en} plays a beautiful through ball into the final third...
-                </motion.div>
+                <AnimatePresence mode="wait">
+                  <motion.div 
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -10, opacity: 0 }}
+                    key={commentary}
+                    className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
+                  >
+                    {isLive && <span className="text-yellow-400 mr-2">{game.time_elapsed}</span>}
+                    {commentary}
+                  </motion.div>
+                </AnimatePresence>
                 
-                <motion.div
-                  animate={{ x: [0, 80, -40, 20, 0], y: [0, -15, 10, -20, 0] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute bottom-6 left-1/2 text-sm sm:text-base drop-shadow-md"
-                >
-                  ⚽
-                </motion.div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                  <motion.div
+                    animate={isLive ? { x: ballPos.x, y: ballPos.y } : { x: 0, y: 0 }}
+                    transition={{ type: "spring", stiffness: 40, damping: 10 }}
+                    className="text-sm sm:text-base drop-shadow-md"
+                  >
+                    ⚽
+                  </motion.div>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -711,7 +755,7 @@ function MatchCarouselSection({
       </div>
 
       <div className="mt-3 mb-2 px-1 w-full overflow-hidden">
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x justify-start sm:justify-center">
+        <div className="flex gap-2 overflow-x-auto pb-3 scroll-smooth snap-x justify-start scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
           {games.map((g, idx) => {
             const isLive = g.time_elapsed !== "notstarted" && g.finished !== "TRUE";
             const isUpcoming = g.time_elapsed === "notstarted";
