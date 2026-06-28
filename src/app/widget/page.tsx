@@ -239,7 +239,7 @@ export default function WidgetPage() {
       </div>
 
       {/* Miniature News Ticker */}
-      <div className="w-full bg-red-950/20 text-red-400 text-[7px] font-mono uppercase tracking-widest py-0.5 flex whitespace-nowrap border-t border-white/5 mt-1 overflow-hidden">
+      <div className="w-[calc(100%+24px)] -mx-3 bg-red-950/45 text-red-400 text-[6.5px] font-mono uppercase tracking-widest py-0.5 flex whitespace-nowrap border-t border-b border-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.15)] mt-1.5 overflow-hidden">
         <motion.div
           className="flex gap-8 items-center min-w-fit pr-8"
           animate={{ x: ["0%", "-50%"] }}
