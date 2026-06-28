@@ -11,7 +11,7 @@ import { format, addDays } from "date-fns";
 
 function NewsMarquee({ bulletins }: { bulletins: string[] }) {
   return (
-    <div className="w-full bg-red-900/30 text-red-400 text-[10px] sm:text-xs font-mono uppercase tracking-widest py-2 overflow-hidden flex whitespace-nowrap border-y border-red-500/20 mb-4">
+    <div className="w-[100vw] relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-red-900/30 text-red-400 text-[10px] sm:text-xs font-mono uppercase tracking-widest py-2 overflow-hidden flex whitespace-nowrap border-y border-red-500/20 mb-4">
       <motion.div
         className="flex gap-12 items-center min-w-fit pr-12"
         animate={{ x: ["0%", "-50%"] }}
