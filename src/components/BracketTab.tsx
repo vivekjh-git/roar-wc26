@@ -727,8 +727,7 @@ function MatchCarouselSection({
   isLiveTitle?: string;
 }) {
   const [carouselIdx, setCarouselIdx] = useState(0);
-  const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
-  const dragStartX = useRef<number | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   if (games.length === 0) {
     return (
@@ -750,10 +749,26 @@ function MatchCarouselSection({
   const displayTitle = (hasLive && isLiveTitle) ? isLiveTitle : title;
 
   const goTo = (idx: number) => {
+    const container = carouselRef.current;
+    if (!container) return;
     const clamped = Math.max(0, Math.min(idx, games.length - 1));
-    setDirection(clamped >= carouselIdx ? 1 : -1);
+    const cardWidth = container.clientWidth;
+    container.scrollTo({ left: clamped * cardWidth, behavior: "smooth" });
     setCarouselIdx(clamped);
   };
+
+  useEffect(() => {
+    const container = carouselRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const cardWidth = container.clientWidth;
+      if (cardWidth === 0) return;
+      const idx = Math.round(container.scrollLeft / cardWidth);
+      setCarouselIdx(idx);
+    };
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [games.length]);
 
   return (
     <section className="relative z-10 -mt-2 mb-6">
@@ -777,47 +792,31 @@ function MatchCarouselSection({
         )}
       </div>
 
-      {/* Carousel — AnimatePresence renders ONLY the active card; no other cards exist in the DOM */}
+      {/* Carousel Container */}
       <div className="relative group w-full">
         <div
-          className="relative w-full rounded-2xl border border-white/5 overflow-hidden select-none"
-          onPointerDown={(e) => { dragStartX.current = e.clientX; }}
-          onPointerUp={(e) => {
-            if (dragStartX.current === null) return;
-            const dx = e.clientX - dragStartX.current;
-            dragStartX.current = null;
-            if (Math.abs(dx) < 10) return; // tap, not swipe
-            if (dx < -40) goTo(carouselIdx + 1);
-            else if (dx > 40) goTo(carouselIdx - 1);
+          ref={carouselRef}
+          className="w-full flex items-start overflow-x-auto snap-x snap-mandatory rounded-2xl border border-white/5 scroll-smooth no-scrollbar"
+          style={{
+            msOverflowStyle: "none",
+            scrollbarWidth: "none",
           }}
-          onPointerLeave={() => { dragStartX.current = null; }}
-          style={{ touchAction: "pan-y", cursor: "grab" }}
         >
-          <AnimatePresence mode="wait" initial={false} custom={direction}>
-            <motion.div
-              key={games[carouselIdx]?.id ?? carouselIdx}
-              custom={direction}
-              variants={{
-                enter: (d: number) => ({ opacity: 0, x: d > 0 ? 80 : -80 }),
-                center: { opacity: 1, x: 0 },
-                exit: (d: number) => ({ opacity: 0, x: d > 0 ? -80 : 80 }),
-              }}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-              style={{ overflowY: "auto", maxHeight: "75dvh" }}
+          {games.map((game, idx) => (
+            <div
+              key={game.id}
+              className="w-full flex-shrink-0 snap-center"
             >
               <FeaturedLiveCard
-                game={games[carouselIdx]}
+                game={game}
                 teamMap={teamMap}
                 stadiumMap={stadiumMap}
                 onTeamClick={onTeamClick}
                 allGames={allGames}
-                isActive={true}
+                isActive={carouselIdx === idx}
               />
-            </motion.div>
-          </AnimatePresence>
+            </div>
+          ))}
         </div>
 
         {/* Navigation Arrows */}
@@ -850,8 +849,8 @@ function MatchCarouselSection({
           {games.map((g, idx) => {
             const isLive = g.time_elapsed !== "notstarted" && g.finished !== "TRUE";
             const isUpcoming = g.time_elapsed === "notstarted";
-            const hName = teamMap[g.home_team_id]?.fifa_code || g.home_team_name_en?.substring(0,3).toUpperCase() || "TBD";
-            const aName = teamMap[g.away_team_id]?.fifa_code || g.away_team_name_en?.substring(0,3).toUpperCase() || "TBD";
+            const hName = teamMap[g.home_team_id]?.fifa_code || g.home_team_name_en?.substring(0, 3).toUpperCase() || "TBD";
+            const aName = teamMap[g.away_team_id]?.fifa_code || g.away_team_name_en?.substring(0, 3).toUpperCase() || "TBD";
             const hs = g.home_score || "0";
             const as_ = g.away_score || "0";
             const timeStr = isUpcoming ? formatMatchDateNPT(g.local_date, g.stadium_id).split(", ")[1] : (isLive ? `LIVE ${g.time_elapsed.replace(/live/i, "").trim()}` : "FT");
