@@ -1164,9 +1164,24 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
     { key: "third", label: "3rd Place", games: byType.third },
   ].filter((s) => s.games.length > 0);
 
+  const [externalNews, setExternalNews] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch('/api/news')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.news)) {
+          setExternalNews(data.news.map((n: string) => `🗞️ NEWS: ${n}`));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const newsBulletins = useMemo(() => {
-    return generateLiveBulletins(games, teams);
-  }, [games, teams]);
+    const local = generateLiveBulletins(games, teams);
+    // Interleave local stats with real world cup news
+    return externalNews.length > 0 ? [...local, ...externalNews] : local;
+  }, [games, teams, externalNews]);
 
   const getMinWidthClass = () => {
     switch (startRound) {
