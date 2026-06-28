@@ -139,7 +139,7 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
         >
           {/* Header */}
           <div
-            className="relative px-5 pt-6 pb-4 overflow-hidden"
+            className="relative px-5 pt-6 pb-4 overflow-hidden shrink-0"
             style={{ background: `linear-gradient(135deg, #1a2744 0%, #0d1526 100%)` }}
           >
             {/* Background flag blur */}
