@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Game, Team, Stadium } from "@/lib/api";
 import { parseScorers } from "@/lib/api";
@@ -727,6 +727,8 @@ function MatchCarouselSection({
   isLiveTitle?: string;
 }) {
   const [carouselIdx, setCarouselIdx] = useState(0);
+  const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+  const dragStartX = useRef<number | null>(null);
 
   if (games.length === 0) {
     return (
@@ -747,6 +749,12 @@ function MatchCarouselSection({
   const hasLive = games.some(g => g.time_elapsed !== "notstarted" && g.finished !== "TRUE");
   const displayTitle = (hasLive && isLiveTitle) ? isLiveTitle : title;
 
+  const goTo = (idx: number) => {
+    const clamped = Math.max(0, Math.min(idx, games.length - 1));
+    setDirection(clamped >= carouselIdx ? 1 : -1);
+    setCarouselIdx(clamped);
+  };
+
   return (
     <section className="relative z-10 -mt-2 mb-6">
       <div className="flex items-center justify-between mb-3 px-1">
@@ -759,56 +767,56 @@ function MatchCarouselSection({
         {games.length > 1 && (
           <div className="flex gap-2">
             {games.map((_, i) => (
-              <button 
-                key={i} 
-                onClick={() => setCarouselIdx(i)} 
-                className={`w-2.5 h-2.5 rounded-full transition-all ${i === carouselIdx ? (iconColor ? 'bg-red-500 scale-110' : 'bg-[#ff5e00] scale-110') : 'bg-gray-700 hover:bg-gray-500'}`} 
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                className={`w-2.5 h-2.5 rounded-full transition-all ${i === carouselIdx ? (iconColor ? "bg-red-500 scale-110" : "bg-[#ff5e00] scale-110") : "bg-gray-700 hover:bg-gray-500"}`}
               />
             ))}
           </div>
         )}
       </div>
-      
-      {/* Carousel — each slide is independently scrollable so expanded details never bleed */}
-      <div className="relative w-full overflow-hidden rounded-2xl border border-white/5">
-        <motion.div
-          className="flex"
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.15}
-          dragMomentum={false}
-          onDragEnd={(e, { offset }) => {
-            if (offset.x < -50) {
-              setCarouselIdx((prev) => (prev + 1) % games.length);
-            } else if (offset.x > 50) {
-              setCarouselIdx((prev) => (prev - 1 + games.length) % games.length);
-            }
-          }}
-          animate={{ x: `-${carouselIdx * 100}%` }}
-          transition={{ type: "spring", stiffness: 320, damping: 32, mass: 0.8 }}
-        >
-          {games.map((game, idx) => (
-            <div
-              key={game.id}
-              className="w-full flex-shrink-0"
-              style={{
-                /* Each slide scrolls independently; hidden slides are inert */
-                overflowY: carouselIdx === idx ? "auto" : "hidden",
-                maxHeight: carouselIdx === idx ? "75dvh" : undefined,
-                pointerEvents: carouselIdx === idx ? "auto" : "none",
-              }}
-            >
-              <FeaturedLiveCard
-                game={game}
-                teamMap={teamMap}
-                stadiumMap={stadiumMap}
-                onTeamClick={onTeamClick}
-                allGames={allGames}
-                isActive={carouselIdx === idx}
-              />
-            </div>
-          ))}
-        </motion.div>
+
+      {/* Carousel — AnimatePresence renders ONLY the active card; no other cards exist in the DOM */}
+      <div
+        className="relative w-full rounded-2xl border border-white/5 overflow-hidden select-none"
+        onPointerDown={(e) => { dragStartX.current = e.clientX; }}
+        onPointerUp={(e) => {
+          if (dragStartX.current === null) return;
+          const dx = e.clientX - dragStartX.current;
+          dragStartX.current = null;
+          if (Math.abs(dx) < 10) return; // tap, not swipe
+          if (dx < -40) goTo(carouselIdx + 1);
+          else if (dx > 40) goTo(carouselIdx - 1);
+        }}
+        onPointerLeave={() => { dragStartX.current = null; }}
+        style={{ touchAction: "pan-y", cursor: "grab" }}
+      >
+        <AnimatePresence mode="wait" initial={false} custom={direction}>
+          <motion.div
+            key={games[carouselIdx]?.id ?? carouselIdx}
+            custom={direction}
+            variants={{
+              enter: (d: number) => ({ opacity: 0, x: d > 0 ? 80 : -80 }),
+              center: { opacity: 1, x: 0 },
+              exit: (d: number) => ({ opacity: 0, x: d > 0 ? -80 : 80 }),
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+            style={{ overflowY: "auto", maxHeight: "75dvh" }}
+          >
+            <FeaturedLiveCard
+              game={games[carouselIdx]}
+              teamMap={teamMap}
+              stadiumMap={stadiumMap}
+              onTeamClick={onTeamClick}
+              allGames={allGames}
+              isActive={true}
+            />
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <div className="mt-3 mb-2 px-1 w-full overflow-hidden">
@@ -820,18 +828,18 @@ function MatchCarouselSection({
             const aName = teamMap[g.away_team_id]?.fifa_code || g.away_team_name_en?.substring(0,3).toUpperCase() || "TBD";
             const hs = g.home_score || "0";
             const as_ = g.away_score || "0";
-            const timeStr = isUpcoming ? formatMatchDateNPT(g.local_date, g.stadium_id).split(", ")[1] : (isLive ? `LIVE ${g.time_elapsed.replace(/live/i, '').trim()}` : "FT");
-            
+            const timeStr = isUpcoming ? formatMatchDateNPT(g.local_date, g.stadium_id).split(", ")[1] : (isLive ? `LIVE ${g.time_elapsed.replace(/live/i, "").trim()}` : "FT");
+
             return (
-              <button 
+              <button
                 key={g.id}
-                onClick={() => setCarouselIdx(idx)}
+                onClick={() => goTo(idx)}
                 className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 whitespace-nowrap transition-colors
-                  ${carouselIdx === idx 
-                    ? "bg-white/10 border-white/20 text-white" 
+                  ${carouselIdx === idx
+                    ? "bg-white/10 border-white/20 text-white"
                     : "bg-black/20 border-white/5 text-gray-500 hover:text-gray-300"}`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${isUpcoming ? 'bg-blue-400' : isLive ? 'bg-red-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                <span className={`w-1.5 h-1.5 rounded-full ${isUpcoming ? "bg-blue-400" : isLive ? "bg-red-500 animate-pulse" : "bg-gray-400"}`} />
                 <span>
                   {hName} {isUpcoming ? "vs" : `${hs}-${as_}`} {aName}
                 </span>
