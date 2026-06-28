@@ -714,8 +714,8 @@ function FeaturedLiveCard({
       const isAway = g.away_team_id === teamId;
       if (!isHome && !isAway) return acc;
       
-      const hs = parseInt(g.home_score) || 0;
-      const as_ = parseInt(g.away_score) || 0;
+      const hs = Number.parseInt(g.home_score) || 0;
+      const as_ = Number.parseInt(g.away_score) || 0;
       
       return {
         mp: acc.mp + 1,
