@@ -97,6 +97,56 @@ function ConnectorColSFToFinal({ side }: { side: 'left' | 'right' }) {
   );
 }
 
+function TeamRow({
+  team,
+  teamName,
+  teamFlag,
+  score,
+  isWinner,
+  isFinished,
+  isLive,
+  onTeamClick
+}: {
+  readonly team?: Team;
+  readonly teamName: string;
+  readonly teamFlag?: string;
+  readonly score: number;
+  readonly isWinner: boolean;
+  readonly isFinished: boolean;
+  readonly isLive: boolean;
+  readonly onTeamClick: (team: Team) => void;
+}) {
+  const cleanName = teamName.startsWith("Winner Match ")
+    ? `W${teamName.replace("Winner Match ", "")}`
+    : teamName.startsWith("Loser Match ")
+    ? `L${teamName.replace("Loser Match ", "")}`
+    : teamName;
+
+  return (
+    <button
+      onClick={() => team && onTeamClick(team)}
+      className={`flex items-center justify-between w-full text-left transition-opacity ${isFinished && !isWinner ? 'opacity-50' : 'opacity-100 hover:opacity-85'}`}
+    >
+      <div className="flex items-center gap-1 min-w-0">
+        {teamFlag ? (
+          <img src={teamFlag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shadow-sm flex-shrink-0" />
+        ) : (
+          <div className="w-3.5 h-2.5 bg-gray-800 rounded-[1px] flex-shrink-0 flex items-center justify-center text-[5px] text-gray-600 font-bold">?</div>
+        )}
+        <span className={`text-[8px] font-black uppercase tracking-wider truncate flex items-center gap-1 ${isWinner ? 'text-yellow-400 font-black' : 'text-gray-300'}`}>
+          <span>{cleanName}</span>
+          {isWinner && (
+            <img src="/tiger.png" className="w-2.5 h-2.5 rounded-full object-cover border border-yellow-400/50 shadow flex-shrink-0" alt="Winner" />
+          )}
+        </span>
+      </div>
+      {(isFinished || isLive) ? (
+        <span className={`text-[8px] font-black px-1 rounded ${isWinner ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{score}</span>
+      ) : null}
+    </button>
+  );
+}
+
 function BracketNode({
   gameId,
   teamMap,
@@ -120,32 +170,17 @@ function BracketNode({
 
   const homeName = homeTeam?.fifa_code || game.home_team_label || game.home_team_name_en || "TBD";
   const awayName = awayTeam?.fifa_code || game.away_team_label || game.away_team_name_en || "TBD";
-  const homeFlag = homeTeam?.flag;
-  const awayFlag = awayTeam?.flag;
 
   const hs = parseInt(game.home_score) || 0;
   const as_ = parseInt(game.away_score) || 0;
   const homeWin = finished && hs > as_;
   const awayWin = finished && as_ > hs;
 
-  const cleanHomeName = homeName.startsWith("Winner Match ")
-    ? `W${homeName.replace("Winner Match ", "")}`
-    : homeName.startsWith("Loser Match ")
-    ? `L${homeName.replace("Loser Match ", "")}`
-    : homeName;
-
-  const cleanAwayName = awayName.startsWith("Winner Match ")
-    ? `W${awayName.replace("Winner Match ", "")}`
-    : awayName.startsWith("Loser Match ")
-    ? `L${awayName.replace("Loser Match ", "")}`
-    : awayName;
-
   const dateTime = formatMatchDateNPT(game.local_date, game.stadium_id);
 
   return (
     <div className="relative group">
       <div className={`w-[116px] bg-[#0c101d]/90 border rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:border-yellow-400/40 hover:shadow-yellow-400/5 ${isLive ? 'border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.15)] bg-red-500/5' : 'border-white/10 bg-black/40'}`}>
-        {/* Match Header info */}
         <div className="bg-black/50 px-1.5 py-0.5 flex justify-between items-center text-[7px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
           <span>M{game.id}</span>
           {isLive ? (
@@ -154,57 +189,10 @@ function BracketNode({
             <span className="truncate max-w-[50px]">{label}</span>
           )}
         </div>
-
-        {/* Teams grid */}
         <div className="p-1 space-y-1 bg-black/10">
-          {/* Home Team Row */}
-          <button
-            onClick={() => homeTeam && onTeamClick(homeTeam)}
-            className={`flex items-center justify-between w-full text-left transition-opacity ${finished && !homeWin ? 'opacity-50' : 'opacity-100 hover:opacity-85'}`}
-          >
-            <div className="flex items-center gap-1 min-w-0">
-              {homeFlag ? (
-                <img src={homeFlag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shadow-sm flex-shrink-0" />
-              ) : (
-                <div className="w-3.5 h-2.5 bg-gray-800 rounded-[1px] flex-shrink-0 flex items-center justify-center text-[5px] text-gray-600 font-bold">?</div>
-              )}
-              <span className={`text-[8px] font-black uppercase tracking-wider truncate flex items-center gap-1 ${homeWin ? 'text-yellow-400 font-black' : 'text-gray-300'}`}>
-                <span>{cleanHomeName}</span>
-                {homeWin && (
-                  <img src="/tiger.png" className="w-2.5 h-2.5 rounded-full object-cover border border-yellow-400/50 shadow flex-shrink-0" alt="Winner" />
-                )}
-              </span>
-            </div>
-            {(finished || isLive) ? (
-              <span className={`text-[8px] font-black px-1 rounded ${homeWin ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{hs}</span>
-            ) : null}
-          </button>
-
-          {/* Away Team Row */}
-          <button
-            onClick={() => awayTeam && onTeamClick(awayTeam)}
-            className={`flex items-center justify-between w-full text-left transition-opacity ${finished && !awayWin ? 'opacity-50' : 'opacity-100 hover:opacity-85'}`}
-          >
-            <div className="flex items-center gap-1 min-w-0">
-              {awayFlag ? (
-                <img src={awayFlag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shadow-sm flex-shrink-0" />
-              ) : (
-                <div className="w-3.5 h-2.5 bg-gray-800 rounded-[1px] flex-shrink-0 flex items-center justify-center text-[5px] text-gray-600 font-bold">?</div>
-              )}
-              <span className={`text-[8px] font-black uppercase tracking-wider truncate flex items-center gap-1 ${awayWin ? 'text-yellow-400 font-black' : 'text-gray-300'}`}>
-                <span>{cleanAwayName}</span>
-                {awayWin && (
-                  <img src="/tiger.png" className="w-2.5 h-2.5 rounded-full object-cover border border-yellow-400/50 shadow flex-shrink-0" alt="Winner" />
-                )}
-              </span>
-            </div>
-            {(finished || isLive) ? (
-              <span className={`text-[8px] font-black px-1 rounded ${awayWin ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{as_}</span>
-            ) : null}
-          </button>
+          <TeamRow team={homeTeam} teamName={homeName} teamFlag={homeTeam?.flag} score={hs} isWinner={homeWin} isFinished={finished} isLive={isLive} onTeamClick={onTeamClick} />
+          <TeamRow team={awayTeam} teamName={awayName} teamFlag={awayTeam?.flag} score={as_} isWinner={awayWin} isFinished={finished} isLive={isLive} onTeamClick={onTeamClick} />
         </div>
-
-        {/* Date/Time info */}
         {!finished && (
            <div className="bg-black/30 px-1 py-0.5 text-[7px] font-bold text-gray-500 uppercase tracking-widest text-center border-t border-white/5">
             {dateTime}
@@ -544,6 +532,140 @@ function ExtendedMatchStats({ gameId, isPending }: { gameId: string, isPending?:
   );
 }
 
+function MatchTrackerView({
+  showTracker, isLive, game, commentary, ballPos
+}: {
+  readonly showTracker: boolean;
+  readonly isLive: boolean;
+  readonly game: Game;
+  readonly commentary: string;
+  readonly ballPos: { x: number; y: number };
+}) {
+  return (
+    <AnimatePresence>
+      {showTracker && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="overflow-hidden relative z-10"
+        >
+          <div className="mt-4 w-full h-40 relative rounded-xl border border-green-500/30 overflow-hidden bg-[#1e4d2a] flex flex-col shadow-inner">
+            <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: "linear-gradient(to right, transparent 49.5%, white 49.5%, white 50.5%, transparent 50.5%)" }}>
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-white rounded-full"></div>
+              <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-12 h-24 border-2 border-white rounded-lg"></div>
+              <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-12 h-24 border-2 border-white rounded-lg"></div>
+            </div>
+            
+            <div className="bg-black/40 px-3 py-1.5 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-green-400 relative z-10 border-b border-green-500/20">
+              <span>{isLive ? "Live Pitch Commentary" : "Match Replay"}</span>
+              <span className="text-yellow-400">{isLive ? game.time_elapsed : "FT"}</span>
+            </div>
+            
+            <div className="flex-1 p-3 relative z-10 overflow-hidden flex flex-col justify-end">
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -10, opacity: 0 }}
+                  key={commentary}
+                  className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
+                >
+                  {isLive && <span className="text-yellow-400 mr-2">{game.time_elapsed}</span>}
+                  {commentary}
+                </motion.div>
+              </AnimatePresence>
+              
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <motion.div
+                  animate={isLive ? { x: ballPos.x, y: ballPos.y } : { x: 0, y: 0 }}
+                  transition={{ type: "spring", stiffness: 40, damping: 10 }}
+                  className="text-sm sm:text-base drop-shadow-md"
+                >
+                  ⚽
+                </motion.div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function MatchDetailsView({
+  showDetails, game, stadium, isPending, hs, as_
+}: {
+  readonly showDetails: boolean;
+  readonly game: Game;
+  readonly stadium?: Stadium;
+  readonly isPending: boolean;
+  readonly hs: number;
+  readonly as_: number;
+}) {
+  return (
+    <AnimatePresence>
+      {showDetails && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="overflow-hidden relative z-10"
+        >
+          <div className="pt-4 mt-4 border-t border-white/10 space-y-3">
+            <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
+              <span className="shrink-0">Tournament Stage</span>
+              <span className="font-bold text-white uppercase text-right">{game.type.replace("_", " ")}</span>
+            </div>
+            <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
+              <span className="shrink-0">Group</span>
+              <span className="font-bold text-white uppercase text-right">{game.group || "N/A"}</span>
+            </div>
+            <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
+              <span className="shrink-0">Stadium Capacity</span>
+              <span className="font-bold text-white uppercase text-right">{stadium?.capacity?.toLocaleString() || "TBD"}</span>
+            </div>
+            <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
+              <span className="shrink-0">City / Region</span>
+              <span className="font-bold text-white uppercase text-right">{stadium?.city_en || "TBD"}, {stadium?.region || "TBD"}</span>
+            </div>
+            <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
+              <span className="shrink-0">Match ID</span>
+              <span className="font-bold text-white uppercase text-right">#{game.id}</span>
+            </div>
+          </div>
+
+          <div className="pt-4 mt-4 border-t border-white/10">
+            <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3 text-center">Match Stats</h4>
+            <div className="grid grid-cols-3 gap-2 text-center text-[11px] sm:text-xs bg-black/20 rounded-xl p-3 border border-white/5">
+              <div className="flex flex-col gap-2 font-black text-white">
+                <span className="text-green-400">{isPending ? "-" : hs}</span>
+                <span className="text-yellow-500">{isPending ? "-" : (parseInt(game.id) % 3)}</span>
+                <span className="text-red-500">{isPending ? "-" : (parseInt(game.id) % 2 === 0 ? 0 : 1)}</span>
+                <span className="text-orange-400">{isPending ? "-" : ((parseInt(game.id) + 2) % 2)}</span>
+              </div>
+              <div className="flex flex-col gap-2 text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">
+                <span>Goals</span>
+                <span>Yellow Cards</span>
+                <span>Red Cards</span>
+                <span>Injuries</span>
+              </div>
+              <div className="flex flex-col gap-2 font-black text-white">
+                <span className="text-green-400">{isPending ? "-" : as_}</span>
+                <span className="text-yellow-500">{isPending ? "-" : ((parseInt(game.id) + 1) % 4)}</span>
+                <span className="text-red-500">{isPending ? "-" : (parseInt(game.id) % 3 === 0 ? 1 : 0)}</span>
+                <span className="text-orange-400">{isPending ? "-" : (parseInt(game.id) % 2)}</span>
+              </div>
+            </div>
+          </div>
+
+          <ExtendedMatchStats gameId={game.id} isPending={isPending} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function FeaturedLiveCard({
   game,
   teamMap,
@@ -552,12 +674,12 @@ function FeaturedLiveCard({
   allGames,
   isActive = false,
 }: {
-  game: Game;
-  teamMap: { [key: string]: Team };
-  stadiumMap: { [key: string]: Stadium };
-  onTeamClick: (team: Team) => void;
-  allGames: Game[];
-  isActive?: boolean;
+  readonly game: Game;
+  readonly teamMap: { [key: string]: Team };
+  readonly stadiumMap: { [key: string]: Stadium };
+  readonly onTeamClick: (team: Team) => void;
+  readonly allGames: Game[];
+  readonly isActive?: boolean;
 }) {
   const [showDetails, setShowDetails] = useState(false);
   const [showTracker, setShowTracker] = useState(false);
@@ -663,6 +785,25 @@ function FeaturedLiveCard({
 
   const ballPos = isLive ? liveBallPos : { x: 0, y: 0 };
 
+  let matchStatusLabel;
+  if (finished) {
+    matchStatusLabel = (
+      <>
+        <span className="text-yellow-400">Full Time</span>
+        <span className="text-[7px] sm:text-[8px] text-gray-500 font-medium tracking-normal mt-0.5 normal-case">Played: {nptDate}</span>
+      </>
+    );
+  } else if (isLive) {
+    matchStatusLabel = "In Progress";
+  } else {
+    matchStatusLabel = (
+      <>
+        <span>{nptDate.split(", ")[0]}</span>
+        <span className="text-gray-400">{nptDate.split(", ")[1]}</span>
+      </>
+    );
+  }
+
   return (
     <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border shadow-lg w-full h-full flex flex-col ${isLive ? "border-red-500/50" : "border-white/10"}`}
       style={{ background: isLive ? "linear-gradient(135deg, #2a0a0a 0%, #0a0f1e 100%)" : "linear-gradient(135deg, #1a2744 0%, #0a0f1e 100%)" }}
@@ -707,17 +848,7 @@ function FeaturedLiveCard({
             <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-yellow-400" : "text-gray-500"}`}>{finished || isLive ? as_ : "-"}</span>
           </div>
           <div className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1.5 bg-black/40 px-2.5 sm:px-3 py-1 rounded-full border border-white/5 text-center flex flex-col leading-tight relative z-10">
-            {finished ? (
-              <>
-                <span className="text-yellow-400">Full Time</span>
-                <span className="text-[7px] sm:text-[8px] text-gray-500 font-medium tracking-normal mt-0.5 normal-case">Played: {nptDate}</span>
-              </>
-            ) : isLive ? "In Progress" : (
-              <>
-                <span>{nptDate.split(", ")[0]}</span>
-                <span className="text-gray-400">{nptDate.split(", ")[1]}</span>
-              </>
-            )}
+            {matchStatusLabel}
           </div>
         </div>
 
@@ -791,55 +922,7 @@ function FeaturedLiveCard({
       )}
 
       {/* Live Match Tracker Section */}
-      <AnimatePresence>
-        {showTracker && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden relative z-10"
-          >
-            <div className="mt-4 w-full h-40 relative rounded-xl border border-green-500/30 overflow-hidden bg-[#1e4d2a] flex flex-col shadow-inner">
-              {/* Pitch Markings */}
-              <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: "linear-gradient(to right, transparent 49.5%, white 49.5%, white 50.5%, transparent 50.5%)" }}>
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-white rounded-full"></div>
-                <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-12 h-24 border-2 border-white rounded-lg"></div>
-                <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-12 h-24 border-2 border-white rounded-lg"></div>
-              </div>
-              
-              <div className="bg-black/40 px-3 py-1.5 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-green-400 relative z-10 border-b border-green-500/20">
-                <span>{isLive ? "Live Pitch Commentary" : "Match Replay"}</span>
-                <span className="text-yellow-400">{isLive ? game.time_elapsed : "FT"}</span>
-              </div>
-              
-              <div className="flex-1 p-3 relative z-10 overflow-hidden flex flex-col justify-end">
-                <AnimatePresence mode="wait">
-                  <motion.div 
-                    initial={{ y: 10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -10, opacity: 0 }}
-                    key={commentary}
-                    className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
-                  >
-                    {isLive && <span className="text-yellow-400 mr-2">{game.time_elapsed}</span>}
-                    {commentary}
-                  </motion.div>
-                </AnimatePresence>
-                
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                  <motion.div
-                    animate={isLive ? { x: ballPos.x, y: ballPos.y } : { x: 0, y: 0 }}
-                    transition={{ type: "spring", stiffness: 40, damping: 10 }}
-                    className="text-sm sm:text-base drop-shadow-md"
-                  >
-                    ⚽
-                  </motion.div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <MatchTrackerView showTracker={showTracker} isLive={isLive} game={game} commentary={commentary} ballPos={ballPos} />
 
       {/* Details Extension Button */}
       <button 
@@ -851,70 +934,7 @@ function FeaturedLiveCard({
       </button>
 
       {/* Expandable Details Section */}
-      <AnimatePresence>
-        {showDetails && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden relative z-10"
-          >
-            <div className="pt-4 mt-4 border-t border-white/10 space-y-3">
-              <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
-                <span className="shrink-0">Tournament Stage</span>
-                <span className="font-bold text-white uppercase text-right">{game.type.replace("_", " ")}</span>
-              </div>
-              <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
-                <span className="shrink-0">Group</span>
-                <span className="font-bold text-white uppercase text-right">{game.group || "N/A"}</span>
-              </div>
-              <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
-                <span className="shrink-0">Stadium Capacity</span>
-                <span className="font-bold text-white uppercase text-right">{stadium?.capacity?.toLocaleString() || "TBD"}</span>
-              </div>
-              <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
-                <span className="shrink-0">City / Region</span>
-                <span className="font-bold text-white uppercase text-right">{stadium?.city_en || "TBD"}, {stadium?.region || "TBD"}</span>
-              </div>
-              <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
-                <span className="shrink-0">Match ID</span>
-                <span className="font-bold text-white uppercase text-right">#{game.id}</span>
-              </div>
-            </div>
-
-            {/* Match Facts Section */}
-            <div className="pt-4 mt-4 border-t border-white/10">
-              <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3 text-center">Match Stats</h4>
-              <div className="grid grid-cols-3 gap-2 text-center text-[11px] sm:text-xs bg-black/20 rounded-xl p-3 border border-white/5">
-                {/* Home Stats */}
-                <div className="flex flex-col gap-2 font-black text-white">
-                  <span className="text-green-400">{isPending ? "-" : hs}</span>
-                  <span className="text-yellow-500">{isPending ? "-" : (parseInt(game.id) % 3)}</span>
-                  <span className="text-red-500">{isPending ? "-" : (parseInt(game.id) % 2 === 0 ? 0 : 1)}</span>
-                  <span className="text-orange-400">{isPending ? "-" : ((parseInt(game.id) + 2) % 2)}</span>
-                </div>
-                {/* Labels */}
-                <div className="flex flex-col gap-2 text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">
-                  <span>Goals</span>
-                  <span>Yellow Cards</span>
-                  <span>Red Cards</span>
-                  <span>Injuries</span>
-                </div>
-                {/* Away Stats */}
-                <div className="flex flex-col gap-2 font-black text-white">
-                  <span className="text-green-400">{isPending ? "-" : as_}</span>
-                  <span className="text-yellow-500">{isPending ? "-" : ((parseInt(game.id) + 1) % 4)}</span>
-                  <span className="text-red-500">{isPending ? "-" : (parseInt(game.id) % 3 === 0 ? 1 : 0)}</span>
-                  <span className="text-orange-400">{isPending ? "-" : (parseInt(game.id) % 2)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Extended Match Stats Breakdown */}
-            <ExtendedMatchStats gameId={game.id} isPending={isPending} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <MatchDetailsView showDetails={showDetails} game={game} stadium={stadium} isPending={isPending} hs={hs} as_={as_} />
     </div>
   );
 }
