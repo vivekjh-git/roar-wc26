@@ -739,9 +739,9 @@ function MatchCarouselSection({
           dragElastic={0.2}
           onDragEnd={(e, { offset }) => {
             if (offset.x < -50) {
-              setCarouselIdx((prev) => Math.min(prev + 1, games.length - 1));
+              setCarouselIdx((prev) => (prev + 1) % games.length);
             } else if (offset.x > 50) {
-              setCarouselIdx((prev) => Math.max(prev - 1, 0));
+              setCarouselIdx((prev) => (prev - 1 + games.length) % games.length);
             }
           }}
           animate={{ x: `-${carouselIdx * 100}%` }}
@@ -805,7 +805,13 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
     const bUpcoming = b.time_elapsed === "notstarted" ? 1 : 0;
     if (aUpcoming !== bUpcoming) return bUpcoming - aUpcoming;
     
-    return new Date(a.local_date).getTime() - new Date(b.local_date).getTime();
+    if (aUpcoming) {
+      // Upcoming matches: soonest first (ascending)
+      return new Date(a.local_date).getTime() - new Date(b.local_date).getTime();
+    } else {
+      // Live or finished matches: most recent/latest first (descending)
+      return new Date(b.local_date).getTime() - new Date(a.local_date).getTime();
+    }
   };
 
   const todayGames = useMemo(() => {
