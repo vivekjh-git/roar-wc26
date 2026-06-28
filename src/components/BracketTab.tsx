@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useMemo, useState, useEffect, useRef } from "react";
@@ -48,7 +49,7 @@ function ConnectorColR32ToR16({ side }: { side: 'left' | 'right' }) {
   });
 
   return (
-    <svg className="h-[900px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg className="h-[675px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
       {brackets.map((d, i) => (
         <path key={i} d={d} />
       ))}
@@ -67,7 +68,7 @@ function ConnectorColR16ToQF({ side }: { side: 'left' | 'right' }) {
   });
 
   return (
-    <svg className="h-[900px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg className="h-[675px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
       {brackets.map((d, i) => (
         <path key={i} d={d} />
       ))}
@@ -81,7 +82,7 @@ function ConnectorColQFToSF({ side }: { side: 'left' | 'right' }) {
     : "M 32 225 H 16 V 675 H 32 M 16 450 H 0";
 
   return (
-    <svg className="h-[900px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg className="h-[675px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d={d} />
     </svg>
   );
@@ -89,7 +90,7 @@ function ConnectorColQFToSF({ side }: { side: 'left' | 'right' }) {
 
 function ConnectorColSFToFinal({ side }: { side: 'left' | 'right' }) {
   return (
-    <svg className="h-[900px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg className="h-[675px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M 0 450 H 32" />
     </svg>
   );
@@ -109,7 +110,7 @@ function BracketNode({
   label?: string;
 }) {
   const game = gameMap[gameId];
-  if (!game) return <div className="w-[155px] h-[72px] bg-white/5 rounded-xl border border-white/5 animate-pulse" />;
+  if (!game) return <div className="w-[116px] h-[54px] bg-white/5 rounded-lg border border-white/5 animate-pulse" />;
 
   const homeTeam = teamMap[game.home_team_id];
   const awayTeam = teamMap[game.away_team_id];
@@ -142,36 +143,39 @@ function BracketNode({
 
   return (
     <div className="relative group">
-      <div className={`w-[155px] bg-[#0c101d]/90 border rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:border-yellow-400/40 hover:shadow-yellow-400/5 ${isLive ? 'border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.15)] bg-red-500/5' : 'border-white/10 bg-black/40'}`}>
+      <div className={`w-[116px] bg-[#0c101d]/90 border rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:border-yellow-400/40 hover:shadow-yellow-400/5 ${isLive ? 'border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.15)] bg-red-500/5' : 'border-white/10 bg-black/40'}`}>
         {/* Match Header info */}
-        <div className="bg-black/50 px-2.5 py-1 flex justify-between items-center text-[8px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
-          <span>Match {game.id}</span>
+        <div className="bg-black/50 px-1.5 py-0.5 flex justify-between items-center text-[7px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
+          <span>M{game.id}</span>
           {isLive ? (
-            <span className="text-red-400 font-bold animate-pulse flex items-center gap-0.5"><span className="w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span>LIVE</span>
+            <span className="text-red-400 font-bold animate-pulse flex items-center gap-0.5"><span className="w-1 h-1 bg-red-500 rounded-full inline-block animate-pulse"></span>LIVE</span>
           ) : (
-            <span>{label}</span>
+            <span className="truncate max-w-[50px]">{label}</span>
           )}
         </div>
 
         {/* Teams grid */}
-        <div className="p-2 space-y-1.5 bg-black/10">
+        <div className="p-1 space-y-1 bg-black/10">
           {/* Home Team Row */}
           <button
             onClick={() => homeTeam && onTeamClick(homeTeam)}
             className={`flex items-center justify-between w-full text-left transition-opacity ${finished && !homeWin ? 'opacity-50' : 'opacity-100 hover:opacity-85'}`}
           >
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex items-center gap-1 min-w-0">
               {homeFlag ? (
-                <img src={homeFlag} alt="" className="w-4.5 h-3 object-cover rounded shadow-sm flex-shrink-0" />
+                <img src={homeFlag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shadow-sm flex-shrink-0" />
               ) : (
-                <div className="w-4.5 h-3 bg-gray-800 rounded flex-shrink-0 flex items-center justify-center text-[7px] text-gray-600 font-bold">?</div>
+                <div className="w-3.5 h-2.5 bg-gray-800 rounded-[1px] flex-shrink-0 flex items-center justify-center text-[5px] text-gray-600 font-bold">?</div>
               )}
-              <span className={`text-[10px] font-black uppercase tracking-wider truncate ${homeWin ? 'text-yellow-400 font-black' : 'text-gray-300'}`}>
-                {cleanHomeName}
+              <span className={`text-[8px] font-black uppercase tracking-wider truncate flex items-center gap-1 ${homeWin ? 'text-yellow-400 font-black' : 'text-gray-300'}`}>
+                <span>{cleanHomeName}</span>
+                {homeWin && (
+                  <img src="/tiger.png" className="w-2.5 h-2.5 rounded-full object-cover border border-yellow-400/50 shadow flex-shrink-0" alt="Winner" />
+                )}
               </span>
             </div>
-            {finished ? (
-              <span className={`text-[10px] font-black px-1.5 rounded ${homeWin ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{hs}</span>
+            {(finished || isLive) ? (
+              <span className={`text-[8px] font-black px-1 rounded ${homeWin ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{hs}</span>
             ) : null}
           </button>
 
@@ -180,26 +184,29 @@ function BracketNode({
             onClick={() => awayTeam && onTeamClick(awayTeam)}
             className={`flex items-center justify-between w-full text-left transition-opacity ${finished && !awayWin ? 'opacity-50' : 'opacity-100 hover:opacity-85'}`}
           >
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex items-center gap-1 min-w-0">
               {awayFlag ? (
-                <img src={awayFlag} alt="" className="w-4.5 h-3 object-cover rounded shadow-sm flex-shrink-0" />
+                <img src={awayFlag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shadow-sm flex-shrink-0" />
               ) : (
-                <div className="w-4.5 h-3 bg-gray-800 rounded flex-shrink-0 flex items-center justify-center text-[7px] text-gray-600 font-bold">?</div>
+                <div className="w-3.5 h-2.5 bg-gray-800 rounded-[1px] flex-shrink-0 flex items-center justify-center text-[5px] text-gray-600 font-bold">?</div>
               )}
-              <span className={`text-[10px] font-black uppercase tracking-wider truncate ${awayWin ? 'text-yellow-400 font-black' : 'text-gray-300'}`}>
-                {cleanAwayName}
+              <span className={`text-[8px] font-black uppercase tracking-wider truncate flex items-center gap-1 ${awayWin ? 'text-yellow-400 font-black' : 'text-gray-300'}`}>
+                <span>{cleanAwayName}</span>
+                {awayWin && (
+                  <img src="/tiger.png" className="w-2.5 h-2.5 rounded-full object-cover border border-yellow-400/50 shadow flex-shrink-0" alt="Winner" />
+                )}
               </span>
             </div>
-            {finished ? (
-              <span className={`text-[10px] font-black px-1.5 rounded ${awayWin ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{as_}</span>
+            {(finished || isLive) ? (
+              <span className={`text-[8px] font-black px-1 rounded ${awayWin ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{as_}</span>
             ) : null}
           </button>
         </div>
 
         {/* Date/Time info */}
         {!finished && (
-          <div className="bg-black/30 px-2 py-0.5 text-[8px] font-bold text-gray-500 uppercase tracking-widest text-center border-t border-white/5">
-            {timeOnly}
+          <div className="bg-black/30 px-1 py-0.5 text-[7px] font-bold text-gray-500 uppercase tracking-widest text-center border-t border-white/5">
+            {timeOnly.replace(" NPT", "")}
           </div>
         )}
       </div>
@@ -1067,6 +1074,7 @@ function MatchCarouselSection({
 export default function BracketTab({ games, teams, stadiums, onTeamClick }: BracketTabProps) {
   const [activeTab, setActiveTab] = useState<'today' | 'tomorrow' | 'upcoming'>('today');
   const [viewType, setViewType] = useState<'visual' | 'list'>('visual');
+  const [startRound, setStartRound] = useState<'r32' | 'r16' | 'qf' | 'sf'>('r32');
   const teamMap = useMemo(() => Object.fromEntries(teams.map((t) => [t.id, t])), [teams]);
   const stadiumMap = useMemo(() => Object.fromEntries((stadiums || []).map((s) => [s.id, s])), [stadiums]);
   const gameMap = useMemo(() => Object.fromEntries(games.map(g => [g.id, g])), [games]);
@@ -1128,11 +1136,131 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
     return generateLiveBulletins(games, teams);
   }, [games, teams]);
 
+  const getMinWidthClass = () => {
+    switch (startRound) {
+      case 'r32': return 'min-w-[1150px]';
+      case 'r16': return 'min-w-[900px]';
+      case 'qf': return 'min-w-[650px]';
+      case 'sf': return 'min-w-[400px]';
+      default: return 'min-w-[1150px]';
+    }
+  };
+
   return (
     <div className="p-4 space-y-6">
+      {/* 1. News Marquee (Always on top) */}
       <NewsMarquee bulletins={newsBulletins} />
       
-      {/* View Toggle */}
+      {/* 2. Today / Tomorrow / Upcoming matches section (Always visible) */}
+      <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-sm mx-auto shadow-inner">
+        <button 
+          onClick={() => setActiveTab('today')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          <span className={activeTab === 'today' ? 'text-red-500 animate-pulse' : ''}>🔴</span> TDY
+        </button>
+        <button 
+          onClick={() => setActiveTab('tomorrow')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'tomorrow' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          <span>📅</span> TMR
+        </button>
+        <button 
+          onClick={() => setActiveTab('upcoming')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'upcoming' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          <span>⏳</span> UPC
+        </button>
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {activeTab === 'today' && (
+            <MatchCarouselSection
+              title="Today's Matches"
+              isLiveTitle="Live Now & Today"
+              icon="🔴"
+              iconColor="text-red-500"
+              pulseColor="text-red-500"
+              emptyMessage="No matches today"
+              games={todayGames}
+              teamMap={teamMap}
+              stadiumMap={stadiumMap}
+              onTeamClick={onTeamClick}
+              allGames={games}
+            />
+          )}
+          {activeTab === 'tomorrow' && (
+            <MatchCarouselSection
+              title="Tomorrow's Matches"
+              icon="📅"
+              iconColor="text-blue-400"
+              emptyMessage="No matches tomorrow"
+              games={tomorrowGames}
+              teamMap={teamMap}
+              stadiumMap={stadiumMap}
+              onTeamClick={onTeamClick}
+              allGames={games}
+            />
+          )}
+          {activeTab === 'upcoming' && (
+            <MatchCarouselSection
+              title="Upcoming Matches"
+              icon="⏳"
+              iconColor="text-[#ff5e00]"
+              emptyMessage="No upcoming matches"
+              games={upcomingGames}
+              teamMap={teamMap}
+              stadiumMap={stadiumMap}
+              onTeamClick={onTeamClick}
+              allGames={games}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* 3. Hero Stats Banner (Always visible) */}
+      <div
+        className="relative rounded-2xl overflow-hidden text-center py-6 px-4 mb-2 shadow-lg"
+        style={{ background: "linear-gradient(135deg, #1a2744 0%, #0a0f1e 50%, #2a1a00 100%)" }}
+      >
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: "url(/wc-hero.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}
+        />
+        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-left">
+            <div className="text-5xl animate-bounce-slow">🏆</div>
+            <div>
+              <h2 className="text-lg font-black gold-text leading-tight">FIFA WORLD CUP 2026</h2>
+              <p className="text-[10px] text-gray-400 mt-1">Nepal Standard Time (NPT)</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
+              <div className="text-yellow-400 font-black text-lg">{games.filter((g) => g.finished === "TRUE").length}</div>
+              <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Played</div>
+            </div>
+            <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
+              <div className="text-blue-400 font-black text-lg">{games.filter((g) => g.finished !== "TRUE").length}</div>
+              <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Rem</div>
+            </div>
+            <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
+              <div className="text-green-400 font-black text-lg">
+                {games.filter((g) => g.finished === "TRUE").reduce((sum, g) => sum + (parseInt(g.home_score) || 0) + (parseInt(g.away_score) || 0), 0)}
+              </div>
+              <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Goals</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Bracket / Schedule Toggle (Below Stats Banner) */}
       <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-[280px] mx-auto shadow-inner">
         <button 
           onClick={() => setViewType('visual')}
@@ -1148,6 +1276,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
         </button>
       </div>
 
+      {/* 5. Toggled Bracket Content */}
       <AnimatePresence mode="wait">
         {viewType === 'visual' ? (
           <motion.div
@@ -1167,45 +1296,76 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
               <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Nepal Standard Time (NPT)</p>
             </div>
 
-            <div className="relative w-full overflow-x-auto rounded-3xl border border-white/5 bg-[#080d19]/40 backdrop-blur-md p-6 shadow-2xl select-none no-scrollbar">
-              <div className="flex gap-0 items-center justify-between min-w-[1550px] py-4 h-[900px]">
-                {/* Col 1: Left R32 */}
-                <div className="flex flex-col justify-around h-full">
-                  <BracketNode gameId="74" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="77" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="73" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="75" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="83" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="84" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="81" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="82" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                </div>
+            {/* Start Round Selection controls */}
+            <div className="flex flex-wrap justify-center items-center gap-2 mb-6">
+              <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Filter Round:</span>
+              <div className="flex bg-black/40 p-0.5 rounded-lg border border-white/5 shadow-inner">
+                {([
+                  { key: 'r32', label: 'R32' },
+                  { key: 'r16', label: 'R16' },
+                  { key: 'qf', label: 'QF' },
+                  { key: 'sf', label: 'SF' },
+                ] as const).map((r) => (
+                  <button
+                    key={r.key}
+                    onClick={() => setStartRound(r.key)}
+                    className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all ${
+                      startRound === r.key
+                        ? 'bg-white/10 text-yellow-400 font-bold shadow-sm'
+                        : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-                {/* Connector 1: R32 -> R16 Left */}
-                <ConnectorColR32ToR16 side="left" />
+            <div className="relative w-full overflow-x-auto rounded-3xl border border-white/5 bg-[#080d19]/40 backdrop-blur-md p-6 shadow-2xl select-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              <div className={`flex gap-0 items-center justify-center mx-auto py-4 h-[675px] ${getMinWidthClass()}`}>
+                {/* Col 1: Left R32 */}
+                {startRound === 'r32' && (
+                  <>
+                    <div className="flex flex-col justify-around h-full animate-fade-in">
+                      <BracketNode gameId="74" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="77" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="73" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="75" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="83" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="84" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="81" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="82" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                    </div>
+                    <ConnectorColR32ToR16 side="left" />
+                  </>
+                )}
 
                 {/* Col 2: Left R16 */}
-                <div className="flex flex-col justify-around h-full">
-                  <BracketNode gameId="89" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                  <BracketNode gameId="90" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                  <BracketNode gameId="93" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                  <BracketNode gameId="94" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                </div>
-
-                {/* Connector 2: R16 -> QF Left */}
-                <ConnectorColR16ToQF side="left" />
+                {(startRound === 'r32' || startRound === 'r16') && (
+                  <>
+                    <div className="flex flex-col justify-around h-full animate-fade-in">
+                      <BracketNode gameId="89" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode gameId="90" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode gameId="93" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode gameId="94" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                    </div>
+                    <ConnectorColR16ToQF side="left" />
+                  </>
+                )}
 
                 {/* Col 3: Left QF */}
-                <div className="flex flex-col justify-around h-full">
-                  <BracketNode gameId="97" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
-                  <BracketNode gameId="98" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
-                </div>
-
-                {/* Connector 3: QF -> SF Left */}
-                <ConnectorColQFToSF side="left" />
+                {(startRound === 'r32' || startRound === 'r16' || startRound === 'qf') && (
+                  <>
+                    <div className="flex flex-col justify-around h-full animate-fade-in">
+                      <BracketNode gameId="97" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
+                      <BracketNode gameId="98" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
+                    </div>
+                    <ConnectorColQFToSF side="left" />
+                  </>
+                )}
 
                 {/* Col 4: Left SF */}
-                <div className="flex flex-col justify-around h-full">
+                <div className="flex flex-col justify-around h-full animate-fade-in">
                   <BracketNode gameId="101" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Semi-final" />
                 </div>
 
@@ -1213,16 +1373,20 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                 <ConnectorColSFToFinal side="left" />
 
                 {/* Col 5: Center (Logo, Final, 3rd Place) */}
-                <div className="flex flex-col items-center justify-center gap-8 h-full w-[200px] relative">
+                <div className="flex flex-col items-center justify-center gap-8 h-full w-[200px] relative animate-fade-in">
                   <div className="text-center space-y-2">
                     <div className="text-xs font-black uppercase tracking-widest text-yellow-400">The Final</div>
                     <BracketNode gameId="104" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="🏆 Champion Match" />
                   </div>
                   
-                  {/* Visual Gold Trophy Emblem decoration */}
+                  {/* Circular Application Logo decoration */}
                   <div className="relative py-2 flex flex-col items-center justify-center">
-                    <div className="absolute inset-0 bg-yellow-400/5 blur-2xl rounded-full w-24 h-24 -z-10 animate-pulse" />
-                    <span className="text-6xl drop-shadow-[0_0_20px_rgba(250,204,21,0.45)] animate-bounce-slow">🏆</span>
+                    <div className="absolute inset-0 bg-[#bc00dd]/10 blur-2xl rounded-full w-24 h-24 -z-10 animate-pulse" />
+                    <img 
+                      src="/tiger.png" 
+                      className="w-14 h-14 rounded-full object-cover border-2 border-yellow-400 shadow-2xl drop-shadow-[0_0_15px_rgba(250,204,21,0.35)] select-none animate-bounce-slow" 
+                      alt="Roar WC26 Logo" 
+                    />
                   </div>
 
                   <div className="text-center space-y-2">
@@ -1235,44 +1399,53 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                 <ConnectorColSFToFinal side="right" />
 
                 {/* Col 6: Right SF */}
-                <div className="flex flex-col justify-around h-full">
+                <div className="flex flex-col justify-around h-full animate-fade-in">
                   <BracketNode gameId="102" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Semi-final" />
                 </div>
 
                 {/* Connector 3: SF -> QF Right */}
-                <ConnectorColQFToSF side="right" />
-
                 {/* Col 7: Right QF */}
-                <div className="flex flex-col justify-around h-full">
-                  <BracketNode gameId="99" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
-                  <BracketNode gameId="100" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
-                </div>
+                {(startRound === 'r32' || startRound === 'r16' || startRound === 'qf') && (
+                  <>
+                    <ConnectorColQFToSF side="right" />
+                    <div className="flex flex-col justify-around h-full animate-fade-in">
+                      <BracketNode gameId="99" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
+                      <BracketNode gameId="100" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
+                    </div>
+                  </>
+                )}
 
                 {/* Connector 2: QF -> R16 Right */}
-                <ConnectorColR16ToQF side="right" />
-
                 {/* Col 8: Right R16 */}
-                <div className="flex flex-col justify-around h-full">
-                  <BracketNode gameId="91" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                  <BracketNode gameId="92" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                  <BracketNode gameId="95" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                  <BracketNode gameId="96" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                </div>
+                {(startRound === 'r32' || startRound === 'r16') && (
+                  <>
+                    <ConnectorColR16ToQF side="right" />
+                    <div className="flex flex-col justify-around h-full animate-fade-in">
+                      <BracketNode gameId="91" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode gameId="92" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode gameId="95" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode gameId="96" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                    </div>
+                  </>
+                )}
 
                 {/* Connector 1: R16 -> R32 Right */}
-                <ConnectorColR32ToR16 side="right" />
-
                 {/* Col 9: Right R32 */}
-                <div className="flex flex-col justify-around h-full">
-                  <BracketNode gameId="76" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="78" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="79" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="80" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="86" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="88" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="85" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                  <BracketNode gameId="87" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                </div>
+                {startRound === 'r32' && (
+                  <>
+                    <ConnectorColR32ToR16 side="right" />
+                    <div className="flex flex-col justify-around h-full animate-fade-in">
+                      <BracketNode gameId="76" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="78" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="79" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="80" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="86" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="88" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="85" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode gameId="87" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
@@ -1285,115 +1458,6 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
             transition={{ duration: 0.2 }}
             className="space-y-6 animate-fade-in"
           >
-            {/* Tabs */}
-            <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-sm mx-auto shadow-inner">
-              <button 
-                onClick={() => setActiveTab('today')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
-              >
-                <span className={activeTab === 'today' ? 'text-red-500 animate-pulse' : ''}>🔴</span> TDY
-              </button>
-              <button 
-                onClick={() => setActiveTab('tomorrow')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'tomorrow' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
-              >
-                <span>📅</span> TMR
-              </button>
-              <button 
-                onClick={() => setActiveTab('upcoming')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'upcoming' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
-              >
-                <span>⏳</span> UPC
-              </button>
-            </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                {activeTab === 'today' && (
-                  <MatchCarouselSection
-                    title="Today's Matches"
-                    isLiveTitle="Live Now & Today"
-                    icon="🔴"
-                    iconColor="text-red-500"
-                    pulseColor="text-red-500"
-                    emptyMessage="No matches today"
-                    games={todayGames}
-                    teamMap={teamMap}
-                    stadiumMap={stadiumMap}
-                    onTeamClick={onTeamClick}
-                    allGames={games}
-                  />
-                )}
-                {activeTab === 'tomorrow' && (
-                  <MatchCarouselSection
-                    title="Tomorrow's Matches"
-                    icon="📅"
-                    iconColor="text-blue-400"
-                    emptyMessage="No matches tomorrow"
-                    games={tomorrowGames}
-                    teamMap={teamMap}
-                    stadiumMap={stadiumMap}
-                    onTeamClick={onTeamClick}
-                    allGames={games}
-                  />
-                )}
-                {activeTab === 'upcoming' && (
-                  <MatchCarouselSection
-                    title="Upcoming Matches"
-                    icon="⏳"
-                    iconColor="text-[#ff5e00]"
-                    emptyMessage="No upcoming matches"
-                    games={upcomingGames}
-                    teamMap={teamMap}
-                    stadiumMap={stadiumMap}
-                    onTeamClick={onTeamClick}
-                    allGames={games}
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Hero Banner (Tournament Stats) */}
-            <div
-              className="relative rounded-2xl overflow-hidden text-center py-6 px-4 mb-2 shadow-lg"
-              style={{ background: "linear-gradient(135deg, #1a2744 0%, #0a0f1e 50%, #2a1a00 100%)" }}
-            >
-              <div className="absolute inset-0 opacity-10"
-                style={{ backgroundImage: "url(/wc-hero.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}
-              />
-              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4 text-left">
-                  <div className="text-5xl animate-bounce-slow">🏆</div>
-                  <div>
-                    <h2 className="text-lg font-black gold-text leading-tight">FIFA WORLD CUP 2026</h2>
-                    <p className="text-[10px] text-gray-400 mt-1">Nepal Standard Time (NPT)</p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
-                    <div className="text-yellow-400 font-black text-lg">{games.filter((g) => g.finished === "TRUE").length}</div>
-                    <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Played</div>
-                  </div>
-                  <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
-                    <div className="text-blue-400 font-black text-lg">{games.filter((g) => g.finished !== "TRUE").length}</div>
-                    <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Rem</div>
-                  </div>
-                  <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
-                    <div className="text-green-400 font-black text-lg">
-                      {games.filter((g) => g.finished === "TRUE").reduce((sum, g) => sum + (parseInt(g.home_score) || 0) + (parseInt(g.away_score) || 0), 0)}
-                    </div>
-                    <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Goals</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Bracket stages */}
             {stages.map((stage) => (
               <section key={stage.key}>
