@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { Game, Team, Stadium } from "@/lib/api";
 import type { AllData } from "@/app/page";
 import { formatMatchDateNPT } from "@/lib/date-utils";
@@ -103,6 +103,45 @@ export default function WidgetPage() {
   const { data, loading } = useWidgetData();
   const { teamMap, targetGames } = useWidgetDerivedData(data);
 
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [dragged, setDragged] = useState(false);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!carouselRef.current) return;
+    setIsDragging(true);
+    setDragged(false);
+    setStartX(e.pageX - carouselRef.current.offsetLeft);
+    setScrollLeft(carouselRef.current.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !carouselRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - carouselRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    if (Math.abs(walk) > 5) {
+      setDragged(true);
+    }
+    carouselRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (dragged) {
+      e.preventDefault();
+    }
+  };
+
   const newsBulletins = useMemo(() => {
     if (!data) return [];
     return generateLiveBulletins(data.games, data.teams);
@@ -133,7 +172,12 @@ export default function WidgetPage() {
 
       {/* Horizontal Carousel */}
       <div 
-        className="flex-1 flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1"
+        ref={carouselRef}
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeave}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        className="flex-1 flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1 cursor-grab active:cursor-grabbing select-none"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {targetGames.map((game) => {
@@ -154,6 +198,7 @@ export default function WidgetPage() {
               href="/" 
               target="_blank" 
               rel="noopener noreferrer" 
+              onClick={handleClick}
               className={`flex-shrink-0 snap-start relative w-[280px] h-[125px] p-3 match-card border shadow-xl flex flex-col justify-between overflow-hidden bg-black transition-all hover:scale-[1.01] active:scale-95 ${isLive ? "border-red-500/50" : "border-white/10"}`}
               style={{ 
                 background: isLive ? "linear-gradient(135deg, #2a0a0a 0%, #0a0f1e 100%)" : "linear-gradient(135deg, #1a2744 0%, #0a0f1e 100%)",
