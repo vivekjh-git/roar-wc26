@@ -147,6 +147,26 @@ export default function WidgetPage() {
     return generateLiveBulletins(data.games, data.teams);
   }, [data]);
 
+  useEffect(() => {
+    if (!carouselRef.current || targetGames.length <= 1) return;
+
+    const interval = setInterval(() => {
+      const container = carouselRef.current;
+      if (!container || isDragging) return;
+
+      const cardWidth = 292; // 280px card + 12px gap
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+      if (container.scrollLeft >= maxScrollLeft - 10) {
+        container.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        container.scrollTo({ left: container.scrollLeft + cardWidth, behavior: "smooth" });
+      }
+    }, 4500);
+
+    return () => clearInterval(interval);
+  }, [targetGames, isDragging]);
+
   if (loading) {
     return (
       <div className="w-full h-screen flex items-center justify-center p-4 bg-transparent">
