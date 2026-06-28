@@ -6,7 +6,7 @@ import type { AllData } from "@/app/page";
 import { formatMatchDateNPT } from "@/lib/date-utils";
 import Image from "next/image";
 
-export default function WidgetPage() {
+function useWidgetData() {
   const [data, setData] = useState<AllData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,6 +47,10 @@ export default function WidgetPage() {
     };
   }, []);
 
+  return { data, loading };
+}
+
+function useWidgetDerivedData(data: AllData | null) {
   const teamMap = useMemo(() => {
     if (!data) return {} as Record<string, Team>;
     return Object.fromEntries(data.teams.map((t: Team) => [t.id, t]));
@@ -57,12 +61,10 @@ export default function WidgetPage() {
     return Object.fromEntries((data.stadiums || []).map((s: Stadium) => [s.id, s]));
   }, [data]);
 
-  // Find the most relevant game: Live > Today > Tomorrow > Upcoming
   const targetGame = useMemo(() => {
     if (!data) return null;
     const games = data.games;
     
-    // Sort logic
     const sortGames = (a: Game, b: Game) => {
       const aLive = a.time_elapsed !== "notstarted" && a.finished !== "TRUE" ? 1 : 0;
       const bLive = b.time_elapsed !== "notstarted" && b.finished !== "TRUE" ? 1 : 0;
@@ -82,6 +84,13 @@ export default function WidgetPage() {
     const sortedGames = [...games].sort(sortGames);
     return sortedGames[0] || null;
   }, [data]);
+
+  return { teamMap, stadiumMap, targetGame };
+}
+
+export default function WidgetPage() {
+  const { data, loading } = useWidgetData();
+  const { teamMap, stadiumMap, targetGame } = useWidgetDerivedData(data);
 
   if (loading) {
     return (
