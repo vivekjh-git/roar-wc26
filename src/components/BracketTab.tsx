@@ -424,8 +424,18 @@ function FeaturedLiveCard({
   const awayScorersStr = parseScorers(game.away_scorers).map(s => s.replace(/['"]/g, "").trim()).join(", ");
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
-  // Live Commentary State
-  const [liveCommentary, setLiveCommentary] = useState("");
+  const [liveCommentary, setLiveCommentary] = useState(() => {
+    const commentaries = [
+      `${homeName} is keeping possession in the midfield...`,
+      `${awayName} pushes forward on the counter attack!`,
+      `A dangerous cross into the box!`,
+      `Solid defensive block by ${homeName}.`,
+      `The referee signals for a foul. Free kick to ${awayName}.`,
+      `${homeName} plays a beautiful through ball into the final third...`,
+      `Great intensity in the middle of the park.`
+    ];
+    return commentaries[Math.floor(Math.random() * commentaries.length)];
+  });
   const [liveBallPos, setLiveBallPos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -439,7 +449,6 @@ function FeaturedLiveCard({
       `${homeName} plays a beautiful through ball into the final third...`,
       `Great intensity in the middle of the park.`
     ];
-    setLiveCommentary(commentaries[Math.floor(Math.random() * commentaries.length)]);
     
     const interval = setInterval(() => {
       setLiveCommentary(commentaries[Math.floor(Math.random() * commentaries.length)]);
