@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <clipPath id="c">
+    <circle cx="50" cy="50" r="46"/>
+  </clipPath>
+  <circle cx="50" cy="50" r="48" fill="#0d0d14" stroke="#ff5e00" stroke-width="3"/>
+  <image href="/tiger.png" x="-5" y="-5" width="110" height="110" clip-path="url(#c)"/>
+</svg>
