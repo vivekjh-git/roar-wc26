@@ -30,6 +30,7 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
   const [filter, setFilter] = useState<"all" | "live" | "upcoming" | "finished">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStage, setSelectedStage] = useState<string>("all");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const teamMap = useMemo(() => Object.fromEntries(teams.map((t) => [t.id, t])), [teams]);
   const stadiumMap = useMemo(() => Object.fromEntries(stadiums.map((s) => [s.id, s])), [stadiums]);
@@ -104,7 +105,18 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
   }, [games, filter, selectedStage, searchQuery, teamMap, stadiumMap]);
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-4">
+      {/* Header section with logo */}
+      <div className="flex items-center gap-3 bg-[#111827]/30 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-xl">
+        <div className="relative w-10 h-10 flex-shrink-0 rounded-full bg-neutral-950 border border-[#ff5e00]/40 overflow-hidden flex items-center justify-center shadow-[0_0_10px_rgba(255,94,0,0.3)]">
+          <img src="/tiger.png" alt="logo" className="w-10 h-10 object-contain scale-110 select-none" />
+        </div>
+        <div>
+          <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-wider gold-text leading-none">Fixtures & Schedule</h2>
+          <p className="text-[8px] sm:text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1">FIFA WORLD CUP 2026</p>
+        </div>
+      </div>
+
       {/* Search & Filter Header */}
       <div className="flex flex-col gap-4 bg-[#111827]/40 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-xl">
         <div className="flex flex-col sm:flex-row gap-3">
@@ -129,28 +141,65 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
           </div>
 
           {/* Stage Dropdown */}
-          <div className="relative shrink-0 min-w-[160px]">
-            <select
-              value={selectedStage}
-              onChange={(e) => setSelectedStage(e.target.value)}
-              className="w-full bg-black/40 border border-white/5 hover:border-white/10 focus:border-[#ff5e00]/50 rounded-xl py-2.5 px-4 text-xs text-white outline-none appearance-none transition-colors cursor-pointer"
+          <div className="relative shrink-0 min-w-[160px] z-30">
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="w-full flex items-center justify-between bg-black/40 border border-white/5 hover:border-white/10 rounded-xl py-2.5 px-4 text-xs text-white transition-colors cursor-pointer text-left focus:border-[#ff5e00]/50 outline-none"
             >
-              <option value="all">All Stages</option>
-              {stages.filter(s => s !== "all").map((stage) => (
-                <option key={stage} value={stage}>
-                  {getStageLabel(stage)}
-                </option>
-              ))}
-            </select>
-            <svg
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+              <span>{selectedStage === "all" ? "All Stages" : getStageLabel(selectedStage)}</span>
+              <svg
+                className={`w-4 h-4 text-gray-500 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <AnimatePresence>
+              {dropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 right-0 mt-2 bg-[#0d1526] border border-white/10 rounded-xl shadow-2xl z-20 py-1.5 overflow-hidden max-h-[250px] overflow-y-auto"
+                  >
+                    <button
+                      onClick={() => {
+                        setSelectedStage("all");
+                        setDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs transition-colors hover:bg-white/5 hover:text-yellow-400 ${
+                        selectedStage === "all" ? "text-yellow-400 font-bold bg-white/5" : "text-gray-300"
+                      }`}
+                    >
+                      All Stages
+                    </button>
+                    {stages
+                      .filter((s) => s !== "all")
+                      .map((stage) => (
+                        <button
+                          key={stage}
+                          onClick={() => {
+                            setSelectedStage(stage);
+                            setDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-xs transition-colors hover:bg-white/5 hover:text-yellow-400 ${
+                            selectedStage === stage ? "text-yellow-400 font-bold bg-white/5" : "text-gray-300"
+                          }`}
+                        >
+                          {getStageLabel(stage)}
+                        </button>
+                      ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
