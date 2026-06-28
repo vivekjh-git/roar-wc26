@@ -247,6 +247,7 @@ function MatchCard({
   onTeamClick: (team: Team) => void;
   compact?: boolean;
 }) {
+  // Shared data extraction for sub-components
   const homeTeam = teamMap[game.home_team_id];
   const awayTeam = teamMap[game.away_team_id];
   const stadium = stadiumMap[game.stadium_id];
@@ -264,54 +265,78 @@ function MatchCard({
   const awayWin = finished && as_ > hs;
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
-  
-  // Format scorers for display
-  const homeScorersStr = parseScorers(game.home_scorers).map(s => {
-    const clean = s.replace(/['"]/g, "").trim();
-    return clean;
-  }).join(", ");
-  
-  const awayScorersStr = parseScorers(game.away_scorers).map(s => {
-    const clean = s.replace(/['"]/g, "").trim();
-    return clean;
-  }).join(", ");
 
   if (compact) {
     return (
-      <motion.div variants={itemVariants} className={`glass-card rounded-lg p-2 match-card border ${isLive ? "border-red-500/50 bg-red-500/5" : "border-white/10"}`}>
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-[8px] text-gray-500 uppercase tracking-wider">Match {game.id}</span>
-          {isLive && (
-            <div className="text-[8px] text-red-400 font-bold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-red-500 rounded-full live-pulse inline-block"></span>LIVE
-            </div>
-          )}
-        </div>
-        
-        <div className="space-y-1">
-          <button onClick={() => homeTeam && onTeamClick(homeTeam)} className={`flex items-center gap-1.5 w-full text-left ${homeWin ? "opacity-100" : "opacity-70"}`}>
-            {homeFlag ? <img src={homeFlag} alt="" className="w-4 h-3 object-cover rounded-sm flex-shrink-0" /> : <div className="w-4 h-3 bg-gray-700 rounded-sm flex-shrink-0" />}
-            <span className={`text-[10px] flex-1 truncate ${homeWin ? "font-bold text-white" : "text-gray-300"}`}>
-              {homeName.length > 12 ? homeName.slice(0, 12) + "…" : homeName}
-            </span>
-            {finished && <span className={`text-[10px] font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>}
-          </button>
-          
-          <button onClick={() => awayTeam && onTeamClick(awayTeam)} className={`flex items-center gap-1.5 w-full text-left ${awayWin ? "opacity-100" : "opacity-70"}`}>
-            {awayFlag ? <img src={awayFlag} alt="" className="w-4 h-3 object-cover rounded-sm flex-shrink-0" /> : <div className="w-4 h-3 bg-gray-700 rounded-sm flex-shrink-0" />}
-            <span className={`text-[10px] flex-1 truncate ${awayWin ? "font-bold text-white" : "text-gray-300"}`}>
-              {awayName.length > 12 ? awayName.slice(0, 12) + "…" : awayName}
-            </span>
-            {finished && <span className={`text-[10px] font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>}
-          </button>
-        </div>
-        
-        {!finished && nptDate && (
-          <div className="text-[9px] text-gray-400 mt-1.5 text-center bg-white/5 rounded py-0.5">{nptDate}</div>
-        )}
-      </motion.div>
+      <CompactMatchCard 
+        game={game} homeTeam={homeTeam} awayTeam={awayTeam} 
+        homeName={homeName} awayName={awayName} homeFlag={homeFlag} awayFlag={awayFlag}
+        hs={hs} as_={as_} homeWin={homeWin} awayWin={awayWin}
+        finished={finished} isLive={isLive} nptDate={nptDate}
+        onTeamClick={onTeamClick}
+      />
     );
   }
+
+  return (
+    <DetailedMatchCard 
+      game={game} homeTeam={homeTeam} awayTeam={awayTeam} stadium={stadium}
+      homeName={homeName} awayName={awayName} homeFlag={homeFlag} awayFlag={awayFlag}
+      hs={hs} as_={as_} homeWin={homeWin} awayWin={awayWin}
+      finished={finished} isLive={isLive} nptDate={nptDate}
+      onTeamClick={onTeamClick}
+    />
+  );
+}
+
+function CompactMatchCard({
+  game, homeTeam, awayTeam, homeName, awayName, homeFlag, awayFlag,
+  hs, as_, homeWin, awayWin, finished, isLive, nptDate, onTeamClick
+}: any) {
+  return (
+    <motion.div variants={itemVariants} className={`glass-card rounded-lg p-2 match-card border ${isLive ? "border-red-500/50 bg-red-500/5" : "border-white/10"}`}>
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-[8px] text-gray-500 uppercase tracking-wider">Match {game.id}</span>
+        {isLive && (
+          <div className="text-[8px] text-red-400 font-bold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-red-500 rounded-full live-pulse inline-block"></span>LIVE
+          </div>
+        )}
+      </div>
+      
+      <div className="space-y-1">
+        <button onClick={() => homeTeam && onTeamClick(homeTeam)} className={`flex items-center gap-1.5 w-full text-left ${homeWin ? "opacity-100" : "opacity-70"}`}>
+          {homeFlag ? <img src={homeFlag} alt="" className="w-4 h-3 object-cover rounded-sm flex-shrink-0" /> : <div className="w-4 h-3 bg-gray-700 rounded-sm flex-shrink-0" />}
+          <span className={`text-[10px] flex-1 truncate ${homeWin ? "font-bold text-white" : "text-gray-300"}`}>
+            {homeName.length > 12 ? homeName.slice(0, 12) + "…" : homeName}
+          </span>
+          {finished && <span className={`text-[10px] font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>}
+        </button>
+        
+        <button onClick={() => awayTeam && onTeamClick(awayTeam)} className={`flex items-center gap-1.5 w-full text-left ${awayWin ? "opacity-100" : "opacity-70"}`}>
+          {awayFlag ? <img src={awayFlag} alt="" className="w-4 h-3 object-cover rounded-sm flex-shrink-0" /> : <div className="w-4 h-3 bg-gray-700 rounded-sm flex-shrink-0" />}
+          <span className={`text-[10px] flex-1 truncate ${awayWin ? "font-bold text-white" : "text-gray-300"}`}>
+            {awayName.length > 12 ? awayName.slice(0, 12) + "…" : awayName}
+          </span>
+          {finished && <span className={`text-[10px] font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>}
+        </button>
+      </div>
+      
+      {!finished && nptDate && (
+        <div className="text-[9px] text-gray-400 mt-1.5 text-center bg-white/5 rounded py-0.5">{nptDate}</div>
+      )}
+    </motion.div>
+  );
+}
+
+function DetailedMatchCard({
+  game, homeTeam, awayTeam, stadium, homeName, awayName, homeFlag, awayFlag,
+  hs, as_, homeWin, awayWin, finished, isLive, nptDate, onTeamClick
+}: any) {
+  // Format scorers for display
+  const homeScorersStr = parseScorers(game.home_scorers).map(s => s.replace(/['"]/g, "").trim()).join(", ");
+  const awayScorersStr = parseScorers(game.away_scorers).map(s => s.replace(/['"]/g, "").trim()).join(", ");
+
 
   return (
     <motion.div variants={itemVariants} className={`glass-card rounded-xl p-3 match-card border ${isLive ? "border-red-500/50 bg-red-500/5" : "border-white/10"}`}>
@@ -1073,7 +1098,7 @@ function MatchCarouselSection({
 
 export default function BracketTab({ games, teams, stadiums, onTeamClick }: BracketTabProps) {
   const [activeTab, setActiveTab] = useState<'today' | 'tomorrow' | 'upcoming'>('today');
-  const [viewType, setViewType] = useState<'tree' | 'fall'>('fall');
+  const [viewType, setViewType] = useState<'tree' | 'fall'>('tree');
   const [startRound, setStartRound] = useState<'r32' | 'r16' | 'qf' | 'sf'>('r32');
   // fallFilter: which round to start from in FALL (schedule) view
   const [fallFilter, setFallFilter] = useState<'all' | 'r32' | 'r16' | 'qf' | 'sf' | 'final'>('all');
@@ -1174,19 +1199,25 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
           onClick={() => setActiveTab('today')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <span className={activeTab === 'today' ? 'text-red-500 animate-pulse' : ''}>🔴</span> TDY
+          <span className={activeTab === 'today' ? 'text-red-500 animate-pulse flex items-center justify-center' : 'flex items-center justify-center text-gray-500'}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+          </span> TDY
         </button>
         <button
           onClick={() => setActiveTab('tomorrow')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'tomorrow' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <span>📅</span> TMR
+          <span className="flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          </span> TMR
         </button>
         <button
           onClick={() => setActiveTab('upcoming')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'upcoming' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <span>⏳</span> UPC
+          <span className="flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span> UPC
         </button>
       </div>
 
@@ -1290,7 +1321,8 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                 : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            🌳 Tree
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22v-6"/><path d="M12 8v8"/><path d="M12 8A4 4 0 0 0 8 4h0a4 4 0 0 0-4 4v0a4 4 0 0 0 4 4h4"/><path d="M12 8a4 4 0 0 1 4-4h0a4 4 0 0 1 4 4v0a4 4 0 0 1-4 4h-4"/></svg>
+            Tree
           </button>
           <button
             onClick={() => setViewType('fall')}
@@ -1300,7 +1332,8 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                 : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            🍂 Fall
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+            Fall
           </button>
         </div>
 
