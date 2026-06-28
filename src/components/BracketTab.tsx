@@ -778,45 +778,71 @@ function MatchCarouselSection({
       </div>
 
       {/* Carousel — AnimatePresence renders ONLY the active card; no other cards exist in the DOM */}
-      <div
-        className="relative w-full rounded-2xl border border-white/5 overflow-hidden select-none"
-        onPointerDown={(e) => { dragStartX.current = e.clientX; }}
-        onPointerUp={(e) => {
-          if (dragStartX.current === null) return;
-          const dx = e.clientX - dragStartX.current;
-          dragStartX.current = null;
-          if (Math.abs(dx) < 10) return; // tap, not swipe
-          if (dx < -40) goTo(carouselIdx + 1);
-          else if (dx > 40) goTo(carouselIdx - 1);
-        }}
-        onPointerLeave={() => { dragStartX.current = null; }}
-        style={{ touchAction: "pan-y", cursor: "grab" }}
-      >
-        <AnimatePresence mode="wait" initial={false} custom={direction}>
-          <motion.div
-            key={games[carouselIdx]?.id ?? carouselIdx}
-            custom={direction}
-            variants={{
-              enter: (d: number) => ({ opacity: 0, x: d > 0 ? 80 : -80 }),
-              center: { opacity: 1, x: 0 },
-              exit: (d: number) => ({ opacity: 0, x: d > 0 ? -80 : 80 }),
-            }}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-            style={{ overflowY: "auto", maxHeight: "75dvh" }}
+      <div className="relative group w-full">
+        <div
+          className="relative w-full rounded-2xl border border-white/5 overflow-hidden select-none"
+          onPointerDown={(e) => { dragStartX.current = e.clientX; }}
+          onPointerUp={(e) => {
+            if (dragStartX.current === null) return;
+            const dx = e.clientX - dragStartX.current;
+            dragStartX.current = null;
+            if (Math.abs(dx) < 10) return; // tap, not swipe
+            if (dx < -40) goTo(carouselIdx + 1);
+            else if (dx > 40) goTo(carouselIdx - 1);
+          }}
+          onPointerLeave={() => { dragStartX.current = null; }}
+          style={{ touchAction: "pan-y", cursor: "grab" }}
+        >
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <motion.div
+              key={games[carouselIdx]?.id ?? carouselIdx}
+              custom={direction}
+              variants={{
+                enter: (d: number) => ({ opacity: 0, x: d > 0 ? 80 : -80 }),
+                center: { opacity: 1, x: 0 },
+                exit: (d: number) => ({ opacity: 0, x: d > 0 ? -80 : 80 }),
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+              style={{ overflowY: "auto", maxHeight: "75dvh" }}
+            >
+              <FeaturedLiveCard
+                game={games[carouselIdx]}
+                teamMap={teamMap}
+                stadiumMap={stadiumMap}
+                onTeamClick={onTeamClick}
+                allGames={allGames}
+                isActive={true}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Navigation Arrows */}
+        {carouselIdx > 0 && (
+          <button
+            onClick={() => goTo(carouselIdx - 1)}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 border border-white/10 text-white backdrop-blur-md shadow-lg transition-transform hover:scale-110 active:scale-95"
+            aria-label="Previous match"
           >
-            <FeaturedLiveCard
-              game={games[carouselIdx]}
-              teamMap={teamMap}
-              stadiumMap={stadiumMap}
-              onTeamClick={onTeamClick}
-              allGames={allGames}
-              isActive={true}
-            />
-          </motion.div>
-        </AnimatePresence>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+        {carouselIdx < games.length - 1 && (
+          <button
+            onClick={() => goTo(carouselIdx + 1)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 border border-white/10 text-white backdrop-blur-md shadow-lg transition-transform hover:scale-110 active:scale-95"
+            aria-label="Next match"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <div className="mt-3 mb-2 px-1 w-full overflow-hidden">
