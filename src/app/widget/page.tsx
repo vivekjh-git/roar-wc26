@@ -59,25 +59,31 @@ function useWidgetDerivedData(data: AllData | null) {
   const targetGames = useMemo(() => {
     if (!data) return [];
     const games = data.games;
-    
-    const sortGames = (a: Game, b: Game) => {
-      const aLive = a.time_elapsed !== "notstarted" && a.finished !== "TRUE" ? 1 : 0;
-      const bLive = b.time_elapsed !== "notstarted" && b.finished !== "TRUE" ? 1 : 0;
-      if (aLive !== bLive) return bLive - aLive;
-      
-      const aUpcoming = a.time_elapsed === "notstarted" ? 1 : 0;
-      const bUpcoming = b.time_elapsed === "notstarted" ? 1 : 0;
-      if (aUpcoming !== bUpcoming) return bUpcoming - aUpcoming;
-      
-      if (aUpcoming) {
-        return new Date(a.local_date).getTime() - new Date(b.local_date).getTime();
-      } else {
-        return new Date(b.local_date).getTime() - new Date(a.local_date).getTime();
-      }
-    };
 
-    const sortedGames = [...games].sort(sortGames);
-    return sortedGames.slice(0, 5);
+    const liveGames = games
+      .filter((g) => g.time_elapsed !== "notstarted" && g.finished !== "TRUE")
+      .sort((a, b) => new Date(b.local_date).getTime() - new Date(a.local_date).getTime());
+
+    const finishedGames = games
+      .filter((g) => g.finished === "TRUE")
+      .sort((a, b) => new Date(b.local_date).getTime() - new Date(a.local_date).getTime());
+
+    const upcomingGames = games
+      .filter((g) => g.time_elapsed === "notstarted")
+      .sort((a, b) => new Date(a.local_date).getTime() - new Date(b.local_date).getTime());
+
+    const liveCount = liveGames.length;
+    
+    let selectedFinished: Game[] = [];
+    let selectedUpcoming: Game[] = upcomingGames.slice(0, 2);
+
+    if (liveCount >= 1) {
+      selectedFinished = finishedGames.slice(0, 2);
+      return [...liveGames, ...selectedFinished, ...selectedUpcoming];
+    } else {
+      selectedFinished = finishedGames.slice(0, 3);
+      return [...selectedFinished, ...selectedUpcoming];
+    }
   }, [data]);
 
   return { teamMap, targetGames };
