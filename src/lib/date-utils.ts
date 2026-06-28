@@ -17,27 +17,28 @@ export const NPT_TIMEZONE = "Asia/Kathmandu";
 
 // Mapping of Stadium IDs to their respective Time Zones
 export const STADIUM_TIMEZONES: Record<string, string> = {
-  // Mexico (Central)
-  "1": "America/Mexico_City", // Azteca
-  "2": "America/Mexico_City", // Akron
-  "3": "America/Monterrey", // BBVA
-  // USA - Central
-  "11": "America/Chicago", // NRG, Houston
-  "12": "America/Chicago", // AT&T, Dallas
-  "13": "America/Chicago", // Arrowhead, KC
-  // USA - Eastern
-  "6": "America/New_York", // Hard Rock, Miami
-  "7": "America/New_York", // Mercedes-Benz, Atlanta
-  "8": "America/New_York", // Lincoln Financial, Philly
-  "9": "America/New_York", // Gillette, Boston
-  "10": "America/New_York", // MetLife, NY/NJ
-  // USA/Canada - Pacific
-  "14": "America/Los_Angeles", // Lumen Field, Seattle
-  "15": "America/Los_Angeles", // Levi's Stadium, SF
-  "16": "America/Los_Angeles", // SoFi Stadium, LA
-  "5": "America/Vancouver", // BC Place, Vancouver
-  // Canada - Eastern
-  "4": "America/Toronto", // BMO Field, Toronto
+  // Mexico (Central / CST)
+  "1": "America/Mexico_City", // Estadio Azteca
+  "2": "America/Mexico_City", // Estadio Akron
+  "3": "America/Monterrey",   // Estadio BBVA
+  // USA - Central / CST
+  "4": "America/Chicago",     // AT&T Stadium (Dallas)
+  "5": "America/Chicago",     // NRG Stadium (Houston)
+  "6": "America/Chicago",     // GEHA Field at Arrowhead (KC)
+  // USA - Eastern / EST
+  "7": "America/New_York",    // Mercedes-Benz Stadium (Atlanta)
+  "8": "America/New_York",    // Hard Rock Stadium (Miami)
+  "9": "America/New_York",    // Gillette Stadium (Boston)
+  "10": "America/New_York",   // Lincoln Financial Field (Philly)
+  "11": "America/New_York",   // MetLife Stadium (NY/NJ)
+  // Canada - Eastern / EST
+  "12": "America/Toronto",    // BMO Field (Toronto)
+  // Canada - Pacific / PST
+  "13": "America/Vancouver",  // BC Place (Vancouver)
+  // USA - Pacific / PST
+  "14": "America/Los_Angeles", // Lumen Field (Seattle)
+  "15": "America/Los_Angeles", // Levi's Stadium (SF Bay Area)
+  "16": "America/Los_Angeles", // SoFi Stadium (LA)
 };
 
 /**

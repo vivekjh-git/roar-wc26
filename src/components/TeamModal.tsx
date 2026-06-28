@@ -18,15 +18,15 @@ interface TeamModalProps {
 function StatBox({ label, value, sub, delay }: { label: string; value: string | number; sub?: string; delay: number }) {
   return (
     <motion.div 
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay, type: "spring" }}
-      className="bg-white/5 rounded-xl p-3 text-center border border-white/5 relative overflow-hidden group"
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, type: "spring", stiffness: 200, damping: 20 }}
+      className="bg-[#1a2744]/45 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 text-center border border-white/5 relative overflow-hidden group shadow-md hover:border-yellow-400/20 transition-all flex flex-col justify-center min-h-[76px] sm:min-h-[84px]"
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/0 to-yellow-400/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="text-xl font-black text-white relative z-10">{value}</div>
-      <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mt-0.5 relative z-10">{label}</div>
-      {sub && <div className="text-[9px] text-gray-500 mt-0.5 relative z-10">{sub}</div>}
+      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/0 via-transparent to-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="text-lg sm:text-2xl font-black text-white tracking-tight leading-none mb-1 relative z-10">{value}</div>
+      <div className="text-[8px] sm:text-[10px] text-gray-400 font-extrabold uppercase tracking-wider leading-tight relative z-10">{label}</div>
+      {sub && <div className="text-[7px] sm:text-[9px] text-gray-500 font-bold mt-1.5 leading-none relative z-10">{sub}</div>}
     </motion.div>
   );
 }
@@ -189,7 +189,7 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
             </div>
 
             {/* Stats row */}
-            <div className="grid grid-cols-4 gap-2 mt-5 relative z-10">
+            <div className="grid grid-cols-4 gap-3 mt-6 relative z-10">
               <StatBox label="Played" value={finishedGames.length} delay={0.1} />
               <StatBox label="Wins" value={wins} delay={0.15} />
               <StatBox label="Goals" value={goalsFor} sub={`Conceded: ${goalsAgainst}`} delay={0.2} />
@@ -233,16 +233,16 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
             {/* Top scorers */}
             {teamScorers.length > 0 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <h3 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <span className="w-4 h-px bg-gray-600"></span> ⚽ Key Scorers <span className="flex-1 h-px bg-gray-800"></span>
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {teamScorers.map(([name, goals]) => (
-                    <div key={name} className="flex items-center gap-3 bg-white/5 border border-white/5 rounded-lg px-3 py-2">
-                      <span className="text-sm font-bold text-white flex-1 truncate">{name}</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-yellow-400 font-bold">{goals}</span>
-                        <span className="text-[10px] text-gray-500">G</span>
+                    <div key={name} className="flex items-center gap-3 bg-white/3 border border-white/5 rounded-xl px-3 py-2.5 hover:bg-white/8 transition-all duration-300">
+                      <span className="text-xs sm:text-sm font-bold text-white flex-1 truncate">{name}</span>
+                      <div className="flex items-center gap-1.5 bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/20">
+                        <span className="text-yellow-400 font-extrabold text-xs">{goals}</span>
+                        <span className="text-[8px] text-yellow-400/70 font-black uppercase">Goal{goals > 1 ? 's' : ''}</span>
                       </div>
                     </div>
                   ))}

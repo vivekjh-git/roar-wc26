@@ -16,6 +16,7 @@ interface HeaderProps {
 
 const tabs = [
   { id: "bracket", label: "Bracket" },
+  { id: "fixtures", label: "Fixtures" },
   { id: "groups", label: "Groups" },
   { id: "scorers", label: "Scorers" },
   { id: "records", label: "Records" },

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Header from "@/components/Header";
 import GroupsTab from "@/components/GroupsTab";
 import BracketTab from "@/components/BracketTab";
+import FixturesTab from "@/components/FixturesTab";
 import ScorersTab from "@/components/ScorersTab";
 import RecordsTab from "@/components/RecordsTab";
 import PopularityTab from "@/components/PopularityTab";
@@ -192,6 +193,14 @@ export default function HomePage() {
             >
               {activeTab === "bracket" && (
                 <BracketTab
+                  games={data.games}
+                  teams={data.teams}
+                  stadiums={data.stadiums}
+                  onTeamClick={handleTeamClick}
+                />
+              )}
+              {activeTab === "fixtures" && (
+                <FixturesTab
                   games={data.games}
                   teams={data.teams}
                   stadiums={data.stadiums}
