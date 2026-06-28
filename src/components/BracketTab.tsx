@@ -1,10 +1,47 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Game, Team, Stadium } from "@/lib/api";
 import { parseScorers } from "@/lib/api";
 import { formatMatchDateNPT, formatTimeNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater } from "@/lib/date-utils";
+
+const newsItems = [
+  "BREAKING: Brazil sets new attendance record in thrilling Quarter-Final!",
+  "UPCOMING: Argentina faces France in a highly anticipated rematch tomorrow.",
+  "RECORD: Lionel Messi becomes the first player to score in 6 World Cups.",
+  "INJURY UPDATE: Key midfielder for Spain ruled out of the semi-finals.",
+  "LIVE: Dramatic penalty shootout underway in the Round of 16!"
+];
+
+function NewsMarquee() {
+  return (
+    <div className="w-full bg-red-900/30 text-red-400 text-[10px] sm:text-xs font-mono uppercase tracking-widest py-2 overflow-hidden flex whitespace-nowrap border-y border-red-500/20 mb-4">
+      <motion.div
+        className="flex gap-12 items-center min-w-fit pr-12"
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
+      >
+        <div className="flex gap-12 items-center">
+          {newsItems.map((news, i) => (
+            <React.Fragment key={i}>
+              <span>{news}</span>
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+            </React.Fragment>
+          ))}
+        </div>
+        <div className="flex gap-12 items-center">
+          {newsItems.map((news, i) => (
+            <React.Fragment key={`dup-${i}`}>
+              <span>{news}</span>
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+            </React.Fragment>
+          ))}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
 interface BracketTabProps {
   readonly games: Game[];
@@ -388,38 +425,37 @@ function FeaturedLiveCard({
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
   // Live Commentary State
-  const [commentary, setCommentary] = useState("");
-  const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
+  const [liveCommentary, setLiveCommentary] = useState("");
+  const [liveBallPos, setLiveBallPos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    if (finished) {
-      setCommentary(`Match has ended. Full time result: ${homeName} ${hs} - ${as_} ${awayName}.`);
-      setBallPos({ x: 0, y: 0 });
-    } else if (isLive) {
-      const commentaries = [
-        `${homeName} is keeping possession in the midfield...`,
-        `${awayName} pushes forward on the counter attack!`,
-        `A dangerous cross into the box!`,
-        `Solid defensive block by ${homeName}.`,
-        `The referee signals for a foul. Free kick to ${awayName}.`,
-        `${homeName} plays a beautiful through ball into the final third...`,
-        `Great intensity in the middle of the park.`
-      ];
-      setCommentary(commentaries[Math.floor(Math.random() * commentaries.length)]);
-      
-      const interval = setInterval(() => {
-        setCommentary(commentaries[Math.floor(Math.random() * commentaries.length)]);
-        setBallPos({
-          x: Math.floor(Math.random() * 160) - 80,
-          y: Math.floor(Math.random() * 40) - 20
-        });
-      }, 6000);
-      return () => clearInterval(interval);
-    } else {
-      setCommentary("Match will begin soon. Waiting for kickoff...");
-      setBallPos({ x: 0, y: 0 });
-    }
-  }, [finished, isLive, homeName, awayName, hs, as_]);
+    if (!isLive) return;
+    const commentaries = [
+      `${homeName} is keeping possession in the midfield...`,
+      `${awayName} pushes forward on the counter attack!`,
+      `A dangerous cross into the box!`,
+      `Solid defensive block by ${homeName}.`,
+      `The referee signals for a foul. Free kick to ${awayName}.`,
+      `${homeName} plays a beautiful through ball into the final third...`,
+      `Great intensity in the middle of the park.`
+    ];
+    setLiveCommentary(commentaries[Math.floor(Math.random() * commentaries.length)]);
+    
+    const interval = setInterval(() => {
+      setLiveCommentary(commentaries[Math.floor(Math.random() * commentaries.length)]);
+      setLiveBallPos({
+        x: Math.floor(Math.random() * 160) - 80,
+        y: Math.floor(Math.random() * 40) - 20
+      });
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [isLive, homeName, awayName]);
+
+  const commentary = finished 
+    ? `Match has ended. Full time result: ${homeName} ${hs} - ${as_} ${awayName}.`
+    : isLive ? liveCommentary : "Match will begin soon. Waiting for kickoff...";
+
+  const ballPos = isLive ? liveBallPos : { x: 0, y: 0 };
 
   return (
     <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border shadow-lg w-full h-full flex flex-col ${isLive ? "border-red-500/50" : "border-white/10"}`}
@@ -793,6 +829,7 @@ function MatchCarouselSection({
 }
 
 export default function BracketTab({ games, teams, stadiums, onTeamClick }: BracketTabProps) {
+  const [activeTab, setActiveTab] = useState<'today' | 'tomorrow' | 'upcoming'>('today');
   const teamMap = useMemo(() => Object.fromEntries(teams.map((t) => [t.id, t])), [teams]);
   const stadiumMap = useMemo(() => Object.fromEntries((stadiums || []).map((s) => [s.id, s])), [stadiums]);
 
@@ -851,46 +888,81 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
 
   return (
     <div className="p-4 space-y-6">
-      {/* 1) Today's Matches */}
-      <MatchCarouselSection
-        title="Today's Matches"
-        isLiveTitle="Live Now & Today"
-        icon="🔴"
-        iconColor="text-red-500"
-        pulseColor="text-red-500"
-        emptyMessage="No matches today"
-        games={todayGames}
-        teamMap={teamMap}
-        stadiumMap={stadiumMap}
-        onTeamClick={onTeamClick}
-        allGames={games}
-      />
+      <NewsMarquee />
+      
+      {/* Tabs */}
+      <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-sm mx-auto shadow-inner">
+        <button 
+          onClick={() => setActiveTab('today')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          <span className={activeTab === 'today' ? 'text-red-500 animate-pulse' : ''}>🔴</span> TDY
+        </button>
+        <button 
+          onClick={() => setActiveTab('tomorrow')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'tomorrow' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          <span>📅</span> TMR
+        </button>
+        <button 
+          onClick={() => setActiveTab('upcoming')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'upcoming' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          <span>⏳</span> UPC
+        </button>
+      </div>
 
-      {/* 2) Tomorrow's Matches */}
-      <MatchCarouselSection
-        title="Tomorrow's Matches"
-        icon="📅"
-        iconColor="text-blue-400"
-        emptyMessage="No matches tomorrow"
-        games={tomorrowGames}
-        teamMap={teamMap}
-        stadiumMap={stadiumMap}
-        onTeamClick={onTeamClick}
-        allGames={games}
-      />
-
-      {/* 3) Upcoming Matches */}
-      <MatchCarouselSection
-        title="Upcoming Matches"
-        icon="⏳"
-        iconColor="text-[#ff5e00]"
-        emptyMessage="No upcoming matches"
-        games={upcomingGames}
-        teamMap={teamMap}
-        stadiumMap={stadiumMap}
-        onTeamClick={onTeamClick}
-        allGames={games}
-      />
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {activeTab === 'today' && (
+            <MatchCarouselSection
+              title="Today's Matches"
+              isLiveTitle="Live Now & Today"
+              icon="🔴"
+              iconColor="text-red-500"
+              pulseColor="text-red-500"
+              emptyMessage="No matches today"
+              games={todayGames}
+              teamMap={teamMap}
+              stadiumMap={stadiumMap}
+              onTeamClick={onTeamClick}
+              allGames={games}
+            />
+          )}
+          {activeTab === 'tomorrow' && (
+            <MatchCarouselSection
+              title="Tomorrow's Matches"
+              icon="📅"
+              iconColor="text-blue-400"
+              emptyMessage="No matches tomorrow"
+              games={tomorrowGames}
+              teamMap={teamMap}
+              stadiumMap={stadiumMap}
+              onTeamClick={onTeamClick}
+              allGames={games}
+            />
+          )}
+          {activeTab === 'upcoming' && (
+            <MatchCarouselSection
+              title="Upcoming Matches"
+              icon="⏳"
+              iconColor="text-[#ff5e00]"
+              emptyMessage="No upcoming matches"
+              games={upcomingGames}
+              teamMap={teamMap}
+              stadiumMap={stadiumMap}
+              onTeamClick={onTeamClick}
+              allGames={games}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
 
 
       {/* Hero Banner (Tournament Stats) */}
