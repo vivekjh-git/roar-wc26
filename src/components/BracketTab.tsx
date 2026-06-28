@@ -5,8 +5,9 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Game, Team, Stadium } from "@/lib/api";
 import { parseScorers } from "@/lib/api";
-import { formatMatchDateNPT, formatTimeNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater } from "@/lib/date-utils";
+import { formatMatchDateNPT, formatTimeNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate } from "@/lib/date-utils";
 import { generateLiveBulletins } from "@/lib/news-utils";
+import { format, addDays } from "date-fns";
 
 function NewsMarquee({ bulletins }: { bulletins: string[] }) {
   return (
@@ -1106,6 +1107,10 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
   const stadiumMap = useMemo(() => Object.fromEntries((stadiums || []).map((s) => [s.id, s])), [stadiums]);
   const gameMap = useMemo(() => Object.fromEntries(games.map(g => [g.id, g])), [games]);
 
+  const nptToday = getCurrentNPTDate();
+  const todayStr = format(nptToday, "MMM d");
+  const tomorrowStr = format(addDays(nptToday, 1), "MMM d");
+
   const sortGames = (a: Game, b: Game) => {
     const aLive = a.time_elapsed !== "notstarted" && a.finished !== "TRUE" ? 1 : 0;
     const bLive = b.time_elapsed !== "notstarted" && b.finished !== "TRUE" ? 1 : 0;
@@ -1197,27 +1202,39 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
       <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-sm mx-auto shadow-inner">
         <button
           onClick={() => setActiveTab('today')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 rounded-lg text-center transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <span className={activeTab === 'today' ? 'text-red-500 animate-pulse flex items-center justify-center' : 'flex items-center justify-center text-gray-500'}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
-          </span> TDY
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-widest">
+            <span className={activeTab === 'today' ? 'text-red-500 animate-pulse' : 'text-gray-500'}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            </span>
+            {todayStr}
+          </div>
+          <span className="text-[8px] uppercase tracking-widest opacity-70">Today</span>
         </button>
         <button
           onClick={() => setActiveTab('tomorrow')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'tomorrow' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 rounded-lg text-center transition-all ${activeTab === 'tomorrow' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <span className="flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-          </span> TMR
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-widest">
+            <span className="text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            </span>
+            {tomorrowStr}
+          </div>
+          <span className="text-[8px] uppercase tracking-widest opacity-70">Tomorrow</span>
         </button>
         <button
           onClick={() => setActiveTab('upcoming')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'upcoming' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 rounded-lg text-center transition-all ${activeTab === 'upcoming' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <span className="flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </span> UPC
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-widest mt-1">
+            <span className="text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            UPC
+          </div>
+          <span className="text-[8px] uppercase tracking-widest opacity-0 select-none">Upcoming</span>
         </button>
       </div>
 
