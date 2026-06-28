@@ -6,6 +6,7 @@ import type { AllData } from "@/app/page";
 import { formatMatchDateNPT } from "@/lib/date-utils";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { generateLiveBulletins } from "@/lib/news-utils";
 
 const newsItems = [
   "BREAKING: Brazil sets new attendance record in thrilling Quarter-Final!",
@@ -101,6 +102,11 @@ function useWidgetDerivedData(data: AllData | null) {
 export default function WidgetPage() {
   const { data, loading } = useWidgetData();
   const { teamMap, targetGames } = useWidgetDerivedData(data);
+
+  const newsBulletins = useMemo(() => {
+    if (!data) return [];
+    return generateLiveBulletins(data.games, data.teams);
+  }, [data]);
 
   if (loading) {
     return (
@@ -240,7 +246,7 @@ export default function WidgetPage() {
           transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
         >
           <div className="flex gap-8 items-center">
-            {newsItems.map((news, i) => (
+            {newsBulletins.map((news, i) => (
               <React.Fragment key={i}>
                 <span>{news}</span>
                 <span className="w-1 h-1 bg-red-500 rounded-full" />
@@ -248,7 +254,7 @@ export default function WidgetPage() {
             ))}
           </div>
           <div className="flex gap-8 items-center">
-            {newsItems.map((news, i) => (
+            {newsBulletins.map((news, i) => (
               <React.Fragment key={`dup-${i}`}>
                 <span>{news}</span>
                 <span className="w-1 h-1 bg-red-500 rounded-full" />

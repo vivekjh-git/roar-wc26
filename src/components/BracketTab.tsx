@@ -5,16 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Game, Team, Stadium } from "@/lib/api";
 import { parseScorers } from "@/lib/api";
 import { formatMatchDateNPT, formatTimeNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater } from "@/lib/date-utils";
+import { generateLiveBulletins } from "@/lib/news-utils";
 
-const newsItems = [
-  "BREAKING: Brazil sets new attendance record in thrilling Quarter-Final!",
-  "UPCOMING: Argentina faces France in a highly anticipated rematch tomorrow.",
-  "RECORD: Lionel Messi becomes the first player to score in 6 World Cups.",
-  "INJURY UPDATE: Key midfielder for Spain ruled out of the semi-finals.",
-  "LIVE: Dramatic penalty shootout underway in the Round of 16!"
-];
-
-function NewsMarquee() {
+function NewsMarquee({ bulletins }: { bulletins: string[] }) {
   return (
     <div className="w-full bg-red-900/30 text-red-400 text-[10px] sm:text-xs font-mono uppercase tracking-widest py-2 overflow-hidden flex whitespace-nowrap border-y border-red-500/20 mb-4">
       <motion.div
@@ -23,7 +16,7 @@ function NewsMarquee() {
         transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
       >
         <div className="flex gap-12 items-center">
-          {newsItems.map((news, i) => (
+          {bulletins.map((news, i) => (
             <React.Fragment key={i}>
               <span>{news}</span>
               <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
@@ -31,7 +24,7 @@ function NewsMarquee() {
           ))}
         </div>
         <div className="flex gap-12 items-center">
-          {newsItems.map((news, i) => (
+          {bulletins.map((news, i) => (
             <React.Fragment key={`dup-${i}`}>
               <span>{news}</span>
               <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
@@ -895,9 +888,13 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
     { key: "third", label: "3rd Place", games: byType.third },
   ].filter((s) => s.games.length > 0);
 
+  const newsBulletins = useMemo(() => {
+    return generateLiveBulletins(games, teams);
+  }, [games, teams]);
+
   return (
     <div className="p-4 space-y-6">
-      <NewsMarquee />
+      <NewsMarquee bulletins={newsBulletins} />
       
       {/* Tabs */}
       <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-sm mx-auto shadow-inner">
