@@ -862,11 +862,11 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
   }, [games]);
 
   const upcomingGames = useMemo(() => {
-    // Return up to 3 upcoming matches strictly after tomorrow
+    // Return up to 4 upcoming matches strictly after tomorrow
     return games
       .filter(g => isMatchUpcomingLater(g.local_date, g.stadium_id))
       .sort((a, b) => new Date(a.local_date).getTime() - new Date(b.local_date).getTime())
-      .slice(0, 3);
+      .slice(0, 4);
   }, [games]);
 
   const byType = useMemo(() => {
