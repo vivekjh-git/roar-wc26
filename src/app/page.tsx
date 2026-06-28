@@ -69,6 +69,9 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  // PWA install prompt
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -101,6 +104,40 @@ export default function HomePage() {
     }, 10000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  // PWA install prompt capture
+  useEffect(() => {
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    const handleInstalled = () => {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    };
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window.addEventListener("appinstalled", handleInstalled);
+    // Check if already running as installed PWA
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsInstalled(true);
+    }
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const prompt = installPrompt as any;
+    await prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === "accepted") {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    }
+  };
 
   const teamMap = data
     ? Object.fromEntries(data.teams.map((t) => [t.id, t]))
@@ -169,13 +206,23 @@ export default function HomePage() {
         />
       )}
 
-      {/* PWA install hint */}
-      <div className="fixed bottom-4 right-4 z-40">
-        <div className="bg-[#1a2744] border border-yellow-400/20 rounded-full px-3 py-1.5 text-[10px] text-gray-400 flex items-center gap-1.5">
-          <span className="text-yellow-400">📱</span>
-          Install as app
-        </div>
-      </div>
+      {/* PWA Install Button — only visible when browser exposes install prompt */}
+      <AnimatePresence>
+        {installPrompt && !isInstalled && (
+          <motion.button
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            onClick={handleInstallClick}
+            className="fixed bottom-6 right-4 z-50 flex items-center gap-2 bg-[#1a2744] border border-yellow-400/40 hover:border-yellow-400/80 rounded-full px-4 py-2 text-[11px] font-bold text-gray-300 hover:text-white shadow-[0_0_20px_rgba(250,204,21,0.15)] hover:shadow-[0_0_28px_rgba(250,204,21,0.3)] transition-all active:scale-95"
+            aria-label="Install app"
+          >
+            <span className="text-base">📱</span>
+            Install as app
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
