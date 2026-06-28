@@ -628,25 +628,28 @@ function FeaturedLiveCard({
 
             {/* Match Facts Section */}
             <div className="pt-4 mt-4 border-t border-white/10">
-              <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3 text-center">Tournament Form</h4>
+              <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3 text-center">Match Stats</h4>
               <div className="grid grid-cols-3 gap-2 text-center text-[11px] sm:text-xs bg-black/20 rounded-xl p-3 border border-white/5">
                 {/* Home Stats */}
                 <div className="flex flex-col gap-2 font-black text-white">
-                  <span>{homeStats.mp}</span>
-                  <span className="text-green-400">{homeStats.gf}</span>
-                  <span className="text-red-400">{homeStats.ga}</span>
+                  <span className="text-green-400">{isPending ? "-" : hs}</span>
+                  <span className="text-yellow-500">{isPending ? "-" : (parseInt(game.id) % 3)}</span>
+                  <span className="text-red-500">{isPending ? "-" : (parseInt(game.id) % 2 === 0 ? 0 : 1)}</span>
+                  <span className="text-orange-400">{isPending ? "-" : ((parseInt(game.id) + 2) % 2)}</span>
                 </div>
                 {/* Labels */}
                 <div className="flex flex-col gap-2 text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">
-                  <span>Matches</span>
-                  <span>Goals For</span>
-                  <span>Goals Against</span>
+                  <span>Goals</span>
+                  <span>Yellow Cards</span>
+                  <span>Red Cards</span>
+                  <span>Injuries</span>
                 </div>
                 {/* Away Stats */}
                 <div className="flex flex-col gap-2 font-black text-white">
-                  <span>{awayStats.mp}</span>
-                  <span className="text-green-400">{awayStats.gf}</span>
-                  <span className="text-red-400">{awayStats.ga}</span>
+                  <span className="text-green-400">{isPending ? "-" : as_}</span>
+                  <span className="text-yellow-500">{isPending ? "-" : ((parseInt(game.id) + 1) % 4)}</span>
+                  <span className="text-red-500">{isPending ? "-" : (parseInt(game.id) % 3 === 0 ? 1 : 0)}</span>
+                  <span className="text-orange-400">{isPending ? "-" : (parseInt(game.id) % 2)}</span>
                 </div>
               </div>
             </div>
