@@ -89,21 +89,47 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    void fetchData();
+    let mounted = true;
+
+    const loadInitial = async () => {
+      try {
+        const res = await fetch("/api/wc/all", { cache: "no-store" });
+        if (!res.ok) throw new Error("API error");
+        const json = await res.json() as AllData;
+        if (mounted) {
+          setData(json);
+          setLoading(false);
+        }
+      } catch {
+        if (mounted) {
+          setError(true);
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadInitial();
+
     // Auto-refresh only games every 10 seconds to keep live data fast and lightweight
     const interval = setInterval(async () => {
       try {
         const res = await fetch("/api/wc/games", { cache: "no-store" });
         if (res.ok) {
           const newGames = await res.json();
-          setData(prev => prev ? { ...prev, games: newGames } : null);
+          if (mounted) {
+            setData(prev => prev ? { ...prev, games: newGames } : null);
+          }
         }
       } catch (e) {
         // silent error for background polling
       }
     }, 10000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // PWA install prompt capture
   useEffect(() => {
@@ -119,7 +145,7 @@ export default function HomePage() {
     window.addEventListener("appinstalled", handleInstalled);
     // Check if already running as installed PWA
     if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsInstalled(true);
+      setTimeout(() => setIsInstalled(true), 0);
     }
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
