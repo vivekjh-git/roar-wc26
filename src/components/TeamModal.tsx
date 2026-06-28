@@ -269,8 +269,8 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
                   const stadium = stadiumMap[g.stadium_id];
                   const isLive = g.time_elapsed !== "notstarted" && !finished;
 
-                  const dateStrNpt = formatMatchDateNPT(g.local_date) || "TBD";
-                  const timeNpt = formatTimeNPT(g.local_date);
+                  const dateStrNpt = formatMatchDateNPT(g.local_date, g.stadium_id) || "TBD";
+                  const timeNpt = formatTimeNPT(g.local_date, g.stadium_id);
 
                   return (
                     <div

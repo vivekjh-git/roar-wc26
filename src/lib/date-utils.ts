@@ -15,14 +15,43 @@ import {
 
 export const NPT_TIMEZONE = "Asia/Kathmandu";
 
+// Mapping of Stadium IDs to their respective Time Zones
+export const STADIUM_TIMEZONES: Record<string, string> = {
+  // Mexico (Central)
+  "1": "America/Mexico_City", // Azteca
+  "2": "America/Mexico_City", // Akron
+  "3": "America/Monterrey", // BBVA
+  // USA - Central
+  "11": "America/Chicago", // NRG, Houston
+  "12": "America/Chicago", // AT&T, Dallas
+  "13": "America/Chicago", // Arrowhead, KC
+  // USA - Eastern
+  "6": "America/New_York", // Hard Rock, Miami
+  "7": "America/New_York", // Mercedes-Benz, Atlanta
+  "8": "America/New_York", // Lincoln Financial, Philly
+  "9": "America/New_York", // Gillette, Boston
+  "10": "America/New_York", // MetLife, NY/NJ
+  // USA/Canada - Pacific
+  "14": "America/Los_Angeles", // Lumen Field, Seattle
+  "15": "America/Los_Angeles", // Levi's Stadium, SF
+  "16": "America/Los_Angeles", // SoFi Stadium, LA
+  "5": "America/Vancouver", // BC Place, Vancouver
+  // Canada - Eastern
+  "4": "America/Toronto", // BMO Field, Toronto
+};
+
 /**
  * Parse API date string "MM/dd/yyyy HH:mm" → JS Date (treated as UTC)
- * The API stores venue local times; we treat them as-is and add offset below.
+ * Uses the stadium's timezone if provided to calculate exact UTC time.
  */
-export function parseMatchDate(localDate: string): Date {
-  // API format: "06/13/2026 21:00"
+export function parseMatchDate(localDate: string, stadiumId?: string): Date {
+  if (!localDate) return new Date(NaN);
   try {
-    return parse(localDate, "MM/dd/yyyy HH:mm", new Date());
+    const tz = stadiumId ? STADIUM_TIMEZONES[stadiumId] || "UTC" : "UTC";
+    const [datePart, timePart] = localDate.split(" ");
+    const [m, d, y] = datePart.split("/");
+    const isoStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${timePart}:00`;
+    return fromZonedTime(isoStr, tz);
   } catch {
     return new Date(NaN);
   }
@@ -32,10 +61,10 @@ export function parseMatchDate(localDate: string): Date {
  * Format a match date from API string → Nepal Time
  * Output: "Jun 14, 2:45 AM NPT"
  */
-export function formatMatchDateNPT(localDate: string | null | undefined): string {
+export function formatMatchDateNPT(localDate: string | null | undefined, stadiumId?: string): string {
   if (!localDate) return "";
   try {
-    const date = parseMatchDate(localDate);
+    const date = parseMatchDate(localDate, stadiumId);
     if (isNaN(date.getTime())) return "";
     return formatInTimeZone(date, NPT_TIMEZONE, "MMM d, h:mm a") + " NPT";
   } catch {
@@ -47,10 +76,10 @@ export function formatMatchDateNPT(localDate: string | null | undefined): string
  * Format a match date — date only
  * Output: "Jun 14"
  */
-export function formatMatchDateShortNPT(localDate: string | null | undefined): string {
+export function formatMatchDateShortNPT(localDate: string | null | undefined, stadiumId?: string): string {
   if (!localDate) return "";
   try {
-    const date = parseMatchDate(localDate);
+    const date = parseMatchDate(localDate, stadiumId);
     if (isNaN(date.getTime())) return "";
     return formatInTimeZone(date, NPT_TIMEZONE, "MMM d");
   } catch {
@@ -62,10 +91,10 @@ export function formatMatchDateShortNPT(localDate: string | null | undefined): s
  * Format time only in NPT
  * Output: "7:15 AM NPT"
  */
-export function formatTimeNPT(localDate: string | null | undefined): string {
+export function formatTimeNPT(localDate: string | null | undefined, stadiumId?: string): string {
   if (!localDate) return "";
   try {
-    const date = parseMatchDate(localDate);
+    const date = parseMatchDate(localDate, stadiumId);
     if (isNaN(date.getTime())) return "";
     return formatInTimeZone(date, NPT_TIMEZONE, "h:mm a") + " NPT";
   } catch {
@@ -77,10 +106,10 @@ export function formatTimeNPT(localDate: string | null | undefined): string {
  * Format match date with weekday
  * Output: "Sun, Jun 14, 7:15 AM NPT"
  */
-export function formatMatchDateFullNPT(localDate: string | null | undefined): string {
+export function formatMatchDateFullNPT(localDate: string | null | undefined, stadiumId?: string): string {
   if (!localDate) return "";
   try {
-    const date = parseMatchDate(localDate);
+    const date = parseMatchDate(localDate, stadiumId);
     if (isNaN(date.getTime())) return "";
     return formatInTimeZone(date, NPT_TIMEZONE, "EEE, MMM d, h:mm a") + " NPT";
   } catch {
@@ -110,10 +139,10 @@ export function getCurrentNPTDate(): Date {
 /**
  * Check if a match date string is today in NPT
  */
-export function isMatchToday(localDate: string | null | undefined): boolean {
+export function isMatchToday(localDate: string | null | undefined, stadiumId?: string): boolean {
   if (!localDate) return false;
   try {
-    const matchDate = parseMatchDate(localDate);
+    const matchDate = parseMatchDate(localDate, stadiumId);
     const nowNPT = toZonedTime(new Date(), NPT_TIMEZONE);
     const matchNPT = toZonedTime(matchDate, NPT_TIMEZONE);
     return (
@@ -121,6 +150,51 @@ export function isMatchToday(localDate: string | null | undefined): boolean {
       matchNPT.getMonth() === nowNPT.getMonth() &&
       matchNPT.getDate() === nowNPT.getDate()
     );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if a match date string is tomorrow in NPT
+ */
+export function isMatchTomorrow(localDate: string | null | undefined, stadiumId?: string): boolean {
+  if (!localDate) return false;
+  try {
+    const matchDate = parseMatchDate(localDate, stadiumId);
+    const nowNPT = toZonedTime(new Date(), NPT_TIMEZONE);
+    const matchNPT = toZonedTime(matchDate, NPT_TIMEZONE);
+    
+    const tomorrowNPT = new Date(nowNPT);
+    tomorrowNPT.setDate(tomorrowNPT.getDate() + 1);
+    
+    return (
+      matchNPT.getFullYear() === tomorrowNPT.getFullYear() &&
+      matchNPT.getMonth() === tomorrowNPT.getMonth() &&
+      matchNPT.getDate() === tomorrowNPT.getDate()
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if a match date string is strictly after tomorrow in NPT
+ */
+export function isMatchUpcomingLater(localDate: string | null | undefined, stadiumId?: string): boolean {
+  if (!localDate) return false;
+  try {
+    const matchDate = parseMatchDate(localDate, stadiumId);
+    const nowNPT = toZonedTime(new Date(), NPT_TIMEZONE);
+    const matchNPT = toZonedTime(matchDate, NPT_TIMEZONE);
+    
+    const tomorrowNPT = new Date(nowNPT);
+    tomorrowNPT.setDate(tomorrowNPT.getDate() + 1);
+    
+    // Reset times to compare dates easily
+    tomorrowNPT.setHours(23, 59, 59, 999);
+    
+    return matchNPT.getTime() > tomorrowNPT.getTime();
   } catch {
     return false;
   }
@@ -139,7 +213,7 @@ export interface CountdownResult {
  * Get countdown from now (NPT) to the next unstarted match
  */
 export function getNextMatchCountdown(
-  games: Array<{ local_date: string; finished: string; time_elapsed: string }>
+  games: Array<{ local_date: string; finished: string; time_elapsed: string; stadium_id?: string }>
 ): CountdownResult {
   const nowMs = Date.now();
 
@@ -151,7 +225,7 @@ export function getNextMatchCountdown(
         g.finished !== "TRUE" &&
         g.local_date
     )
-    .map((g) => ({ game: g, dateMs: parseMatchDate(g.local_date).getTime() }))
+    .map((g) => ({ game: g, dateMs: parseMatchDate(g.local_date, g.stadium_id).getTime() }))
     .filter(({ dateMs }) => !isNaN(dateMs) && dateMs > nowMs)
     .sort((a, b) => a.dateMs - b.dateMs);
 
@@ -172,7 +246,7 @@ export function getNextMatchCountdown(
 /**
  * Get the next upcoming match for display
  */
-export function getNextMatch<T extends { local_date: string; finished: string; time_elapsed: string }>(
+export function getNextMatch<T extends { local_date: string; finished: string; time_elapsed: string; stadium_id?: string }>(
   games: T[]
 ): T | null {
   const nowMs = Date.now();
@@ -183,11 +257,8 @@ export function getNextMatch<T extends { local_date: string; finished: string; t
         g.finished !== "TRUE" &&
         g.local_date
     )
-    .map((g) => ({ game: g, dateMs: parseMatchDate(g.local_date).getTime() }))
+    .map((g) => ({ game: g, dateMs: parseMatchDate(g.local_date, g.stadium_id).getTime() }))
     .filter(({ dateMs }) => !isNaN(dateMs) && dateMs > nowMs)
     .sort((a, b) => a.dateMs - b.dateMs);
   return upcoming[0]?.game ?? null;
 }
-
-// Suppress unused import warning for fromZonedTime (used for potential future conversions)
-void fromZonedTime;
