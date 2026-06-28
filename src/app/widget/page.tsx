@@ -1,20 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import type { Game, Team, Stadium } from "@/lib/api";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import type { Game, Team } from "@/lib/api";
 import type { AllData } from "@/app/page";
 import { formatMatchDateNPT } from "@/lib/date-utils";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { generateLiveBulletins } from "@/lib/news-utils";
-
-const newsItems = [
-  "BREAKING: Brazil sets new attendance record in thrilling Quarter-Final!",
-  "UPCOMING: Argentina faces France in a highly anticipated rematch tomorrow.",
-  "RECORD: Lionel Messi becomes the first player to score in 6 World Cups.",
-  "INJURY UPDATE: Key midfielder for Spain ruled out of the semi-finals.",
-  "LIVE: Dramatic penalty shootout underway in the Round of 16!"
-];
 
 function useWidgetData() {
   const [data, setData] = useState<AllData | null>(null);
@@ -83,9 +75,9 @@ function useWidgetDerivedData(data: AllData | null) {
       .sort((a, b) => new Date(a.local_date).getTime() - new Date(b.local_date).getTime());
 
     const liveCount = liveGames.length;
-    
+
     let selectedFinished: Game[] = [];
-    let selectedUpcoming: Game[] = upcomingGames.slice(0, 2);
+    const selectedUpcoming: Game[] = upcomingGames.slice(0, 2);
 
     if (liveCount >= 1) {
       selectedFinished = finishedGames.slice(0, 2);
@@ -104,68 +96,52 @@ export default function WidgetPage() {
   const { teamMap, targetGames } = useWidgetDerivedData(data);
 
   const carouselRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const [dragged, setDragged] = useState(false);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!carouselRef.current) return;
-    setIsDragging(true);
-    setDragged(false);
-    setStartX(e.pageX - carouselRef.current.offsetLeft);
-    setScrollLeft(carouselRef.current.scrollLeft);
-  };
-
-  const handleMouseLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !carouselRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - carouselRef.current.offsetLeft;
-    const walk = (x - startX) * 1.5;
-    if (Math.abs(walk) > 5) {
-      setDragged(true);
-    }
-    carouselRef.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    if (dragged) {
-      e.preventDefault();
-    }
-  };
+  const currentIndexRef = useRef(0);
+  const isPausedRef = useRef(false);
 
   const newsBulletins = useMemo(() => {
     if (!data) return [];
     return generateLiveBulletins(data.games, data.teams);
   }, [data]);
 
+  const goToIndex = useCallback((index: number) => {
+    const container = carouselRef.current;
+    if (!container) return;
+    const cardWidth = container.clientWidth;
+    container.scrollTo({ left: index * cardWidth, behavior: "smooth" });
+    currentIndexRef.current = index;
+  }, []);
+
+  // Auto-advance carousel
   useEffect(() => {
-    if (!carouselRef.current || targetGames.length <= 1) return;
+    if (targetGames.length <= 1) return;
 
     const interval = setInterval(() => {
+      if (isPausedRef.current) return;
       const container = carouselRef.current;
-      if (!container || isDragging) return;
-
-      const cardWidth = 292; // 280px card + 12px gap
-      const maxScrollLeft = container.scrollWidth - container.clientWidth;
-
-      if (container.scrollLeft >= maxScrollLeft - 10) {
-        container.scrollTo({ left: 0, behavior: "smooth" });
-      } else {
-        container.scrollTo({ left: container.scrollLeft + cardWidth, behavior: "smooth" });
-      }
+      if (!container) return;
+      const total = targetGames.length;
+      const next = (currentIndexRef.current + 1) % total;
+      goToIndex(next);
     }, 4500);
 
     return () => clearInterval(interval);
-  }, [targetGames, isDragging]);
+  }, [targetGames.length, goToIndex]);
+
+  // Update index on scroll (for dot indicators)
+  const [activeIndex, setActiveIndex] = useState(0);
+  useEffect(() => {
+    const container = carouselRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const cardWidth = container.clientWidth;
+      const idx = Math.round(container.scrollLeft / cardWidth);
+      currentIndexRef.current = idx;
+      setActiveIndex(idx);
+    };
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, []);
 
   if (loading) {
     return (
@@ -180,32 +156,46 @@ export default function WidgetPage() {
   }
 
   return (
-    <div className="w-full h-screen flex flex-col p-3 bg-transparent overflow-hidden select-none">
+    <div className="w-full h-screen flex flex-col bg-transparent overflow-hidden select-none">
       {/* Header with Logo */}
-      <div className="flex items-center justify-between mb-2 px-1.5">
+      <div className="flex items-center justify-between px-3 pt-2 pb-1.5">
         <div className="flex items-center gap-1.5">
           <Image src="/tiger.png" alt="Logo" width={18} height={18} className="object-contain" />
           <span className="text-[10px] font-black uppercase tracking-widest gold-text">ROAR FIFA</span>
         </div>
-        <span className="text-[8px] text-gray-500 font-mono tracking-widest">NPT TIME</span>
+        <div className="flex items-center gap-1.5">
+          {/* Dot indicators */}
+          {targetGames.length > 1 && (
+            <div className="flex items-center gap-1 mr-2">
+              {targetGames.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => { goToIndex(i); }}
+                  className={`rounded-full transition-all duration-300 ${
+                    i === activeIndex ? "w-3 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/20"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+          <span className="text-[8px] text-gray-500 font-mono tracking-widest">NPT</span>
+        </div>
       </div>
 
-      {/* Horizontal Carousel */}
-      <div 
+      {/* Horizontal Carousel — full-width cards, no gap, pure snap */}
+      <div
         ref={carouselRef}
-        onMouseDown={handleMouseDown}
-        onMouseLeave={handleMouseLeave}
-        onMouseUp={handleMouseUp}
-        onMouseMove={handleMouseMove}
-        className="flex-1 flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1 cursor-grab active:cursor-grabbing select-none"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        onMouseEnter={() => { isPausedRef.current = true; }}
+        onMouseLeave={() => { isPausedRef.current = false; }}
+        className="flex-1 flex overflow-x-auto snap-x snap-mandatory px-3"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none", scrollBehavior: "auto" }}
       >
         {targetGames.map((game) => {
           const homeTeam = teamMap[game.home_team_id];
           const awayTeam = teamMap[game.away_team_id];
           const finished = game.finished === "TRUE";
           const isLive = game.time_elapsed !== "notstarted" && game.time_elapsed !== "finished" && !finished;
-          
+
           const homeName = homeTeam?.fifa_code || game.home_team_label || game.home_team_name_en?.substring(0, 3).toUpperCase() || "TBD";
           const awayName = awayTeam?.fifa_code || game.away_team_label || game.away_team_name_en?.substring(0, 3).toUpperCase() || "TBD";
           const hs = parseInt(game.home_score) || 0;
@@ -213,98 +203,98 @@ export default function WidgetPage() {
           const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
           return (
-            <a 
+            <div
               key={game.id}
-              href="/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              onClick={handleClick}
-              className={`flex-shrink-0 snap-start relative w-[280px] h-[125px] p-3 match-card border shadow-xl flex flex-col justify-between overflow-hidden bg-black transition-all hover:scale-[1.01] active:scale-95 ${isLive ? "border-red-500/50" : "border-white/10"}`}
-              style={{ 
-                background: isLive ? "linear-gradient(135deg, #2a0a0a 0%, #0a0f1e 100%)" : "linear-gradient(135deg, #1a2744 0%, #0a0f1e 100%)",
-                borderRadius: '16px'
-              }}
+              className="flex-shrink-0 snap-center w-full"
             >
-              {/* Background styling for Live */}
-              {isLive && (
-                <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse pointer-events-none"></div>
-              )}
-              
-              {/* Top Banner */}
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-1.5">
-                  {isLive ? (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 text-[8px] font-bold uppercase tracking-wider">
-                      <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse"></span>
-                      LIVE {game.time_elapsed.replace(/live/i, '').trim()}&apos;
-                    </span>
-                  ) : finished ? (
-                    <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-gray-400 border border-white/5 text-[8px] font-bold uppercase tracking-wider">
-                      FT
-                    </span>
-                  ) : (
-                    <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[8px] font-bold uppercase tracking-wider">
-                      PRE
-                    </span>
-                  )}
-                  <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Grp {game.group}</span>
-                </div>
-                <div className="text-[8px] text-gray-500 font-mono tracking-widest text-right leading-tight">
-                  {nptDate.split(", ")[1]}
-                </div>
-              </div>
-              
-              {/* Teams and Score */}
-              <div className="flex items-center justify-between my-auto">
-                {/* Home Team */}
-                <div className="flex flex-col items-center gap-1 w-[40%]">
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/10 shadow bg-black/50 p-0.5">
-                    {homeTeam?.flag ? (
-                      <Image src={homeTeam.flag} alt={homeName} fill className="object-cover rounded-full" sizes="32px" />
+              <div
+                className={`relative w-full h-full p-3 match-card border shadow-xl flex flex-col justify-between overflow-hidden ${isLive ? "border-red-500/50" : "border-white/10"}`}
+                style={{
+                  background: isLive ? "linear-gradient(135deg, #2a0a0a 0%, #0a0f1e 100%)" : "linear-gradient(135deg, #1a2744 0%, #0a0f1e 100%)",
+                  borderRadius: "16px",
+                }}
+              >
+                {/* Background glow for Live */}
+                {isLive && (
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse pointer-events-none" />
+                )}
+
+                {/* Top Banner */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    {isLive ? (
+                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-500 border border-red-500/30 text-[8px] font-bold uppercase tracking-wider">
+                        <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
+                        LIVE {game.time_elapsed.replace(/live/i, "").trim()}&apos;
+                      </span>
+                    ) : finished ? (
+                      <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-gray-400 border border-white/5 text-[8px] font-bold uppercase tracking-wider">
+                        FT
+                      </span>
                     ) : (
-                      <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-full text-[8px] text-gray-500">TBD</div>
+                      <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[8px] font-bold uppercase tracking-wider">
+                        PRE
+                      </span>
                     )}
+                    <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Grp {game.group}</span>
                   </div>
-                  <span className="text-[9px] font-black text-center leading-tight uppercase tracking-wider truncate w-full">{homeName}</span>
+                  <div className="text-[8px] text-gray-500 font-mono tracking-widest text-right leading-tight">
+                    {nptDate.split(", ")[1]}
+                  </div>
                 </div>
-                
-                {/* Score/VS */}
-                <div className="flex flex-col items-center justify-center w-[20%]">
-                  {game.time_elapsed === "notstarted" ? (
-                    <div className="text-xs font-black text-gray-500/50">VS</div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-xl font-black ${finished && hs > as_ ? "text-white" : finished ? "text-gray-400" : "text-white"}`}>{hs}</span>
-                      <span className="text-gray-600 text-xs">-</span>
-                      <span className={`text-xl font-black ${finished && as_ > hs ? "text-white" : finished ? "text-gray-400" : "text-white"}`}>{as_}</span>
+
+                {/* Teams and Score */}
+                <div className="flex items-center justify-between my-auto py-1">
+                  {/* Home Team */}
+                  <div className="flex flex-col items-center gap-1 w-[38%]">
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/10 shadow bg-black/50 p-0.5">
+                      {homeTeam?.flag ? (
+                        <Image src={homeTeam.flag} alt={homeName} fill className="object-cover rounded-full" sizes="40px" />
+                      ) : (
+                        <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-full text-[8px] text-gray-500">TBD</div>
+                      )}
                     </div>
-                  )}
-                </div>
-                
-                {/* Away Team */}
-                <div className="flex flex-col items-center gap-1 w-[40%]">
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/10 shadow bg-black/50 p-0.5">
-                    {awayTeam?.flag ? (
-                      <Image src={awayTeam.flag} alt={awayName} fill className="object-cover rounded-full" sizes="32px" />
+                    <span className="text-[10px] font-black text-center leading-tight uppercase tracking-wider truncate w-full text-center">{homeName}</span>
+                  </div>
+
+                  {/* Score / VS */}
+                  <div className="flex flex-col items-center justify-center w-[24%]">
+                    {game.time_elapsed === "notstarted" ? (
+                      <div className="text-sm font-black text-gray-500/50">VS</div>
                     ) : (
-                      <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-full text-[8px] text-gray-500">TBD</div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-2xl font-black tabular-nums ${finished && hs > as_ ? "text-white" : finished ? "text-gray-400" : "text-yellow-400"}`}>{hs}</span>
+                        <span className="text-gray-600 text-sm">-</span>
+                        <span className={`text-2xl font-black tabular-nums ${finished && as_ > hs ? "text-white" : finished ? "text-gray-400" : "text-yellow-400"}`}>{as_}</span>
+                      </div>
                     )}
                   </div>
-                  <span className="text-[9px] font-black text-center leading-tight uppercase tracking-wider truncate w-full">{awayName}</span>
+
+                  {/* Away Team */}
+                  <div className="flex flex-col items-center gap-1 w-[38%]">
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/10 shadow bg-black/50 p-0.5">
+                      {awayTeam?.flag ? (
+                        <Image src={awayTeam.flag} alt={awayName} fill className="object-cover rounded-full" sizes="40px" />
+                      ) : (
+                        <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-full text-[8px] text-gray-500">TBD</div>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-black text-center leading-tight uppercase tracking-wider truncate w-full text-center">{awayName}</span>
+                  </div>
+                </div>
+
+                {/* Bottom Date */}
+                <div className="text-[7px] text-gray-600 uppercase tracking-widest text-center">
+                  {nptDate.split(", ")[0]}
                 </div>
               </div>
-              
-              {/* Bottom Date */}
-              <div className="text-[7px] text-gray-600 uppercase tracking-widest text-center">
-                {nptDate.split(", ")[0]}
-              </div>
-            </a>
+            </div>
           );
         })}
       </div>
 
       {/* Miniature News Ticker */}
-      <div className="w-[calc(100%+24px)] -mx-3 bg-red-950/45 text-red-400 text-[6.5px] font-mono uppercase tracking-widest py-0.5 flex whitespace-nowrap border-t border-b border-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.15)] mt-1.5 overflow-hidden">
+      <div className="w-full bg-red-950/45 text-red-400 text-[6.5px] font-mono uppercase tracking-widest py-0.5 flex whitespace-nowrap border-t border-b border-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.15)] overflow-hidden">
         <motion.div
           className="flex gap-8 items-center min-w-fit pr-8"
           animate={{ x: ["0%", "-50%"] }}
