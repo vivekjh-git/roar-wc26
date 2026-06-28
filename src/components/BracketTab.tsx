@@ -36,6 +36,177 @@ function NewsMarquee({ bulletins }: { bulletins: string[] }) {
   );
 }
 
+// Connector line rendering components for the Visual Bracket Tree
+function ConnectorColR32ToR16({ side }: { side: 'left' | 'right' }) {
+  const brackets = Array.from({ length: 4 }).map((_, k) => {
+    const yTop = 225 * k + 56.25;
+    const yBottom = 225 * k + 168.75;
+    const yMid = 225 * k + 112.5;
+    return side === 'left'
+      ? `M 0 ${yTop} H 16 V ${yBottom} H 0 M 16 ${yMid} H 32`
+      : `M 32 ${yTop} H 16 V ${yBottom} H 32 M 16 ${yMid} H 0`;
+  });
+
+  return (
+    <svg className="h-[900px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
+      {brackets.map((d, i) => (
+        <path key={i} d={d} />
+      ))}
+    </svg>
+  );
+}
+
+function ConnectorColR16ToQF({ side }: { side: 'left' | 'right' }) {
+  const brackets = Array.from({ length: 2 }).map((_, k) => {
+    const yTop = 450 * k + 112.5;
+    const yBottom = 450 * k + 337.5;
+    const yMid = 450 * k + 225;
+    return side === 'left'
+      ? `M 0 ${yTop} H 16 V ${yBottom} H 0 M 16 ${yMid} H 32`
+      : `M 32 ${yTop} H 16 V ${yBottom} H 32 M 16 ${yMid} H 0`;
+  });
+
+  return (
+    <svg className="h-[900px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
+      {brackets.map((d, i) => (
+        <path key={i} d={d} />
+      ))}
+    </svg>
+  );
+}
+
+function ConnectorColQFToSF({ side }: { side: 'left' | 'right' }) {
+  const d = side === 'left'
+    ? "M 0 225 H 16 V 675 H 0 M 16 450 H 32"
+    : "M 32 225 H 16 V 675 H 32 M 16 450 H 0";
+
+  return (
+    <svg className="h-[900px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d={d} />
+    </svg>
+  );
+}
+
+function ConnectorColSFToFinal({ side }: { side: 'left' | 'right' }) {
+  return (
+    <svg className="h-[900px] w-8 text-white/10 pointer-events-none select-none flex-shrink-0 animate-fade-in" viewBox="0 0 32 900" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M 0 450 H 32" />
+    </svg>
+  );
+}
+
+function BracketNode({
+  gameId,
+  teamMap,
+  gameMap,
+  onTeamClick,
+  label,
+}: {
+  gameId: string;
+  teamMap: { [key: string]: Team };
+  gameMap: { [key: string]: Game };
+  onTeamClick: (team: Team) => void;
+  label?: string;
+}) {
+  const game = gameMap[gameId];
+  if (!game) return <div className="w-[155px] h-[72px] bg-white/5 rounded-xl border border-white/5 animate-pulse" />;
+
+  const homeTeam = teamMap[game.home_team_id];
+  const awayTeam = teamMap[game.away_team_id];
+  const finished = game.finished === "TRUE";
+  const isLive = game.time_elapsed !== "notstarted" && game.time_elapsed !== "finished" && !finished;
+
+  const homeName = homeTeam?.fifa_code || game.home_team_label || game.home_team_name_en || "TBD";
+  const awayName = awayTeam?.fifa_code || game.away_team_label || game.away_team_name_en || "TBD";
+  const homeFlag = homeTeam?.flag;
+  const awayFlag = awayTeam?.flag;
+
+  const hs = parseInt(game.home_score) || 0;
+  const as_ = parseInt(game.away_score) || 0;
+  const homeWin = finished && hs > as_;
+  const awayWin = finished && as_ > hs;
+
+  const cleanHomeName = homeName.startsWith("Winner Match ")
+    ? `W${homeName.replace("Winner Match ", "")}`
+    : homeName.startsWith("Loser Match ")
+    ? `L${homeName.replace("Loser Match ", "")}`
+    : homeName;
+
+  const cleanAwayName = awayName.startsWith("Winner Match ")
+    ? `W${awayName.replace("Winner Match ", "")}`
+    : awayName.startsWith("Loser Match ")
+    ? `L${awayName.replace("Loser Match ", "")}`
+    : awayName;
+
+  const timeOnly = formatTimeNPT(game.local_date, game.stadium_id);
+
+  return (
+    <div className="relative group">
+      <div className={`w-[155px] bg-[#0c101d]/90 border rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:border-yellow-400/40 hover:shadow-yellow-400/5 ${isLive ? 'border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.15)] bg-red-500/5' : 'border-white/10 bg-black/40'}`}>
+        {/* Match Header info */}
+        <div className="bg-black/50 px-2.5 py-1 flex justify-between items-center text-[8px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
+          <span>Match {game.id}</span>
+          {isLive ? (
+            <span className="text-red-400 font-bold animate-pulse flex items-center gap-0.5"><span className="w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span>LIVE</span>
+          ) : (
+            <span>{label}</span>
+          )}
+        </div>
+
+        {/* Teams grid */}
+        <div className="p-2 space-y-1.5 bg-black/10">
+          {/* Home Team Row */}
+          <button
+            onClick={() => homeTeam && onTeamClick(homeTeam)}
+            className={`flex items-center justify-between w-full text-left transition-opacity ${finished && !homeWin ? 'opacity-50' : 'opacity-100 hover:opacity-85'}`}
+          >
+            <div className="flex items-center gap-1.5 min-w-0">
+              {homeFlag ? (
+                <img src={homeFlag} alt="" className="w-4.5 h-3 object-cover rounded shadow-sm flex-shrink-0" />
+              ) : (
+                <div className="w-4.5 h-3 bg-gray-800 rounded flex-shrink-0 flex items-center justify-center text-[7px] text-gray-600 font-bold">?</div>
+              )}
+              <span className={`text-[10px] font-black uppercase tracking-wider truncate ${homeWin ? 'text-yellow-400 font-black' : 'text-gray-300'}`}>
+                {cleanHomeName}
+              </span>
+            </div>
+            {finished ? (
+              <span className={`text-[10px] font-black px-1.5 rounded ${homeWin ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{hs}</span>
+            ) : null}
+          </button>
+
+          {/* Away Team Row */}
+          <button
+            onClick={() => awayTeam && onTeamClick(awayTeam)}
+            className={`flex items-center justify-between w-full text-left transition-opacity ${finished && !awayWin ? 'opacity-50' : 'opacity-100 hover:opacity-85'}`}
+          >
+            <div className="flex items-center gap-1.5 min-w-0">
+              {awayFlag ? (
+                <img src={awayFlag} alt="" className="w-4.5 h-3 object-cover rounded shadow-sm flex-shrink-0" />
+              ) : (
+                <div className="w-4.5 h-3 bg-gray-800 rounded flex-shrink-0 flex items-center justify-center text-[7px] text-gray-600 font-bold">?</div>
+              )}
+              <span className={`text-[10px] font-black uppercase tracking-wider truncate ${awayWin ? 'text-yellow-400 font-black' : 'text-gray-300'}`}>
+                {cleanAwayName}
+              </span>
+            </div>
+            {finished ? (
+              <span className={`text-[10px] font-black px-1.5 rounded ${awayWin ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{as_}</span>
+            ) : null}
+          </button>
+        </div>
+
+        {/* Date/Time info */}
+        {!finished && (
+          <div className="bg-black/30 px-2 py-0.5 text-[8px] font-bold text-gray-500 uppercase tracking-widest text-center border-t border-white/5">
+            {timeOnly}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface BracketTabProps {
   readonly games: Game[];
   readonly teams: Team[];
@@ -895,8 +1066,10 @@ function MatchCarouselSection({
 
 export default function BracketTab({ games, teams, stadiums, onTeamClick }: BracketTabProps) {
   const [activeTab, setActiveTab] = useState<'today' | 'tomorrow' | 'upcoming'>('today');
+  const [viewType, setViewType] = useState<'visual' | 'list'>('visual');
   const teamMap = useMemo(() => Object.fromEntries(teams.map((t) => [t.id, t])), [teams]);
   const stadiumMap = useMemo(() => Object.fromEntries((stadiums || []).map((s) => [s.id, s])), [stadiums]);
+  const gameMap = useMemo(() => Object.fromEntries(games.map(g => [g.id, g])), [games]);
 
   const sortGames = (a: Game, b: Game) => {
     const aLive = a.time_elapsed !== "notstarted" && a.finished !== "TRUE" ? 1 : 0;
@@ -959,149 +1132,304 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
     <div className="p-4 space-y-6">
       <NewsMarquee bulletins={newsBulletins} />
       
-      {/* Tabs */}
-      <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-sm mx-auto shadow-inner">
+      {/* View Toggle */}
+      <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-[280px] mx-auto shadow-inner">
         <button 
-          onClick={() => setActiveTab('today')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+          onClick={() => setViewType('visual')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${viewType === 'visual' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <span className={activeTab === 'today' ? 'text-red-500 animate-pulse' : ''}>🔴</span> TDY
+          <span>🏆</span> Bracket
         </button>
         <button 
-          onClick={() => setActiveTab('tomorrow')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'tomorrow' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+          onClick={() => setViewType('list')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${viewType === 'list' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <span>📅</span> TMR
-        </button>
-        <button 
-          onClick={() => setActiveTab('upcoming')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'upcoming' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
-        >
-          <span>⏳</span> UPC
+          <span>📅</span> Schedule
         </button>
       </div>
 
       <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, x: 10 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -10 }}
-          transition={{ duration: 0.2 }}
-        >
-          {activeTab === 'today' && (
-            <MatchCarouselSection
-              title="Today's Matches"
-              isLiveTitle="Live Now & Today"
-              icon="🔴"
-              iconColor="text-red-500"
-              pulseColor="text-red-500"
-              emptyMessage="No matches today"
-              games={todayGames}
-              teamMap={teamMap}
-              stadiumMap={stadiumMap}
-              onTeamClick={onTeamClick}
-              allGames={games}
-            />
-          )}
-          {activeTab === 'tomorrow' && (
-            <MatchCarouselSection
-              title="Tomorrow's Matches"
-              icon="📅"
-              iconColor="text-blue-400"
-              emptyMessage="No matches tomorrow"
-              games={tomorrowGames}
-              teamMap={teamMap}
-              stadiumMap={stadiumMap}
-              onTeamClick={onTeamClick}
-              allGames={games}
-            />
-          )}
-          {activeTab === 'upcoming' && (
-            <MatchCarouselSection
-              title="Upcoming Matches"
-              icon="⏳"
-              iconColor="text-[#ff5e00]"
-              emptyMessage="No upcoming matches"
-              games={upcomingGames}
-              teamMap={teamMap}
-              stadiumMap={stadiumMap}
-              onTeamClick={onTeamClick}
-              allGames={games}
-            />
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-
-      {/* Hero Banner (Tournament Stats) */}
-      <div
-        className="relative rounded-2xl overflow-hidden text-center py-6 px-4 mb-2 shadow-lg"
-        style={{ background: "linear-gradient(135deg, #1a2744 0%, #0a0f1e 50%, #2a1a00 100%)" }}
-      >
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: "url(/wc-hero.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}
-        />
-        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 text-left">
-            <div className="text-5xl animate-bounce-slow">🏆</div>
-            <div>
-              <h2 className="text-lg font-black gold-text leading-tight">FIFA WORLD CUP 2026</h2>
-              <p className="text-[10px] text-gray-400 mt-1">Nepal Standard Time (NPT)</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
-              <div className="text-yellow-400 font-black text-lg">{games.filter((g) => g.finished === "TRUE").length}</div>
-              <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Played</div>
-            </div>
-            <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
-              <div className="text-blue-400 font-black text-lg">{games.filter((g) => g.finished !== "TRUE").length}</div>
-              <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Rem</div>
-            </div>
-            <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
-              <div className="text-green-400 font-black text-lg">
-                {games.filter((g) => g.finished === "TRUE").reduce((sum, g) => sum + (parseInt(g.home_score) || 0) + (parseInt(g.away_score) || 0), 0)}
-              </div>
-              <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Goals</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bracket stages */}
-      {stages.map((stage) => (
-        <section key={stage.key}>
-          <div className="flex items-center gap-3 mb-3">
-            <h3 className="text-sm font-bold text-yellow-400">{stage.label}</h3>
-            <div className="flex-1 h-px bg-yellow-400/20"></div>
-            <span className="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{stage.games.length} matches</span>
-          </div>
-
+        {viewType === 'visual' ? (
           <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            viewport={{ once: true }}
-            className={
-              stage.key === "final" || stage.key === "sf" ? "grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto" :
-              stage.key === "r32" || stage.key === "r16" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2" :
-              "grid grid-cols-2 sm:grid-cols-2 gap-3"
-            }
+            key="visual-bracket"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="w-full overflow-hidden"
           >
-            {stage.games.map((game) => (
-              <MatchCard
-                key={game.id}
-                game={game}
-                teamMap={teamMap}
-                stadiumMap={stadiumMap}
-                onTeamClick={onTeamClick}
-                compact={stage.key === "r32" || stage.key === "r16"}
+            {/* Header Banner */}
+            <div className="flex flex-col items-center justify-center mb-6 text-center animate-fade-in">
+              <img src="/fifaworldcup_logo.svg" className="w-24 h-auto object-contain mb-2 select-none filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]" alt="FIFA World Cup 2026 Logo" />
+              <h2 className="text-2xl font-black tracking-tighter text-white uppercase sm:text-3xl gold-text">
+                2026 WORLD CUP BRACKET
+              </h2>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Nepal Standard Time (NPT)</p>
+            </div>
+
+            <div className="relative w-full overflow-x-auto rounded-3xl border border-white/5 bg-[#080d19]/40 backdrop-blur-md p-6 shadow-2xl select-none no-scrollbar">
+              <div className="flex gap-0 items-center justify-between min-w-[1550px] py-4 h-[900px]">
+                {/* Col 1: Left R32 */}
+                <div className="flex flex-col justify-around h-full">
+                  <BracketNode gameId="74" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="77" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="73" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="75" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="83" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="84" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="81" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="82" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                </div>
+
+                {/* Connector 1: R32 -> R16 Left */}
+                <ConnectorColR32ToR16 side="left" />
+
+                {/* Col 2: Left R16 */}
+                <div className="flex flex-col justify-around h-full">
+                  <BracketNode gameId="89" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                  <BracketNode gameId="90" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                  <BracketNode gameId="93" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                  <BracketNode gameId="94" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                </div>
+
+                {/* Connector 2: R16 -> QF Left */}
+                <ConnectorColR16ToQF side="left" />
+
+                {/* Col 3: Left QF */}
+                <div className="flex flex-col justify-around h-full">
+                  <BracketNode gameId="97" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
+                  <BracketNode gameId="98" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
+                </div>
+
+                {/* Connector 3: QF -> SF Left */}
+                <ConnectorColQFToSF side="left" />
+
+                {/* Col 4: Left SF */}
+                <div className="flex flex-col justify-around h-full">
+                  <BracketNode gameId="101" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Semi-final" />
+                </div>
+
+                {/* Connector 4: SF -> Final Left */}
+                <ConnectorColSFToFinal side="left" />
+
+                {/* Col 5: Center (Logo, Final, 3rd Place) */}
+                <div className="flex flex-col items-center justify-center gap-8 h-full w-[200px] relative">
+                  <div className="text-center space-y-2">
+                    <div className="text-xs font-black uppercase tracking-widest text-yellow-400">The Final</div>
+                    <BracketNode gameId="104" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="🏆 Champion Match" />
+                  </div>
+                  
+                  {/* Visual Gold Trophy Emblem decoration */}
+                  <div className="relative py-2 flex flex-col items-center justify-center">
+                    <div className="absolute inset-0 bg-yellow-400/5 blur-2xl rounded-full w-24 h-24 -z-10 animate-pulse" />
+                    <span className="text-6xl drop-shadow-[0_0_20px_rgba(250,204,21,0.45)] animate-bounce-slow">🏆</span>
+                  </div>
+
+                  <div className="text-center space-y-2">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">3rd Place Match</div>
+                    <BracketNode gameId="103" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Third Place" />
+                  </div>
+                </div>
+
+                {/* Connector 4: Final -> SF Right */}
+                <ConnectorColSFToFinal side="right" />
+
+                {/* Col 6: Right SF */}
+                <div className="flex flex-col justify-around h-full">
+                  <BracketNode gameId="102" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Semi-final" />
+                </div>
+
+                {/* Connector 3: SF -> QF Right */}
+                <ConnectorColQFToSF side="right" />
+
+                {/* Col 7: Right QF */}
+                <div className="flex flex-col justify-around h-full">
+                  <BracketNode gameId="99" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
+                  <BracketNode gameId="100" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
+                </div>
+
+                {/* Connector 2: QF -> R16 Right */}
+                <ConnectorColR16ToQF side="right" />
+
+                {/* Col 8: Right R16 */}
+                <div className="flex flex-col justify-around h-full">
+                  <BracketNode gameId="91" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                  <BracketNode gameId="92" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                  <BracketNode gameId="95" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                  <BracketNode gameId="96" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                </div>
+
+                {/* Connector 1: R16 -> R32 Right */}
+                <ConnectorColR32ToR16 side="right" />
+
+                {/* Col 9: Right R32 */}
+                <div className="flex flex-col justify-around h-full">
+                  <BracketNode gameId="76" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="78" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="79" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="80" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="86" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="88" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="85" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                  <BracketNode gameId="87" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="list-schedule"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-6 animate-fade-in"
+          >
+            {/* Tabs */}
+            <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-sm mx-auto shadow-inner">
+              <button 
+                onClick={() => setActiveTab('today')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                <span className={activeTab === 'today' ? 'text-red-500 animate-pulse' : ''}>🔴</span> TDY
+              </button>
+              <button 
+                onClick={() => setActiveTab('tomorrow')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'tomorrow' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                <span>📅</span> TMR
+              </button>
+              <button 
+                onClick={() => setActiveTab('upcoming')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'upcoming' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                <span>⏳</span> UPC
+              </button>
+            </div>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {activeTab === 'today' && (
+                  <MatchCarouselSection
+                    title="Today's Matches"
+                    isLiveTitle="Live Now & Today"
+                    icon="🔴"
+                    iconColor="text-red-500"
+                    pulseColor="text-red-500"
+                    emptyMessage="No matches today"
+                    games={todayGames}
+                    teamMap={teamMap}
+                    stadiumMap={stadiumMap}
+                    onTeamClick={onTeamClick}
+                    allGames={games}
+                  />
+                )}
+                {activeTab === 'tomorrow' && (
+                  <MatchCarouselSection
+                    title="Tomorrow's Matches"
+                    icon="📅"
+                    iconColor="text-blue-400"
+                    emptyMessage="No matches tomorrow"
+                    games={tomorrowGames}
+                    teamMap={teamMap}
+                    stadiumMap={stadiumMap}
+                    onTeamClick={onTeamClick}
+                    allGames={games}
+                  />
+                )}
+                {activeTab === 'upcoming' && (
+                  <MatchCarouselSection
+                    title="Upcoming Matches"
+                    icon="⏳"
+                    iconColor="text-[#ff5e00]"
+                    emptyMessage="No upcoming matches"
+                    games={upcomingGames}
+                    teamMap={teamMap}
+                    stadiumMap={stadiumMap}
+                    onTeamClick={onTeamClick}
+                    allGames={games}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Hero Banner (Tournament Stats) */}
+            <div
+              className="relative rounded-2xl overflow-hidden text-center py-6 px-4 mb-2 shadow-lg"
+              style={{ background: "linear-gradient(135deg, #1a2744 0%, #0a0f1e 50%, #2a1a00 100%)" }}
+            >
+              <div className="absolute inset-0 opacity-10"
+                style={{ backgroundImage: "url(/wc-hero.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}
               />
+              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4 text-left">
+                  <div className="text-5xl animate-bounce-slow">🏆</div>
+                  <div>
+                    <h2 className="text-lg font-black gold-text leading-tight">FIFA WORLD CUP 2026</h2>
+                    <p className="text-[10px] text-gray-400 mt-1">Nepal Standard Time (NPT)</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
+                    <div className="text-yellow-400 font-black text-lg">{games.filter((g) => g.finished === "TRUE").length}</div>
+                    <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Played</div>
+                  </div>
+                  <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
+                    <div className="text-blue-400 font-black text-lg">{games.filter((g) => g.finished !== "TRUE").length}</div>
+                    <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Rem</div>
+                  </div>
+                  <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
+                    <div className="text-green-400 font-black text-lg">
+                      {games.filter((g) => g.finished === "TRUE").reduce((sum, g) => sum + (parseInt(g.home_score) || 0) + (parseInt(g.away_score) || 0), 0)}
+                    </div>
+                    <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Goals</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bracket stages */}
+            {stages.map((stage) => (
+              <section key={stage.key}>
+                <div className="flex items-center gap-3 mb-3">
+                  <h3 className="text-sm font-bold text-yellow-400">{stage.label}</h3>
+                  <div className="flex-1 h-px bg-yellow-400/20"></div>
+                  <span className="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{stage.games.length} matches</span>
+                </div>
+
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  viewport={{ once: true }}
+                  className={
+                    stage.key === "final" || stage.key === "sf" ? "grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto" :
+                    stage.key === "r32" || stage.key === "r16" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2" :
+                    "grid grid-cols-2 sm:grid-cols-2 gap-3"
+                  }
+                >
+                  {stage.games.map((game) => (
+                    <MatchCard
+                      key={game.id}
+                      game={game}
+                      teamMap={teamMap}
+                      stadiumMap={stadiumMap}
+                      onTeamClick={onTeamClick}
+                      compact={stage.key === "r32" || stage.key === "r16"}
+                    />
+                  ))}
+                </motion.div>
+              </section>
             ))}
           </motion.div>
-        </section>
-      ))}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

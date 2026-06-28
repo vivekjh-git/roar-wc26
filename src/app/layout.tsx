@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "WC2026",
+    title: "RoarFifa",
   },
   keywords: ["FIFA World Cup 2026", "live scores", "bracket", "group standings", "top scorers"],
 };
