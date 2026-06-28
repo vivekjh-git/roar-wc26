@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+@theme {
+  --color-yellow-300: #ffb300;
+  --color-yellow-400: #ff5e00;
+  --color-yellow-500: #ff9f0a;
+  --color-yellow-600: #cc4c00;
+  --color-green-400: #ff5e00;
+  --color-green-500: #ffb300;
+  --color-pink-500: #ff5e00;
+  --color-pink-600: #cc4c00;
+}
+
+:root {
+  --wc-gold: #ff5e00;
+  --wc-dark: #030308;
+  --wc-blue: #0b0b18;
+  --wc-red: #ff3366;
+  --wc-green: #ffb300;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(circle at 50% 0%, #150527 0%, #030307 100%) no-repeat fixed;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #0b0b18; }
+::-webkit-scrollbar-thumb { background: #bc00dd; border-radius: 2px; }
+
+/* Bracket lines */
+.bracket-line {
+  border-color: rgba(255, 94, 0, 0.3);
+}
+
+/* Glass card */
+.glass-card {
+  background: rgba(10, 10, 24, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 94, 0, 0.3);
+  box-shadow: 0 0 15px rgba(255, 94, 0, 0.1);
+}
+
+/* Gold gradient text */
+.gold-text {
+  background: linear-gradient(135deg, #ffb300, #ff5e00, #cc4c00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 10px rgba(255, 94, 0, 0.3);
+}
+
+/* Pulse animation for live badge */
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.live-pulse {
+  animation: pulse-live 1.5s ease-in-out infinite;
+}
+
+/* Tab animation */
+.tab-active {
+  border-bottom: 2px solid #c9a227;
+}
+
+/* Shimmer loading */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #1a2744 25%, #243050 50%, #1a2744 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Trophy glow */
+.trophy-glow {
+  filter: drop-shadow(0 0 20px rgba(188, 0, 221, 0.6));
+}
+
+/* Match card hover */
+.match-card {
+  transition: all 0.2s ease;
+}
+.match-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(188, 0, 221, 0.6);
+  box-shadow: 0 0 20px rgba(188, 0, 221, 0.25);
+}
+
+/* Group badge colors */
+.group-a { background: #e74c3c; }
+.group-b { background: #e67e22; }
+.group-c { background: #f1c40f; color: #000; }
+.group-d { background: #2ecc71; color: #000; }
+.group-e { background: #1abc9c; }
+.group-f { background: #3498db; }
+.group-g { background: #9b59b6; }
+.group-h { background: #e91e63; }
+.group-i { background: #00bcd4; }
+.group-j { background: #8bc34a; color: #000; }
+.group-k { background: #ff5722; }
+.group-l { background: #607d8b; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(-5%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 2s infinite;
+}
+
+/* Cyberpunk Redesign Styles */
+.cyber-nav {
+  background: rgba(10, 10, 24, 0.95);
+  border: 1px solid rgba(255, 94, 0, 0.4);
+  box-shadow: 0 0 15px rgba(255, 94, 0, 0.2);
+  position: relative;
+}
+
+.cyber-tab {
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s ease;
+}
+
+.cyber-tab:hover {
+  text-shadow: 0 0 8px rgba(255, 179, 0, 0.6);
+}
+
+.cyber-tab-active {
+  color: #fff !important;
+  text-shadow: 0 0 10px rgba(255, 94, 0, 0.8), 0 0 20px rgba(255, 94, 0, 0.4);
+}
+
+.cyber-tab-indicator {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 94, 0, 0.05) 0%, rgba(255, 94, 0, 0.2) 100%);
+  border-bottom: 3px solid #ff5e00;
+  box-shadow: 0 4px 10px rgba(255, 94, 0, 0.4);
+  z-index: 0;
+}
+
+/* Chomping Tiger Animations */
+@keyframes chomp-right {
+  0%, 100% { transform: translateY(-50%) scaleX(1) scale(1); }
+  50% { transform: translateY(-50%) scaleX(1) scale(1.2) rotate(3deg); }
+}
+
+@keyframes chomp-left {
+  0%, 100% { transform: translateY(-50%) scaleX(-1) scale(1); }
+  50% { transform: translateY(-50%) scaleX(-1) scale(1.2) rotate(-3deg); }
+}
+
+.animate-chomp-right {
+  animation: chomp-right 0.6s infinite ease-in-out;
+}
+
+.animate-chomp-left {
+  animation: chomp-left 0.6s infinite ease-in-out;
+}
+
+/* Tiger Stripe Progress Bar Texture */
+.tiger-stripe-bg {
+  background-color: #c9a227;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(0, 0, 0, 0.25) 8px,
+    rgba(0, 0, 0, 0.25) 16px
+  );
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.15), 0 0 10px rgba(201, 162, 39, 0.2);
+}
+
+
+

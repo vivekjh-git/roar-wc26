@@ -1,0 +1,22 @@
+{
+  "name": "FIFA World Cup 2026",
+  "short_name": "WC2026",
+  "description": "FIFA World Cup 2026 - Live Scores, Groups, Fixtures & Stats",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#c9a227",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
