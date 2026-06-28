@@ -139,7 +139,7 @@ function BracketNode({
     ? `L${awayName.replace("Loser Match ", "")}`
     : awayName;
 
-  const timeOnly = formatTimeNPT(game.local_date, game.stadium_id);
+  const dateTime = formatMatchDateNPT(game.local_date, game.stadium_id);
 
   return (
     <div className="relative group">
@@ -205,8 +205,8 @@ function BracketNode({
 
         {/* Date/Time info */}
         {!finished && (
-          <div className="bg-black/30 px-1 py-0.5 text-[7px] font-bold text-gray-500 uppercase tracking-widest text-center border-t border-white/5">
-            {timeOnly.replace(" NPT", "")}
+           <div className="bg-black/30 px-1 py-0.5 text-[7px] font-bold text-gray-500 uppercase tracking-widest text-center border-t border-white/5">
+            {dateTime}
           </div>
         )}
       </div>
@@ -1073,8 +1073,10 @@ function MatchCarouselSection({
 
 export default function BracketTab({ games, teams, stadiums, onTeamClick }: BracketTabProps) {
   const [activeTab, setActiveTab] = useState<'today' | 'tomorrow' | 'upcoming'>('today');
-  const [viewType, setViewType] = useState<'visual' | 'list'>('visual');
+  const [viewType, setViewType] = useState<'tree' | 'fall'>('fall');
   const [startRound, setStartRound] = useState<'r32' | 'r16' | 'qf' | 'sf'>('r32');
+  // fallFilter: which round to start from in FALL (schedule) view
+  const [fallFilter, setFallFilter] = useState<'all' | 'r32' | 'r16' | 'qf' | 'sf' | 'final'>('all');
   const teamMap = useMemo(() => Object.fromEntries(teams.map((t) => [t.id, t])), [teams]);
   const stadiumMap = useMemo(() => Object.fromEntries((stadiums || []).map((s) => [s.id, s])), [stadiums]);
   const gameMap = useMemo(() => Object.fromEntries(games.map(g => [g.id, g])), [games]);
@@ -1146,26 +1148,41 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
     }
   };
 
+  // Stages filtered by fallFilter
+  const filteredStages = useMemo(() => {
+    const order = ['r32', 'r16', 'qf', 'sf', 'final', 'third'];
+    const filterOrder = ['r32', 'r16', 'qf', 'sf', 'final'];
+    const startIdx = fallFilter === 'all' ? 0 : filterOrder.indexOf(fallFilter);
+    const startKey = fallFilter === 'all' ? null : filterOrder[startIdx];
+    // Include all stages from the selected key onwards (final always includes third)
+    return stages.filter(s => {
+      if (fallFilter === 'all') return true;
+      const sIdx = order.indexOf(s.key);
+      const fIdx = order.indexOf(fallFilter === 'final' ? 'final' : fallFilter);
+      return sIdx >= fIdx;
+    });
+  }, [stages, fallFilter]);
+
   return (
     <div className="p-4 space-y-6">
-      {/* 1. News Marquee (Always on top) */}
+      {/* 1. News Marquee */}
       <NewsMarquee bulletins={newsBulletins} />
-      
-      {/* 2. Today / Tomorrow / Upcoming matches section (Always visible) */}
+
+      {/* 2. Today / Tomorrow / Upcoming tab bar */}
       <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-sm mx-auto shadow-inner">
-        <button 
+        <button
           onClick={() => setActiveTab('today')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
           <span className={activeTab === 'today' ? 'text-red-500 animate-pulse' : ''}>🔴</span> TDY
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('tomorrow')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'tomorrow' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
           <span>📅</span> TMR
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('upcoming')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'upcoming' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
@@ -1173,6 +1190,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
         </button>
       </div>
 
+      {/* 3. Carousel content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -1225,9 +1243,9 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
         </motion.div>
       </AnimatePresence>
 
-      {/* 3. Hero Stats Banner (Always visible) */}
+      {/* 4. Stats Banner — always visible */}
       <div
-        className="relative rounded-2xl overflow-hidden text-center py-6 px-4 mb-2 shadow-lg"
+        className="relative rounded-2xl overflow-hidden py-5 px-4 shadow-lg"
         style={{ background: "linear-gradient(135deg, #1a2744 0%, #0a0f1e 50%, #2a1a00 100%)" }}
       >
         <div className="absolute inset-0 opacity-10"
@@ -1260,70 +1278,82 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
         </div>
       </div>
 
-      {/* 4. Bracket / Schedule Toggle (Below Stats Banner) */}
-      <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-[280px] mx-auto shadow-inner">
-        <button 
-          onClick={() => setViewType('visual')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${viewType === 'visual' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
-        >
-          <span>🏆</span> Bracket
-        </button>
-        <button 
-          onClick={() => setViewType('list')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${viewType === 'list' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
-        >
-          <span>📅</span> Schedule
-        </button>
+      {/* 5. TREE / FALL toggle + round filter — below stats banner */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        {/* View toggle */}
+        <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 shadow-inner">
+          <button
+            onClick={() => setViewType('tree')}
+            className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-200 ${
+              viewType === 'tree'
+                ? 'bg-gradient-to-r from-yellow-500/20 to-yellow-400/10 text-yellow-400 border border-yellow-400/20 shadow'
+                : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            🌳 Tree
+          </button>
+          <button
+            onClick={() => setViewType('fall')}
+            className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-200 ${
+              viewType === 'fall'
+                ? 'bg-gradient-to-r from-orange-500/20 to-red-500/10 text-orange-400 border border-orange-400/20 shadow'
+                : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            🍂 Fall
+          </button>
+        </div>
+
+        {/* Round filter pills — always visible, applies to both views */}
+        <div className="flex items-center gap-1.5 bg-black/30 border border-white/5 rounded-xl px-2 py-1.5 shadow-inner">
+          {([
+            { key: 'all',   label: 'All' },
+            { key: 'r32',   label: 'R32' },
+            { key: 'r16',   label: 'R16' },
+            { key: 'qf',    label: 'QF' },
+            { key: 'sf',    label: 'SF' },
+            { key: 'final', label: 'Final' },
+          ] as const).map((r) => (
+            <button
+              key={r.key}
+              onClick={() => {
+                setFallFilter(r.key);
+                // Also sync startRound for tree view
+                if (r.key !== 'all' && r.key !== 'final') setStartRound(r.key);
+              }}
+              className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-150 ${
+                fallFilter === r.key
+                  ? 'bg-white/10 text-white shadow'
+                  : 'text-gray-600 hover:text-gray-400'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* 5. Toggled Bracket Content */}
+      {/* 6. TREE / FALL content */}
       <AnimatePresence mode="wait">
-        {viewType === 'visual' ? (
+        {viewType === 'tree' ? (
           <motion.div
-            key="visual-bracket"
+            key="tree-view"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="w-full overflow-hidden"
+            transition={{ duration: 0.25 }}
+            className="w-full"
           >
-            {/* Header Banner */}
-            <div className="flex flex-col items-center justify-center mb-6 text-center animate-fade-in">
-              <img src="/fifaworldcup_logo.svg" className="w-24 h-auto object-contain mb-2 select-none filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]" alt="FIFA World Cup 2026 Logo" />
-              <h2 className="text-2xl font-black tracking-tighter text-white uppercase sm:text-3xl gold-text">
-                2026 WORLD CUP BRACKET
-              </h2>
-              <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Nepal Standard Time (NPT)</p>
+            {/* Logo + title */}
+            <div className="flex flex-col items-center justify-center mb-4 text-center">
+              <img src="/fifaworldcup_logo.svg" className="w-16 h-auto object-contain mb-2 select-none filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]" alt="FIFA World Cup 2026 Logo" />
+              <h2 className="text-xl font-black tracking-tight text-white uppercase gold-text">2026 Knockout Bracket</h2>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">NPT — Nepal Standard Time</p>
             </div>
 
-            {/* Start Round Selection controls */}
-            <div className="flex flex-wrap justify-center items-center gap-2 mb-6">
-              <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Filter Round:</span>
-              <div className="flex bg-black/40 p-0.5 rounded-lg border border-white/5 shadow-inner">
-                {([
-                  { key: 'r32', label: 'R32' },
-                  { key: 'r16', label: 'R16' },
-                  { key: 'qf', label: 'QF' },
-                  { key: 'sf', label: 'SF' },
-                ] as const).map((r) => (
-                  <button
-                    key={r.key}
-                    onClick={() => setStartRound(r.key)}
-                    className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all ${
-                      startRound === r.key
-                        ? 'bg-white/10 text-yellow-400 font-bold shadow-sm'
-                        : 'text-gray-500 hover:text-gray-300'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative w-full overflow-x-auto rounded-3xl border border-white/5 bg-[#080d19]/40 backdrop-blur-md p-6 shadow-2xl select-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            {/* Scrollable tree */}
+            <div className="w-full overflow-x-auto rounded-2xl border border-white/5 bg-[#080d19]/50 backdrop-blur-md p-4 shadow-2xl select-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
               <div className={`flex gap-0 items-center justify-center mx-auto py-4 h-[675px] ${getMinWidthClass()}`}>
-                {/* Col 1: Left R32 */}
                 {startRound === 'r32' && (
                   <>
                     <div className="flex flex-col justify-around h-full animate-fade-in">
@@ -1339,8 +1369,6 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                     <ConnectorColR32ToR16 side="left" />
                   </>
                 )}
-
-                {/* Col 2: Left R16 */}
                 {(startRound === 'r32' || startRound === 'r16') && (
                   <>
                     <div className="flex flex-col justify-around h-full animate-fade-in">
@@ -1352,71 +1380,53 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                     <ConnectorColR16ToQF side="left" />
                   </>
                 )}
-
-                {/* Col 3: Left QF */}
                 {(startRound === 'r32' || startRound === 'r16' || startRound === 'qf') && (
                   <>
                     <div className="flex flex-col justify-around h-full animate-fade-in">
-                      <BracketNode gameId="97" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
-                      <BracketNode gameId="98" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
+                      <BracketNode gameId="97" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
+                      <BracketNode gameId="98" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
                     </div>
                     <ConnectorColQFToSF side="left" />
                   </>
                 )}
-
-                {/* Col 4: Left SF */}
                 <div className="flex flex-col justify-around h-full animate-fade-in">
-                  <BracketNode gameId="101" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Semi-final" />
+                  <BracketNode gameId="101" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="SF" />
                 </div>
-
-                {/* Connector 4: SF -> Final Left */}
                 <ConnectorColSFToFinal side="left" />
 
-                {/* Col 5: Center (Logo, Final, 3rd Place) */}
-                <div className="flex flex-col items-center justify-center gap-8 h-full w-[200px] relative animate-fade-in">
+                {/* Center: logo + Final + 3rd */}
+                <div className="flex flex-col items-center justify-center gap-6 h-full w-[180px] relative animate-fade-in">
                   <div className="text-center space-y-2">
-                    <div className="text-xs font-black uppercase tracking-widest text-yellow-400">The Final</div>
-                    <BracketNode gameId="104" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="🏆 Champion Match" />
+                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-yellow-400">The Final</div>
+                    <BracketNode gameId="104" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="🏆 Final" />
                   </div>
-                  
-                  {/* Circular Application Logo decoration */}
-                  <div className="relative py-2 flex flex-col items-center justify-center">
-                    <div className="absolute inset-0 bg-[#bc00dd]/10 blur-2xl rounded-full w-24 h-24 -z-10 animate-pulse" />
-                    <img 
-                      src="/tiger.png" 
-                      className="w-14 h-14 rounded-full object-cover border-2 border-yellow-400 shadow-2xl drop-shadow-[0_0_15px_rgba(250,204,21,0.35)] select-none animate-bounce-slow" 
-                      alt="Roar WC26 Logo" 
+                  <div className="relative flex flex-col items-center">
+                    <div className="absolute inset-0 bg-[#bc00dd]/10 blur-2xl rounded-full -z-10 animate-pulse" />
+                    <img
+                      src="/tiger.png"
+                      className="w-14 h-14 rounded-full object-cover border-2 border-yellow-400 shadow-2xl drop-shadow-[0_0_15px_rgba(250,204,21,0.35)] select-none animate-bounce-slow"
+                      alt="Roar WC26"
                     />
                   </div>
-
                   <div className="text-center space-y-2">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">3rd Place Match</div>
-                    <BracketNode gameId="103" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Third Place" />
+                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">3rd Place</div>
+                    <BracketNode gameId="103" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="3rd" />
                   </div>
                 </div>
 
-                {/* Connector 4: Final -> SF Right */}
                 <ConnectorColSFToFinal side="right" />
-
-                {/* Col 6: Right SF */}
                 <div className="flex flex-col justify-around h-full animate-fade-in">
-                  <BracketNode gameId="102" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Semi-final" />
+                  <BracketNode gameId="102" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="SF" />
                 </div>
-
-                {/* Connector 3: SF -> QF Right */}
-                {/* Col 7: Right QF */}
                 {(startRound === 'r32' || startRound === 'r16' || startRound === 'qf') && (
                   <>
                     <ConnectorColQFToSF side="right" />
                     <div className="flex flex-col justify-around h-full animate-fade-in">
-                      <BracketNode gameId="99" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
-                      <BracketNode gameId="100" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="Quarter-final" />
+                      <BracketNode gameId="99" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
+                      <BracketNode gameId="100" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
                     </div>
                   </>
                 )}
-
-                {/* Connector 2: QF -> R16 Right */}
-                {/* Col 8: Right R16 */}
                 {(startRound === 'r32' || startRound === 'r16') && (
                   <>
                     <ConnectorColR16ToQF side="right" />
@@ -1428,9 +1438,6 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                     </div>
                   </>
                 )}
-
-                {/* Connector 1: R16 -> R32 Right */}
-                {/* Col 9: Right R32 */}
                 {startRound === 'r32' && (
                   <>
                     <ConnectorColR32ToR16 side="right" />
@@ -1450,47 +1457,63 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
             </div>
           </motion.div>
         ) : (
+          /* FALL — colour-coded schedule with round filter */
           <motion.div
-            key="list-schedule"
+            key="fall-view"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-6 animate-fade-in"
+            transition={{ duration: 0.25 }}
+            className="space-y-8"
           >
-            {/* Bracket stages */}
-            {stages.map((stage) => (
-              <section key={stage.key}>
-                <div className="flex items-center gap-3 mb-3">
-                  <h3 className="text-sm font-bold text-yellow-400">{stage.label}</h3>
-                  <div className="flex-1 h-px bg-yellow-400/20"></div>
-                  <span className="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{stage.games.length} matches</span>
-                </div>
-
-                <motion.div
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="show"
-                  viewport={{ once: true }}
-                  className={
-                    stage.key === "final" || stage.key === "sf" ? "grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto" :
-                    stage.key === "r32" || stage.key === "r16" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2" :
-                    "grid grid-cols-2 sm:grid-cols-2 gap-3"
-                  }
-                >
-                  {stage.games.map((game) => (
-                    <MatchCard
-                      key={game.id}
-                      game={game}
-                      teamMap={teamMap}
-                      stadiumMap={stadiumMap}
-                      onTeamClick={onTeamClick}
-                      compact={stage.key === "r32" || stage.key === "r16"}
-                    />
-                  ))}
-                </motion.div>
-              </section>
-            ))}
+            {filteredStages.map((stage) => {
+              const stageColors: Record<string, { accent: string; glow: string; badge: string }> = {
+                r32:   { accent: 'text-gray-400',    glow: 'from-gray-800/50',    badge: 'bg-gray-700/60 text-gray-300 border border-gray-600/30' },
+                r16:   { accent: 'text-blue-400',    glow: 'from-blue-900/40',    badge: 'bg-blue-900/60 text-blue-300 border border-blue-700/30' },
+                qf:    { accent: 'text-purple-400',  glow: 'from-purple-900/40',  badge: 'bg-purple-900/60 text-purple-300 border border-purple-700/30' },
+                sf:    { accent: 'text-orange-400',  glow: 'from-orange-900/40',  badge: 'bg-orange-900/60 text-orange-300 border border-orange-700/30' },
+                final: { accent: 'text-yellow-400',  glow: 'from-yellow-900/50',  badge: 'bg-yellow-900/60 text-yellow-300 border border-yellow-600/30' },
+                third: { accent: 'text-emerald-400', glow: 'from-emerald-900/40', badge: 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/30' },
+              };
+              const c = stageColors[stage.key] ?? stageColors.r32;
+              return (
+                <section key={stage.key}>
+                  <div className={`flex items-center gap-3 mb-4 rounded-xl px-4 py-2.5 bg-gradient-to-r ${c.glow} to-transparent border border-white/5`}>
+                    <h3 className={`text-sm font-black uppercase tracking-wider ${c.accent}`}>{stage.label}</h3>
+                    <div className="flex-1 h-px bg-white/5" />
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.badge}`}>
+                      {stage.games.length} matches
+                    </span>
+                  </div>
+                  <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    viewport={{ once: true }}
+                    className={
+                      stage.key === 'final'
+                        ? 'grid grid-cols-1 max-w-sm mx-auto gap-3'
+                        : stage.key === 'sf' || stage.key === 'third'
+                        ? 'grid grid-cols-1 sm:grid-cols-2 gap-3'
+                        : stage.key === 'qf'
+                        ? 'grid grid-cols-1 sm:grid-cols-2 gap-3'
+                        : 'grid grid-cols-2 sm:grid-cols-4 gap-2'
+                    }
+                  >
+                    {stage.games.map((game) => (
+                      <MatchCard
+                        key={game.id}
+                        game={game}
+                        teamMap={teamMap}
+                        stadiumMap={stadiumMap}
+                        onTeamClick={onTeamClick}
+                        compact={stage.key === 'r32' || stage.key === 'r16'}
+                      />
+                    ))}
+                  </motion.div>
+                </section>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
