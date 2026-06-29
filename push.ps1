@@ -70,8 +70,8 @@ if ($LASTEXITCODE -ne 0) {
 
 # 6. Re-alias roarfifa.vercel.app to the latest production deployment
 Write-Step "Aliasing latest deployment -> roarfifa.vercel.app..."
-# In Vercel CLI, we can just assign the domain to the project itself
-npx vercel domains add roarfifa.vercel.app
+# In Vercel CLI, we map the subdomain alias using vercel alias
+npx vercel alias set roarfifa.vercel.app
 if ($LASTEXITCODE -eq 0) {
     Write-Success "roarfifa.vercel.app is bound to production"
 } else {
