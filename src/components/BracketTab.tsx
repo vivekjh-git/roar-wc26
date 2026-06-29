@@ -562,12 +562,15 @@ function MatchTrackerView({
   const [isFarAhead, setIsFarAhead] = useState(false);
 
   useEffect(() => {
-    if (!isPending) {
-      setIsFarAhead(false);
-      return;
-    }
-    const matchDate = parseMatchDate(game.local_date, game.stadium_id);
-    setIsFarAhead((matchDate.getTime() - Date.now()) > 60 * 60 * 1000);
+    const timer = setTimeout(() => {
+      if (!isPending) {
+        setIsFarAhead(false);
+        return;
+      }
+      const matchDate = parseMatchDate(game.local_date, game.stadium_id);
+      setIsFarAhead((matchDate.getTime() - Date.now()) > 60 * 60 * 1000);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [isPending, game.local_date, game.stadium_id]);
 
   return (
@@ -1367,34 +1370,52 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
 
       {/* 4. Stats Banner — always visible */}
       <div
-        className="relative rounded-2xl overflow-hidden py-5 px-4 shadow-lg"
-        style={{ background: "linear-gradient(135deg, #1a2744 0%, #0a0f1e 50%, #2a1a00 100%)" }}
+        className="relative rounded-2xl overflow-hidden py-5 px-5 shadow-lg border border-white/5"
+        style={{ 
+          background: "linear-gradient(135deg, #111a30 0%, #060a14 100%)",
+          boxShadow: "inset 0 1.5px 0px rgba(255, 255, 255, 0.1), 0 12px 30px rgba(0, 0, 0, 0.6)"
+        }}
       >
-        <div className="absolute inset-0 opacity-10"
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
           style={{ backgroundImage: "url(/wc-hero.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}
         />
         <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 text-left">
-            <div className="text-5xl animate-bounce-slow">🏆</div>
+          <div className="flex items-center gap-3.5 text-left">
+            <div className="w-12 h-12 flex items-center justify-center bg-black/20 rounded-xl p-1 border border-white/5 shadow-inner">
+              <img src="/fifaworldcup_logo.svg" alt="FIFA Cup" className="w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]" />
+            </div>
             <div>
-              <h2 className="text-lg font-black gold-text leading-tight">FIFA WORLD CUP 2026</h2>
-              <p className="text-[10px] text-gray-400 mt-1">Nepal Standard Time (NPT)</p>
+              <h2 className="text-sm sm:text-base font-black gold-text leading-tight tracking-wide">FIFA WORLD CUP 2026</h2>
+              <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1">Nepal Standard Time (NPT)</p>
             </div>
           </div>
-          <div className="flex gap-3">
-            <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
-              <div className="text-yellow-400 font-black text-lg">{games.filter((g) => g.finished === "TRUE").length}</div>
-              <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Played</div>
+          <div className="flex gap-2.5">
+            <div className="bg-black/40 backdrop-blur rounded-xl p-2 sm:p-2.5 min-w-[72px] sm:min-w-[80px] text-center border border-white/5 flex flex-col items-center justify-center shadow-inner">
+              <svg className="w-4 h-4 text-yellow-500/90 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-yellow-400 font-black text-base leading-none">{games.filter((g) => g.finished === "TRUE").length}</div>
+              <div className="text-gray-500 text-[8px] font-black uppercase tracking-wider mt-1">Played</div>
             </div>
-            <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
-              <div className="text-blue-400 font-black text-lg">{games.filter((g) => g.finished !== "TRUE").length}</div>
-              <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Rem</div>
+            <div className="bg-black/40 backdrop-blur rounded-xl p-2 sm:p-2.5 min-w-[72px] sm:min-w-[80px] text-center border border-white/5 flex flex-col items-center justify-center shadow-inner">
+              <svg className="w-4 h-4 text-blue-400/90 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-blue-400 font-black text-base leading-none">{games.filter((g) => g.finished !== "TRUE").length}</div>
+              <div className="text-gray-500 text-[8px] font-black uppercase tracking-wider mt-1">Rem</div>
             </div>
-            <div className="bg-black/30 backdrop-blur rounded-lg p-2 min-w-[65px] text-center border border-white/5">
-              <div className="text-green-400 font-black text-lg">
+            <div className="bg-black/40 backdrop-blur rounded-xl p-2 sm:p-2.5 min-w-[72px] sm:min-w-[80px] text-center border border-white/5 flex flex-col items-center justify-center shadow-inner">
+              <svg className="w-4 h-4 text-orange-500/90 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <circle cx="12" cy="12" r="10" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m12 2-2 4 4 0-2-4Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m10 6-4 2 2 3.5 2-5.5Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m14 6 4 2-2 3.5-2-5.5Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m8 11.5 2 4.5h4l2-4.5-2-3.5h-4l-2 3.5Z" />
+              </svg>
+              <div className="text-orange-500 font-black text-base leading-none">
                 {games.filter((g) => g.finished === "TRUE").reduce((sum, g) => sum + (parseInt(g.home_score) || 0) + (parseInt(g.away_score) || 0), 0)}
               </div>
-              <div className="text-gray-500 text-[8px] font-bold uppercase tracking-wider">Goals</div>
+              <div className="text-gray-500 text-[8px] font-black uppercase tracking-wider mt-1">Goals</div>
             </div>
           </div>
         </div>
