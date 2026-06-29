@@ -60,22 +60,31 @@ if (-not $status) {
     Write-Success "Pushed to GitHub"
 }
 
-# 5. Deploy to Vercel production
+# 5. Deploy to Vercel production — capture the deployment URL
 Write-Step "Deploying to Vercel (production)..."
-npx vercel --prod --yes
+$deployOutput = npx vercel --prod --yes 2>&1
+$deployOutput | ForEach-Object { Write-Host $_ }
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "Vercel deployment failed."
     exit 1
 }
 
-# 6. Re-alias roarfifa.vercel.app to the latest production deployment
-Write-Step "Aliasing latest deployment -> roarfifa.vercel.app..."
-# In Vercel CLI, we map the subdomain alias using vercel alias
-npx vercel alias set roarfifa.vercel.app
-if ($LASTEXITCODE -eq 0) {
-    Write-Success "roarfifa.vercel.app is bound to production"
+# Extract the new deployment URL (e.g. roarfifa-xxxxxxxx-vivek-jh.vercel.app)
+$newDeployUrl = ($deployOutput | Select-String -Pattern "https://(roarfifa-[^\s]+\.vercel\.app)" | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -First 1)
+
+if (-not $newDeployUrl) {
+    Write-Fail "Could not detect new deployment URL. Skipping alias."
 } else {
-    Write-Host "  Note: domain binding skipped or already applied." -ForegroundColor Yellow
+    Write-Success "New deployment URL: $newDeployUrl"
+
+    # 6. Re-alias roarfifa.vercel.app to the exact new deployment URL
+    Write-Step "Aliasing $newDeployUrl -> roarfifa.vercel.app..."
+    npx vercel alias set $newDeployUrl roarfifa.vercel.app
+    if ($LASTEXITCODE -eq 0) {
+        Write-Success "roarfifa.vercel.app now points to $newDeployUrl"
+    } else {
+        Write-Fail "Alias failed. Run manually: vercel alias set $newDeployUrl roarfifa.vercel.app"
+    }
 }
 
 Write-Host ""
