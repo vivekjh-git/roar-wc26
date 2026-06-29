@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Game } from "@/lib/api";
 import CountdownWidget from "./CountdownWidget";
 import { formatTimeNPT } from "@/lib/date-utils";
+import Image from "next/image";
 
 interface HeaderProps {
   activeTab: string;
@@ -54,28 +55,28 @@ export default function Header({ activeTab, onTabChange, onRefresh, loading, gam
           className="flex items-center gap-2 shrink-0 cursor-pointer hover:opacity-80 active:scale-95 transition-all duration-150"
           aria-label="Go to home"
         >
-          <div className="relative w-9 h-9 flex-shrink-0 rounded-full bg-neutral-950 border border-[#ff5e00]/40 overflow-hidden flex items-center justify-center shadow-[0_0_8px_rgba(255,94,0,0.35)]">
-            <img src="/tiger.png" alt="logo" className="w-10 h-10 object-contain scale-110 select-none" />
+          <div className="relative w-9 h-9 shrink-0 rounded-full bg-neutral-950 border border-[#ff5e00]/40 overflow-hidden flex items-center justify-center shadow-[0_0_8px_rgba(255,94,0,0.35)]">
+            <Image src="/tiger.png" alt="logo" width={40} height={40} className="w-10 h-10 object-contain scale-110 select-none" />
             {loading && (
               <span className="absolute inset-0 border border-[#ff5e00] border-t-transparent rounded-full animate-spin z-10" />
             )}
           </div>
           <div className="flex flex-col min-w-0">
-            <h1 className="text-xs sm:text-sm font-black gold-text leading-tight tracking-wide whitespace-nowrap flex-shrink-0">FIFA WORLD CUP 2026</h1>
-            <p className="text-[8px] sm:text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-0.5 whitespace-nowrap flex-shrink-0">USA · Canada · Mexico</p>
+            <h1 className="text-xs sm:text-sm font-black gold-text leading-tight tracking-wide whitespace-nowrap shrink-0">FIFA WORLD CUP 2026</h1>
+            <p className="text-[8px] sm:text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-0.5 whitespace-nowrap shrink-0">USA · Canada · Mexico</p>
           </div>
         </button>
         
         {/* Controls Section */}
-        <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {games && games.length > 0 && (
             <div className="hidden md:block">
               <CountdownWidget games={games} />
             </div>
           )}
           
-          <div className="flex items-center gap-1 bg-black/40 border border-white/5 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 shadow-inner flex-shrink-0">
-            <svg className="w-3 h-3 text-[#ff5e00] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <div className="flex items-center gap-1 bg-black/40 border border-white/5 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 shadow-inner shrink-0">
+            <svg className="w-3 h-3 text-[#ff5e00] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className="text-[9px] sm:text-[10px] font-black text-gray-300 tabular-nums tracking-wider uppercase">{nptTime}</span>
@@ -97,7 +98,7 @@ export default function Header({ activeTab, onTabChange, onRefresh, loading, gam
           {/* Hamburger Menu Button */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="sm:hidden w-7 h-7 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/5 shadow-inner text-gray-400 hover:text-[#ff5e00] flex-shrink-0"
+            className="sm:hidden w-7 h-7 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/5 shadow-inner text-gray-400 hover:text-[#ff5e00] shrink-0"
             title="Toggle Menu"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -125,33 +126,33 @@ export default function Header({ activeTab, onTabChange, onRefresh, loading, gam
             >
               {/* Flat SVG Icon */}
               {tab.id === "bracket" && (
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0V3.75m-9 15V3.75m9 0A3.75 3.75 0 0012 0a3.75 3.75 0 00-3.75 3.75" />
                 </svg>
               )}
               {tab.id === "fixtures" && (
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                 </svg>
               )}
               {tab.id === "groups" && (
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25A2.25 2.25 0 0113.5 8.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                 </svg>
               )}
               {tab.id === "scorers" && (
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <circle cx="12" cy="12" r="10" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20M2 12h20M12 12l4.5-4.5M12 12l-4.5 4.5M12 12l4.5 4.5M12 12l-4.5-4.5" />
                 </svg>
               )}
               {tab.id === "records" && (
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
                 </svg>
               )}
               {tab.id === "popularity" && (
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
                 </svg>
               )}

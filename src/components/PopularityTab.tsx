@@ -305,7 +305,7 @@ export default function PopularityTab({ data }: PopularityTabProps) {
                 {mostDramatic.away_team_name_en || "?"}
               </div>
               <div className="text-[10px] text-gray-400 mt-1">
-                {(parseInt(mostDramatic.home_score) || 0) + (parseInt(mostDramatic.away_score) || 0)} total goals
+                {(Number.parseInt(mostDramatic.home_score) || 0) + (Number.parseInt(mostDramatic.away_score) || 0)} total goals
               </div>
             </div>
           )}
@@ -314,12 +314,12 @@ export default function PopularityTab({ data }: PopularityTabProps) {
             <div className="glass-card rounded-xl p-4 border border-red-500/20 bg-red-500/5">
               <div className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1.5">💥 Biggest Win</div>
               <div className="text-sm font-black text-white leading-snug">
-                {(parseInt(biggestWin.home_score) || 0) > (parseInt(biggestWin.away_score) || 0)
+                {(Number.parseInt(biggestWin.home_score) || 0) > (Number.parseInt(biggestWin.away_score) || 0)
                   ? biggestWin.home_team_name_en
                   : biggestWin.away_team_name_en}
               </div>
               <div className="text-[10px] text-gray-400 mt-1">
-                {biggestWin.home_score}–{biggestWin.away_score} ({Math.abs((parseInt(biggestWin.home_score) || 0) - (parseInt(biggestWin.away_score) || 0))}-goal margin)
+                {biggestWin.home_score}–{biggestWin.away_score} ({Math.abs((Number.parseInt(biggestWin.home_score) || 0) - (Number.parseInt(biggestWin.away_score) || 0))}-goal margin)
               </div>
             </div>
           )}

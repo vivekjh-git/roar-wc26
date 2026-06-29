@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AllData } from "@/app/page";
 import { 
@@ -196,12 +196,13 @@ function ContributorsList({ list, expanded, variants, onPlayerClick }: Readonly<
             <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
             <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
-              <div 
+              <button 
+                type="button"
                 onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
-                className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block max-w-full"
+                className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
-              </div>
+              </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} • {item.goals}G ({item.penaltyGoals}P)</div>
             </div>
             <div className="text-right flex-shrink-0 text-cyan-400 text-sm font-extrabold">{item.score} <span className="text-[9px] text-gray-500 font-normal">pts</span></div>
@@ -225,12 +226,13 @@ function GoalsRatioList({ list, expanded, variants, onPlayerClick }: Readonly<{ 
             <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
             <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
-              <div 
+              <button 
+                type="button"
                 onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
-                className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block max-w-full"
+                className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
-              </div>
+              </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} • {item.goals} goals in {item.games} games</div>
             </div>
             <div className="text-right flex-shrink-0 text-green-400 text-sm font-extrabold">{item.ratio.toFixed(2)}</div>
@@ -278,12 +280,13 @@ function OwnGoalsList({ list, expanded, variants, onPlayerClick }: Readonly<{ li
             <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} medals={["🔴", "🔴", "🔴"]} /></div>
             <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
-              <div 
+              <button 
+                type="button"
                 onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
-                className="font-bold text-red-400 text-sm hover:underline cursor-pointer transition-colors truncate inline-block max-w-full"
+                className="font-bold text-red-400 text-sm hover:underline cursor-pointer transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
-              </div>
+              </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} {item.matchInfos.join(", ")}</div>
             </div>
             <div className="text-right flex-shrink-0 text-red-400 text-sm font-extrabold">{item.ownGoals}</div>
@@ -307,12 +310,13 @@ function PenaltiesList({ list, expanded, variants, onPlayerClick }: Readonly<{ l
             <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
             <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
-              <div 
+              <button 
+                type="button"
                 onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
-                className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block max-w-full"
+                className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
-              </div>
+              </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName}</div>
             </div>
             <div className="text-right flex-shrink-0 text-white text-sm font-extrabold">{item.penalties}</div>
