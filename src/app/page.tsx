@@ -224,7 +224,7 @@ export default function HomePage() {
                 <RecordsTab records={data.expandedRecords || data.records} />
               )}
               {activeTab === "popularity" && (
-                <PopularityTab popularity={data.popularity} />
+                <PopularityTab data={data} />
               )}
             </motion.div>
           </AnimatePresence>

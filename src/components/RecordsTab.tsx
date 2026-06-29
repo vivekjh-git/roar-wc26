@@ -82,15 +82,15 @@ export default function RecordsTab({ records }: RecordsTabProps) {
       </div>
 
       {/* Category Filters */}
-      <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-4 px-4 snap-x">
+      <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide snap-x px-0.5">
         {RECORD_CATEGORIES.map(cat => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className={`flex items-center px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap snap-start transition-colors border ${
+            className={`flex items-center px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap snap-start transition-all border ${
               activeCategory === cat 
-                ? "bg-[#ff5e00] text-white border-[#ff5e00] shadow-[0_0_10px_rgba(255,94,0,0.3)]" 
-                : "bg-white/5 text-gray-400 border-white/10 hover:text-white"
+                ? "bg-[#ff5e00]/10 text-orange-300 border-[#ff5e00] shadow-[0_0_12px_rgba(255,94,0,0.4)]" 
+                : "bg-white/5 text-gray-400 border-white/10 hover:text-white hover:bg-white/10"
             }`}
           >
             {cat}
