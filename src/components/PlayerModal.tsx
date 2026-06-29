@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Team, Game } from "@/lib/api";
 import { parseScorers } from "@/lib/api";
@@ -27,6 +27,17 @@ interface MatchScoredInfo {
 
 export default function PlayerModal({ playerName, teamId, games, teams, onClose }: PlayerModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  
+  const primarySrc = getPlayerImageUrl(playerName);
+  const fallbackSrc = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(playerName)}&backgroundColor=0d1526&textColor=ff5e00`;
+  
+  const [avatarSrc, setAvatarSrc] = useState(primarySrc);
+  const [prevPlayerName, setPrevPlayerName] = useState(playerName);
+
+  if (playerName !== prevPlayerName) {
+    setPrevPlayerName(playerName);
+    setAvatarSrc(primarySrc);
+  }
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -211,8 +222,13 @@ export default function PlayerModal({ playerName, teamId, games, teams, onClose 
             <div className="flex items-center gap-4 relative z-10">
               <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
                 <img
-                  src={getPlayerImageUrl(playerName)}
+                  src={avatarSrc}
                   alt={playerName}
+                  onError={() => {
+                    if (avatarSrc !== fallbackSrc) {
+                      setAvatarSrc(fallbackSrc);
+                    }
+                  }}
                   className="w-full h-full rounded-full object-cover bg-black/40 border border-yellow-500/30 shadow-[0_0_15px_rgba(255,94,0,0.15)]"
                 />
                 {playerTeam?.flag && (

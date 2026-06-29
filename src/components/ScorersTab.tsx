@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AllData } from "@/app/page";
 import { 
@@ -122,11 +122,27 @@ function FlagImage({ src, alt }: { src: string, alt: string }) {
 }
 
 function PlayerAvatar({ name, flag, teamName }: { name: string, flag: string, teamName: string }) {
+  const primarySrc = getPlayerImageUrl(name);
+  const fallbackSrc = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0d1526&textColor=ff5e00`;
+  
+  const [src, setSrc] = useState(primarySrc);
+  const [prevName, setPrevName] = useState(name);
+
+  if (name !== prevName) {
+    setPrevName(name);
+    setSrc(primarySrc);
+  }
+
   return (
     <div className="relative w-8 h-8 flex-shrink-0">
       <img
-        src={getPlayerImageUrl(name)}
+        src={src}
         alt={name}
+        onError={() => {
+          if (src !== fallbackSrc) {
+            setSrc(fallbackSrc);
+          }
+        }}
         className="w-full h-full rounded-full object-cover bg-black/40 border border-white/10"
       />
       {flag && (

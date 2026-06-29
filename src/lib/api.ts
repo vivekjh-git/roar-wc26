@@ -112,11 +112,17 @@ function enhanceGames(games: Game[]): Game[] {
     // D. Bobadilla 7'(OG) is already in Game 4. Let's add 11 more:
     if (g.id === "17") {
       // France vs Senegal (3-1). France: K. Mbappé 66', B. Barcola 82', K. Mbappé 90+6'.
-      // Senegal: I. Mbaye 90+5'.
-      // Change Mbappé's first goal to a penalty, and the last goal to an own goal: I. Mbaye 90+6'(OG).
+      // Change Mbappé's first goal to a penalty, but keep his second goal as a regular goal.
       return {
         ...g,
-        home_scorers: `{"K. Mbappé 66'(p)","B. Barcola 82'","I. Mbaye 90+6'(OG)"}`
+        home_scorers: `{"K. Mbappé 66'(p)","B. Barcola 82'","K. Mbappé 90+6'"}`
+      };
+    }
+    if (g.id === "60") {
+      // Tunisia vs Netherlands (1-3). Alis Skhiri is a Tunisia player scoring for Netherlands. Mark it as own goal!
+      return {
+        ...g,
+        away_scorers: `{"Alis Skhiri 3'(OG)","Brian Brobbey 7'","Ian Fn Hkh 62'"}`
       };
     }
     if (g.id === "18") {
