@@ -60,20 +60,28 @@ if (-not $status) {
     Write-Success "Pushed to GitHub"
 }
 
-# 5. Deploy to Vercel production — capture the deployment URL
+# 5. Deploy to Vercel production — capture the deployment URL via temp file
 Write-Step "Deploying to Vercel (production)..."
-$deployOutput = npx vercel --prod --yes 2>&1
-$deployOutput | ForEach-Object { Write-Host $_ }
+$tmpOut = [System.IO.Path]::GetTempFileName()
+$ErrorActionPreference = "Continue"
+npx vercel --prod --yes | Tee-Object -FilePath $tmpOut
+$ErrorActionPreference = "Stop"
 if ($LASTEXITCODE -ne 0) {
+    Remove-Item $tmpOut -Force -ErrorAction SilentlyContinue
     Write-Fail "Vercel deployment failed."
     exit 1
 }
 
 # Extract the new deployment URL (e.g. roarfifa-xxxxxxxx-vivek-jh.vercel.app)
-$newDeployUrl = ($deployOutput | Select-String -Pattern "https://(roarfifa-[^\s]+\.vercel\.app)" | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -First 1)
+$deployContent = Get-Content $tmpOut -Raw
+Remove-Item $tmpOut -Force -ErrorAction SilentlyContinue
+
+$matchResult = [regex]::Match($deployContent, "https://(roarfifa-[^\s]+\.vercel\.app)")
+$newDeployUrl = if ($matchResult.Success) { $matchResult.Groups[1].Value } else { $null }
 
 if (-not $newDeployUrl) {
-    Write-Fail "Could not detect new deployment URL. Skipping alias."
+    Write-Host "  Could not auto-detect deployment URL. Aliasing from project default..." -ForegroundColor Yellow
+    npx vercel alias roarfifa.vercel.app
 } else {
     Write-Success "New deployment URL: $newDeployUrl"
 
