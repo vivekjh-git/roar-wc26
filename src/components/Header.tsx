@@ -45,8 +45,15 @@ export default function Header({ activeTab, onTabChange, onRefresh, loading, gam
     <header className="sticky top-0 z-50 bg-[#0a0f1e]/80 backdrop-blur-xl border-b border-yellow-500/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
       {/* Top bar */}
       <div className="flex items-center justify-between px-3 py-2 sm:px-4">
-        {/* Brand Section */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Brand Section — tap to go home */}
+        <button
+          onClick={() => {
+            onTabChange("bracket");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="flex items-center gap-2 flex-shrink-0 cursor-pointer hover:opacity-80 active:scale-95 transition-all duration-150"
+          aria-label="Go to home"
+        >
           <div className="relative w-9 h-9 flex-shrink-0 rounded-full bg-neutral-950 border border-[#ff5e00]/40 overflow-hidden flex items-center justify-center shadow-[0_0_8px_rgba(255,94,0,0.35)]">
             <img src="/tiger.png" alt="logo" className="w-10 h-10 object-contain scale-110 select-none" />
             {loading && (
@@ -57,7 +64,7 @@ export default function Header({ activeTab, onTabChange, onRefresh, loading, gam
             <h1 className="text-xs sm:text-sm font-black gold-text leading-tight tracking-wide whitespace-nowrap flex-shrink-0">FIFA WORLD CUP 2026</h1>
             <p className="text-[8px] sm:text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-0.5 whitespace-nowrap flex-shrink-0">USA · Canada · Mexico</p>
           </div>
-        </div>
+        </button>
         
         {/* Controls Section */}
         <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
