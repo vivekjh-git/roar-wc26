@@ -30,13 +30,13 @@ const containerVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.05 }
+    transition: { duration: 0.1 }
   }
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 15, scale: 0.95 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.12, ease: "easeOut" as const } }
 };
 
 export default function GroupsTab({ groups, teams, games, onTeamClick }: GroupsTabProps) {
@@ -122,7 +122,7 @@ export default function GroupsTab({ groups, teams, games, onTeamClick }: GroupsT
 
               if (viewMode === "compact") {
                 return (
-                  <motion.div layout variants={itemVariants} key={group.name} className="glass-card rounded-lg border border-white/5 p-2 flex flex-col md:flex-row md:items-center gap-3">
+                  <motion.div variants={itemVariants} key={group.name} className="glass-card rounded-lg border border-white/5 p-2 flex flex-col md:flex-row md:items-center gap-3">
                     <div className="w-16 flex-shrink-0 flex items-center justify-center border-r border-white/10">
                       <span className="font-bold text-yellow-400 text-lg">{group.name}</span>
                     </div>
@@ -152,7 +152,6 @@ export default function GroupsTab({ groups, teams, games, onTeamClick }: GroupsT
 
               return (
                 <motion.div
-                  layout
                   variants={itemVariants}
                   key={group.name}
                   className={`rounded-xl border bg-gradient-to-br ${colorClass} overflow-hidden shadow-lg`}

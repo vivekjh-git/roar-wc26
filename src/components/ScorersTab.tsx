@@ -121,37 +121,17 @@ function FlagImage({ src, alt }: { src: string, alt: string }) {
   return <div className="w-6 h-4.5 bg-gray-700 rounded flex-shrink-0" />;
 }
 
+import CachedPlayerImage from "./CachedPlayerImage";
+
 function PlayerAvatar({ name, flag, teamName }: { name: string, flag: string, teamName: string }) {
-  const primarySrc = getPlayerImageUrl(name);
-  const fallbackSrc = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0d1526&textColor=ff5e00`;
-  
-  const [src, setSrc] = useState(primarySrc);
-  const [prevName, setPrevName] = useState(name);
-
-  if (name !== prevName) {
-    setPrevName(name);
-    setSrc(primarySrc);
-  }
-
   return (
     <div className="relative w-8 h-8 flex-shrink-0">
-      <img
-        src={src}
-        alt={name}
-        onError={() => {
-          if (src !== fallbackSrc) {
-            setSrc(fallbackSrc);
-          }
-        }}
+      <CachedPlayerImage
+        playerName={name}
+        flag={flag}
+        teamName={teamName}
         className="w-full h-full rounded-full object-cover bg-black/40 border border-white/10"
       />
-      {flag && (
-        <img
-          src={flag}
-          alt={teamName}
-          className="absolute -bottom-0.5 -right-0.5 w-4 h-3 object-cover rounded-sm border border-black/40 shadow-sm"
-        />
-      )}
     </div>
   );
 }

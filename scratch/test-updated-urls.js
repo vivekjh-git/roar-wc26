@@ -1,32 +1,32 @@
 const testUrls = async () => {
   const ids = {
     "Lionel Messi": "45843",
-    "Kylian Mbappé": "235777",
-    "Ousmane Dembélé": "233049",
-    "Erling Haaland": "246077",
-    "Vinícius Júnior": "243265",
-    "Deniz Undav": "296719",
-    "Brian Brobbey": "279862",
-    "Ismaïla Sarr": "232470",
-    "Harry Kane": "208638",
+    "Kylian Mbappé": "295513",
+    "Ousmane Dembélé": "232490",
+    "Erling Haaland": "261564",
+    "Vinícius Júnior": "238717",
+    "Deniz Undav": "268688",
+    "Brian Brobbey": "265814",
+    "Ismaïla Sarr": "233044",
+    "Harry Kane": "208333",
     "Cristiano Ronaldo": "22774",
-    "Kevin De Bruyne": "156688",
-    "Neymar": "132205",
-    "Jude Bellingham": "304221",
-    "Bukayo Saka": "233075",
-    "Antoine Griezmann": "182513",
-    "Cody Gakpo": "296766",
-    "Kai Havertz": "234796",
-    "Jamal Musiala": "317377",
-    "Lautaro Martínez": "240751",
-    "Christian Pulisic": "222168",
-    "Santiago Giménez": "296531",
-    "Alphonso Davies": "238712",
-    "Ollie Watkins": "234731",
-    "Crysencio Summerville": "279822"
+    "Kevin De Bruyne": "172969",
+    "Neymar": "132923",
+    "Jude Bellingham": "296726",
+    "Bukayo Saka": "241857",
+    "Antoine Griezmann": "125795",
+    "Cody Gakpo": "263595",
+    "Jamal Musiala": "296547",
+    "Kai Havertz": "238711",
+    "Lautaro Martínez": "237699",
+    "Christian Pulisic": "214478",
+    "Santiago Giménez": "257497",
+    "Alphonso Davies": "238744",
+    "Ollie Watkins": "214953",
+    "Crysencio Summerville": "261074"
   };
 
-  console.log("Starting HEAD check for all updated player IDs...");
+  console.log("Checking updated ESPN IDs...");
   for (const [name, id] of Object.entries(ids)) {
     const url = `https://a.espncdn.com/combiner/i?img=/i/headshots/soccer/players/full/${id}.png`;
     try {
