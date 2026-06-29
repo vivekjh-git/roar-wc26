@@ -831,14 +831,13 @@ function FeaturedLiveCard({
   }
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border shadow-lg w-full h-full flex flex-col transition-all duration-300 ${
-      isActive 
-        ? "border-[#ff5e00] shadow-[0_0_15px_rgba(255,94,0,0.35)]" 
-        : isLive 
-          ? "border-red-500/50" 
-          : "border-white/10"
+    <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border w-full h-full flex flex-col transition-all duration-300 ${
+      isLive ? "border-red-500/50" : "border-white/10"
     }`}
-      style={{ background: isLive ? "linear-gradient(135deg, #180303 0%, #020307 100%)" : "linear-gradient(135deg, #050a18 0%, #010205 100%)" }}
+      style={{ 
+        background: isLive ? "linear-gradient(135deg, #381212 0%, #150505 100%)" : "linear-gradient(135deg, #162440 0%, #0a1020 100%)",
+        boxShadow: "inset 0 1.5px 0px rgba(255, 255, 255, 0.1), 0 12px 30px rgba(0, 0, 0, 0.6)"
+      }}
     >
       {isLive && (
         <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse pointer-events-none"></div>
