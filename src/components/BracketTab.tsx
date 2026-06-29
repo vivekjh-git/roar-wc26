@@ -15,7 +15,7 @@ function NewsMarquee({ bulletins }: { bulletins: string[] }) {
       <motion.div
         className="flex gap-12 items-center min-w-fit pr-12"
         animate={{ x: ["0%", "-50%"] }}
-        transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
+        transition={{ repeat: Infinity, duration: 120, ease: "linear" }}
       >
         <div className="flex gap-12 items-center">
           {bulletins.map((news, i) => (
