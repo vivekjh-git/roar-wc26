@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Team, Game } from "@/lib/api";
 import { parseScorers } from "@/lib/api";
 import { formatMatchDateNPT, formatTimeNPT } from "@/lib/date-utils";
+import { getPlayerImageUrl } from "@/lib/player-images";
+
 
 interface PlayerModalProps {
   playerName: string;
@@ -207,13 +209,20 @@ export default function PlayerModal({ playerName, teamId, games, teams, onClose 
             </button>
 
             <div className="flex items-center gap-4 relative z-10">
-              {playerTeam?.flag && (
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
                 <img
-                  src={playerTeam.flag}
-                  alt={playerTeam.name_en}
-                  className="w-14 h-10 object-cover rounded shadow-md border border-white/10 flex-shrink-0"
+                  src={getPlayerImageUrl(playerName)}
+                  alt={playerName}
+                  className="w-full h-full rounded-full object-cover bg-black/40 border border-yellow-500/30 shadow-[0_0_15px_rgba(255,94,0,0.15)]"
                 />
-              )}
+                {playerTeam?.flag && (
+                  <img
+                    src={playerTeam.flag}
+                    alt={playerTeam.name_en}
+                    className="absolute -bottom-1 -right-1 w-6 h-4.5 object-cover rounded shadow-md border border-black/40"
+                  />
+                )}
+              </div>
               <div>
                 <span className="text-[9px] uppercase tracking-widest text-[#ff5e00] font-black">
                   Player Statistics

@@ -18,7 +18,7 @@ const GROUP_COLORS = [
   "from-green-600/20 to-green-800/10 border-green-500/30",
   "from-teal-600/20 to-teal-800/10 border-teal-500/30",
   "from-blue-600/20 to-blue-800/10 border-blue-500/30",
-  "from-purple-600/20 to-purple-800/10 border-purple-500/30",
+  "from-indigo-600/20 to-indigo-800/10 border-indigo-500/30",
   "from-pink-600/20 to-pink-800/10 border-pink-500/30",
   "from-cyan-600/20 to-cyan-800/10 border-cyan-500/30",
   "from-lime-600/20 to-lime-800/10 border-lime-500/30",

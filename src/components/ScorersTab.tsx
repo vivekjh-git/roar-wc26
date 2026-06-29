@@ -11,6 +11,7 @@ import type {
   ScorerEntry, KeyContributorEntry, GoalsPerGameEntry, 
   CleanSheetEntry, OwnGoalEntry, PenaltyGoalEntry 
 } from "@/lib/api";
+import { getPlayerImageUrl } from "@/lib/player-images";
 
 interface ScorersTabProps {
   data: AllData;
@@ -120,6 +121,26 @@ function FlagImage({ src, alt }: { src: string, alt: string }) {
   return <div className="w-6 h-4.5 bg-gray-700 rounded flex-shrink-0" />;
 }
 
+function PlayerAvatar({ name, flag, teamName }: { name: string, flag: string, teamName: string }) {
+  return (
+    <div className="relative w-8 h-8 flex-shrink-0">
+      <img
+        src={getPlayerImageUrl(name)}
+        alt={name}
+        className="w-full h-full rounded-full object-cover bg-black/40 border border-white/10"
+      />
+      {flag && (
+        <img
+          src={flag}
+          alt={teamName}
+          className="absolute -bottom-0.5 -right-0.5 w-4 h-3 object-cover rounded-sm border border-black/40 shadow-sm"
+        />
+      )}
+    </div>
+  );
+}
+
+
 // 1. Goal Scorers
 function GoalScorersList({ list, expanded, variants, onPlayerClick }: { list: ScorerEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
   const maxGoals = list[0]?.goals || 1;
@@ -137,7 +158,7 @@ function GoalScorersList({ list, expanded, variants, onPlayerClick }: { list: Sc
         >
           <div className="flex items-center gap-2.5">
             <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
-            <FlagImage src={scorer.flag} alt={scorer.teamName} />
+            <PlayerAvatar name={scorer.name} flag={scorer.flag} teamName={scorer.teamName} />
             <div className="flex-1 min-w-0">
               <div 
                 onClick={() => scorer.teamId && onPlayerClick?.(scorer.name, scorer.teamId)}
@@ -172,7 +193,7 @@ function ContributorsList({ list, expanded, variants, onPlayerClick }: { list: K
         <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
           <div className="flex items-center gap-2.5">
             <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
-            <FlagImage src={item.flag} alt={item.teamName} />
+            <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
               <div 
                 onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
@@ -201,7 +222,7 @@ function GoalsRatioList({ list, expanded, variants, onPlayerClick }: { list: Goa
         <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
           <div className="flex items-center gap-2.5">
             <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
-            <FlagImage src={item.flag} alt={item.teamName} />
+            <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
               <div 
                 onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
@@ -254,7 +275,7 @@ function OwnGoalsList({ list, expanded, variants, onPlayerClick }: { list: OwnGo
         <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-red-500/20 bg-red-500/5">
           <div className="flex items-center gap-2.5">
             <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} medals={["🔴", "🔴", "🔴"]} /></div>
-            <FlagImage src={item.flag} alt={item.teamName} />
+            <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
               <div 
                 onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
@@ -283,7 +304,7 @@ function PenaltiesList({ list, expanded, variants, onPlayerClick }: { list: Pena
         <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
           <div className="flex items-center gap-2.5">
             <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
-            <FlagImage src={item.flag} alt={item.teamName} />
+            <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
               <div 
                 onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}

@@ -297,11 +297,11 @@ export default function PopularityTab({ data }: PopularityTabProps) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           {mostDramatic && (
-            <div className="glass-card col-span-2 rounded-xl p-4 border border-purple-500/20 bg-purple-500/5">
-              <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1.5">🎭 Most Dramatic Match</div>
+            <div className="glass-card col-span-2 rounded-xl p-4 border border-orange-500/20 bg-orange-500/5">
+              <div className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-1.5">🎭 Most Dramatic Match</div>
               <div className="text-sm font-black text-white">
                 {mostDramatic.home_team_name_en || "?"}{" "}
-                <span className="text-purple-400">{mostDramatic.home_score}–{mostDramatic.away_score}</span>{" "}
+                <span className="text-orange-400">{mostDramatic.home_score}–{mostDramatic.away_score}</span>{" "}
                 {mostDramatic.away_team_name_en || "?"}
               </div>
               <div className="text-[10px] text-gray-400 mt-1">

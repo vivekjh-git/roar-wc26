@@ -132,7 +132,7 @@ function RecordCard({ record, idx }: { record: HistoricalRecord & { status: Reco
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-40">
         <div className="absolute top-2 left-4 w-1.5 h-1.5 rounded-full bg-green-500 blur-[1px]"></div>
         <div className="absolute top-6 left-1/2 w-1.5 h-1.5 rounded-full bg-blue-500 blur-[1px]"></div>
-        <div className="absolute top-4 right-1/4 w-2 h-2 rounded-full bg-purple-500 blur-[1px]"></div>
+        <div className="absolute top-4 right-1/4 w-2 h-2 rounded-full bg-orange-500 blur-[1px]"></div>
         <div className="absolute top-12 left-1/4 w-1.5 h-1.5 rounded-full bg-yellow-500/50 blur-[1px]"></div>
       </div>
 

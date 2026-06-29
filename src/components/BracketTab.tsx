@@ -376,8 +376,25 @@ function MatchMomentum({ gameId, isLive, isPending }: { gameId: string, isLive: 
           <span>Match Momentum</span>
           <span>Waiting to start</span>
         </div>
-        <div className="h-12 w-full flex items-center justify-center text-[10px] text-gray-500 border border-dashed border-white/10 rounded-lg">
-          Live stats will appear here after kickoff
+        <div className="flex items-center gap-3 w-full px-1">
+          {/* Graph (Line only) */}
+          <div className="flex-1 flex items-center justify-center h-12 relative">
+            <div className="h-[1px] w-full bg-white/20" />
+          </div>
+          {/* Compact Stats */}
+          <div className="flex-shrink-0 w-[100px] grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1 border border-white/5 opacity-60">
+            <span className="font-black text-gray-400">- -</span>
+            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Poss</span>
+            <span className="font-black text-gray-400">- -</span>
+
+            <span className="font-black text-gray-400">- -</span>
+            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Shots</span>
+            <span className="font-black text-gray-400">- -</span>
+
+            <span className="font-black text-gray-400">- -</span>
+            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corn</span>
+            <span className="font-black text-gray-400">- -</span>
+          </div>
         </div>
       </div>
     );
@@ -1486,7 +1503,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                     <BracketNode gameId="104" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="🏆 Final" />
                   </div>
                   <div className="relative flex flex-col items-center">
-                    <div className="absolute inset-0 bg-[#bc00dd]/10 blur-2xl rounded-full -z-10 animate-pulse" />
+                    <div className="absolute inset-0 bg-[#ff5e00]/15 blur-2xl rounded-full -z-10 animate-pulse" />
                     <img
                       src="/tiger.png"
                       className="w-14 h-14 rounded-full object-cover border-2 border-yellow-400 shadow-2xl drop-shadow-[0_0_15px_rgba(250,204,21,0.35)] select-none animate-bounce-slow"
@@ -1555,7 +1572,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
               const stageColors: Record<string, { accent: string; glow: string; badge: string }> = {
                 r32:   { accent: 'text-gray-400',    glow: 'from-gray-800/50',    badge: 'bg-gray-700/60 text-gray-300 border border-gray-600/30' },
                 r16:   { accent: 'text-blue-400',    glow: 'from-blue-900/40',    badge: 'bg-blue-900/60 text-blue-300 border border-blue-700/30' },
-                qf:    { accent: 'text-purple-400',  glow: 'from-purple-900/40',  badge: 'bg-purple-900/60 text-purple-300 border border-purple-700/30' },
+                qf:    { accent: 'text-cyan-400',  glow: 'from-cyan-900/40',  badge: 'bg-cyan-900/60 text-cyan-300 border border-cyan-700/30' },
                 sf:    { accent: 'text-orange-400',  glow: 'from-orange-900/40',  badge: 'bg-orange-900/60 text-orange-300 border border-orange-700/30' },
                 final: { accent: 'text-yellow-400',  glow: 'from-yellow-900/50',  badge: 'bg-yellow-900/60 text-yellow-300 border border-yellow-600/30' },
                 third: { accent: 'text-emerald-400', glow: 'from-emerald-900/40', badge: 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/30' },
