@@ -959,8 +959,8 @@ function FeaturedLiveCard({
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8M12 8v8" />
         </svg>
         {showTracker 
-          ? (finished ? "Hide Match Stats" : "Hide Live Tracker") 
-          : (finished ? "View Match Stats" : "View Live Tracker")}
+          ? (finished ? "Hide Live Tracker" : "Hide Live Tracker") 
+          : (finished ? "View Live Tracker" : "View Live Tracker")}
       </button>
 
       {/* Live Match Tracker Section */}
