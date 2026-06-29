@@ -314,11 +314,14 @@ export default function PlayerModal({ playerName, teamId, games, teams, onClose 
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 min-w-0">
                             {opponentFlag ? (
-                              <img
-                                src={opponentFlag}
-                                alt={opponentName}
-                                className="w-5 h-4 object-cover rounded-sm border border-white/10 flex-shrink-0"
-                              />
+                              <>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={opponentFlag}
+                                  alt={opponentName}
+                                  className="w-5 h-4 object-cover rounded-sm border border-white/10 flex-shrink-0"
+                                />
+                              </>
                             ) : (
                               <div className="w-5 h-4 bg-white/10 rounded-sm flex-shrink-0" />
                             )}
