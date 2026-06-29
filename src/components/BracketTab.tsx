@@ -550,10 +550,11 @@ function ExtendedMatchStats({ gameId, isPending }: { gameId: string, isPending?:
 }
 
 function MatchTrackerView({
-  showTracker, isLive, game, commentary, ballPos
+  showTracker, isLive, isPending = false, game, commentary, ballPos
 }: {
   readonly showTracker: boolean;
   readonly isLive: boolean;
+  readonly isPending?: boolean;
   readonly game: Game;
   readonly commentary: string;
   readonly ballPos: { x: number; y: number };
@@ -575,8 +576,8 @@ function MatchTrackerView({
             </div>
             
             <div className="bg-black/40 px-3 py-1.5 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-green-400 relative z-10 border-b border-green-500/20">
-              <span>{isLive ? "Live Pitch Commentary" : "Match Replay"}</span>
-              <span className="text-yellow-400">{isLive ? game.time_elapsed : "FT"}</span>
+              <span>{isPending ? "Pre-Match Analysis" : isLive ? "Live Pitch Commentary" : "Match Replay"}</span>
+              <span className="text-yellow-400">{isPending ? "Upcoming" : isLive ? game.time_elapsed : "FT"}</span>
             </div>
             
             <div className="flex-1 p-3 relative z-10 overflow-hidden flex flex-col justify-end">
@@ -585,11 +586,11 @@ function MatchTrackerView({
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -10, opacity: 0 }}
-                  key={commentary}
+                  key={isPending ? "pending" : commentary}
                   className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
                 >
                   {isLive && <span className="text-yellow-400 mr-2">{game.time_elapsed}</span>}
-                  {commentary}
+                  {isPending ? "Both teams are warming up on the pitch. Formations are announced and managers are reviewing their strategies. Kickoff is imminent." : commentary}
                 </motion.div>
               </AnimatePresence>
               
@@ -822,7 +823,13 @@ function FeaturedLiveCard({
   }
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border shadow-lg w-full h-full flex flex-col ${isLive ? "border-red-500/50" : "border-white/10"}`}
+    <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border shadow-lg w-full h-full flex flex-col transition-all duration-300 ${
+      isActive 
+        ? "border-[#ff5e00] shadow-[0_0_15px_rgba(255,94,0,0.35)]" 
+        : isLive 
+          ? "border-red-500/50" 
+          : "border-white/10"
+    }`}
       style={{ background: isLive ? "linear-gradient(135deg, #2a0a0a 0%, #0a0f1e 100%)" : "linear-gradient(135deg, #1a2744 0%, #0a0f1e 100%)" }}
     >
       {isLive && (
@@ -921,25 +928,25 @@ function FeaturedLiveCard({
 
       <MatchMomentum gameId={game.id} isLive={isLive} isPending={isPending} />
 
-      {(isLive || finished) && (
-        <button 
-          onClick={() => setShowTracker(!showTracker)}
-          className={`mt-4 w-full relative z-10 rounded-xl py-3 flex items-center justify-center gap-2.5 transition-all text-[10px] sm:text-xs font-black uppercase tracking-widest ${
-            isLive 
-              ? "bg-emerald-500 hover:bg-emerald-400 text-black border border-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.4)]" 
-              : "bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-gray-200 hover:text-white"
-          }`}
-        >
-          <svg className="w-3.5 h-3.5 text-current flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <circle cx="12" cy="12" r="10" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8M12 8v8" />
-          </svg>
-          {showTracker ? "Hide Match Tracker" : (isLive ? "View Live Match Tracker" : "View Match Stats")}
-        </button>
-      )}
+      <button 
+        onClick={() => setShowTracker(!showTracker)}
+        className={`mt-4 w-full relative z-10 rounded-xl py-3 flex items-center justify-center gap-2.5 transition-all text-[10px] sm:text-xs font-black uppercase tracking-widest ${
+          isLive 
+            ? "bg-emerald-500 hover:bg-emerald-400 text-black border border-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.4)]" 
+            : "bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-gray-200 hover:text-white"
+        }`}
+      >
+        <svg className="w-3.5 h-3.5 text-current flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <circle cx="12" cy="12" r="10" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8M12 8v8" />
+        </svg>
+        {showTracker 
+          ? (finished ? "Hide Match Stats" : "Hide Live Tracker") 
+          : (finished ? "View Match Stats" : "View Live Tracker")}
+      </button>
 
       {/* Live Match Tracker Section */}
-      <MatchTrackerView showTracker={showTracker} isLive={isLive} game={game} commentary={commentary} ballPos={ballPos} />
+      <MatchTrackerView showTracker={showTracker} isLive={isLive} isPending={isPending} game={game} commentary={commentary} ballPos={ballPos} />
 
       {/* Details Extension Button */}
       <button 
@@ -1060,7 +1067,7 @@ function MatchCarouselSection({
           {games.map((game, idx) => (
             <div
               key={game.id}
-              className="w-full flex-shrink-0 snap-center"
+              className="w-full flex-shrink-0 snap-center p-1.5"
             >
               <FeaturedLiveCard
                 game={game}
