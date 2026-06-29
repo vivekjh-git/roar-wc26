@@ -830,7 +830,7 @@ function FeaturedLiveCard({
           ? "border-red-500/50" 
           : "border-white/10"
     }`}
-      style={{ background: isLive ? "linear-gradient(135deg, #2a0a0a 0%, #0a0f1e 100%)" : "linear-gradient(135deg, #1a2744 0%, #0a0f1e 100%)" }}
+      style={{ background: isLive ? "linear-gradient(135deg, #180303 0%, #020307 100%)" : "linear-gradient(135deg, #050a18 0%, #010205 100%)" }}
     >
       {isLive && (
         <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse pointer-events-none"></div>

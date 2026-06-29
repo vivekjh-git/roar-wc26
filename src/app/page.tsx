@@ -177,7 +177,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] overflow-x-hidden">
+    <div className="min-h-screen bg-black overflow-x-hidden">
       <Header activeTab={activeTab} onTabChange={setActiveTab} onRefresh={fetchData} loading={loading} games={data?.games || []} />
 
       <main className="max-w-4xl mx-auto pb-safe-bottom pb-8">
