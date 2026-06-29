@@ -49,7 +49,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           `
         }} />
       </head>
-      <body className={`${inter.className} bg-[#0a0f1e] text-white antialiased min-h-screen`}>
+      <body className={`${inter.className} bg-[#010103] text-white antialiased min-h-screen`}>
         {children}
       </body>
     </html>
