@@ -559,8 +559,16 @@ function MatchTrackerView({
   readonly commentary: string;
   readonly ballPos: { x: number; y: number };
 }) {
-  const matchDate = parseMatchDate(game.local_date, game.stadium_id);
-  const isFarAhead = isPending && (matchDate.getTime() - Date.now()) > 60 * 60 * 1000;
+  const [isFarAhead, setIsFarAhead] = useState(false);
+
+  useEffect(() => {
+    if (!isPending) {
+      setIsFarAhead(false);
+      return;
+    }
+    const matchDate = parseMatchDate(game.local_date, game.stadium_id);
+    setIsFarAhead((matchDate.getTime() - Date.now()) > 60 * 60 * 1000);
+  }, [isPending, game.local_date, game.stadium_id]);
 
   return (
     <AnimatePresence>
