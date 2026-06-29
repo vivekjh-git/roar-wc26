@@ -153,13 +153,13 @@ function BracketNode({
   gameMap,
   onTeamClick,
   label,
-}: {
+}: Readonly<{
   gameId: string;
   teamMap: { [key: string]: Team };
   gameMap: { [key: string]: Game };
   onTeamClick: (team: Team) => void;
   label?: string;
-}) {
+}>) {
   const game = gameMap[gameId];
   if (!game) return <div className="w-[116px] h-[54px] bg-white/5 rounded-lg border border-white/5 animate-pulse" />;
 

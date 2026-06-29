@@ -51,7 +51,7 @@ export default function Header({ activeTab, onTabChange, onRefresh, loading, gam
             onTabChange("bracket");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="flex items-center gap-2 flex-shrink-0 cursor-pointer hover:opacity-80 active:scale-95 transition-all duration-150"
+          className="flex items-center gap-2 shrink-0 cursor-pointer hover:opacity-80 active:scale-95 transition-all duration-150"
           aria-label="Go to home"
         >
           <div className="relative w-9 h-9 flex-shrink-0 rounded-full bg-neutral-950 border border-[#ff5e00]/40 overflow-hidden flex items-center justify-center shadow-[0_0_8px_rgba(255,94,0,0.35)]">

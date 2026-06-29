@@ -116,7 +116,7 @@ function RankBadge({ idx, medals = ["🥇", "🥈", "🥉"] }: { idx: number, me
   return <span className="text-xs font-bold text-gray-500">#{idx + 1}</span>;
 }
 
-function FlagImage({ src, alt }: { src: string, alt: string }) {
+function FlagImage({ src, alt }: Readonly<{ src: string, alt: string }>) {
   if (src) return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
