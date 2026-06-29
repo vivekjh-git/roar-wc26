@@ -161,12 +161,13 @@ function GoalScorersList({ list, expanded, variants, onPlayerClick }: Readonly<{
             <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
             <PlayerAvatar name={scorer.name} flag={scorer.flag} teamName={scorer.teamName} />
             <div className="flex-1 min-w-0">
-              <div 
+              <button 
+                type="button"
                 onClick={() => scorer.teamId && onPlayerClick?.(scorer.name, scorer.teamId)}
-                className={`font-bold truncate text-sm hover:underline cursor-pointer transition-colors inline-block max-w-full ${idx === 0 ? "text-yellow-400" : "text-white hover:text-yellow-400"}`}
+                className={`font-bold truncate text-sm hover:underline cursor-pointer transition-colors inline-block text-left max-w-full ${idx === 0 ? "text-yellow-400" : "text-white hover:text-yellow-400"}`}
               >
                 {scorer.name}
-              </div>
+              </button>
               <div className="text-[10px] text-gray-400 truncate">{scorer.teamName}</div>
             </div>
             <div className="text-right flex-shrink-0">
