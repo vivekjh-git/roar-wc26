@@ -117,7 +117,12 @@ function RankBadge({ idx, medals = ["🥇", "🥈", "🥉"] }: { idx: number, me
 }
 
 function FlagImage({ src, alt }: { src: string, alt: string }) {
-  if (src) return <img src={src} alt={alt} className="w-6 h-4.5 object-cover rounded flex-shrink-0" />;
+  if (src) return (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} className="w-6 h-4.5 object-cover rounded flex-shrink-0" />
+    </>
+  );
   return <div className="w-6 h-4.5 bg-gray-700 rounded flex-shrink-0" />;
 }
 
@@ -138,7 +143,7 @@ function PlayerAvatar({ name, flag, teamName }: { name: string, flag: string, te
 
 
 // 1. Goal Scorers
-function GoalScorersList({ list, expanded, variants, onPlayerClick }: { list: ScorerEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
+function GoalScorersList({ list, expanded, variants, onPlayerClick }: Readonly<{ list: ScorerEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }>) {
   const maxGoals = list[0]?.goals || 1;
   const displayList = expanded ? list : list.slice(0, 10);
   
@@ -179,7 +184,7 @@ function GoalScorersList({ list, expanded, variants, onPlayerClick }: { list: Sc
 }
 
 // 2. Key Contributors
-function ContributorsList({ list, expanded, variants, onPlayerClick }: { list: KeyContributorEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
+function ContributorsList({ list, expanded, variants, onPlayerClick }: Readonly<{ list: KeyContributorEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }>) {
   const displayList = expanded ? list : list.slice(0, 10);
   if (list.length === 0) return <EmptyState icon="🎯" message="No stats yet" />;
 
@@ -208,7 +213,7 @@ function ContributorsList({ list, expanded, variants, onPlayerClick }: { list: K
 }
 
 // 3. Goals Ratio
-function GoalsRatioList({ list, expanded, variants, onPlayerClick }: { list: GoalsPerGameEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
+function GoalsRatioList({ list, expanded, variants, onPlayerClick }: Readonly<{ list: GoalsPerGameEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }>) {
   const displayList = expanded ? list : list.slice(0, 10);
   if (list.length === 0) return <EmptyState icon="📊" message="No data yet" />;
 
@@ -237,7 +242,7 @@ function GoalsRatioList({ list, expanded, variants, onPlayerClick }: { list: Goa
 }
 
 // 4. Clean Sheets
-function CleanSheetsList({ list, expanded, variants }: { list: CleanSheetEntry[], expanded: boolean, variants: any }) {
+function CleanSheetsList({ list, expanded, variants }: Readonly<{ list: CleanSheetEntry[], expanded: boolean, variants: any }>) {
   const displayList = expanded ? list : list.slice(0, 10);
   if (list.length === 0) return <EmptyState icon="🧤" message="No clean sheets yet" />;
 
@@ -261,7 +266,7 @@ function CleanSheetsList({ list, expanded, variants }: { list: CleanSheetEntry[]
 }
 
 // 5. Own Goals
-function OwnGoalsList({ list, expanded, variants, onPlayerClick }: { list: OwnGoalEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
+function OwnGoalsList({ list, expanded, variants, onPlayerClick }: Readonly<{ list: OwnGoalEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }>) {
   const displayList = expanded ? list : list.slice(0, 10);
   if (list.length === 0) return <EmptyState icon="🔴" message="No own goals yet" />;
 
@@ -290,7 +295,7 @@ function OwnGoalsList({ list, expanded, variants, onPlayerClick }: { list: OwnGo
 }
 
 // 6. Penalty Goals
-function PenaltiesList({ list, expanded, variants, onPlayerClick }: { list: PenaltyGoalEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
+function PenaltiesList({ list, expanded, variants, onPlayerClick }: Readonly<{ list: PenaltyGoalEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }>) {
   const displayList = expanded ? list : list.slice(0, 10);
   if (list.length === 0) return <EmptyState icon="🎯" message="No penalty goals yet" />;
 
@@ -318,7 +323,7 @@ function PenaltiesList({ list, expanded, variants, onPlayerClick }: { list: Pena
   );
 }
 
-function EmptyState({ icon, message }: { icon: string, message: string }) {
+function EmptyState({ icon, message }: Readonly<{ icon: string, message: string }>) {
   return (
     <div className="text-center py-12 text-gray-500">
       <div className="text-4xl mb-3">{icon}</div>
