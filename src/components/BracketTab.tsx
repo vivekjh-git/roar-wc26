@@ -5,7 +5,7 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Game, Team, Stadium } from "@/lib/api";
 import { parseScorers } from "@/lib/api";
-import { formatMatchDateNPT, formatTimeNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate } from "@/lib/date-utils";
+import { formatMatchDateNPT, formatTimeNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate, parseMatchDate } from "@/lib/date-utils";
 import { generateLiveBulletins } from "@/lib/news-utils";
 import { format, addDays } from "date-fns";
 
@@ -559,6 +559,9 @@ function MatchTrackerView({
   readonly commentary: string;
   readonly ballPos: { x: number; y: number };
 }) {
+  const matchDate = parseMatchDate(game.local_date, game.stadium_id);
+  const isFarAhead = isPending && (matchDate.getTime() - Date.now()) > 60 * 60 * 1000;
+
   return (
     <AnimatePresence>
       {showTracker && (
@@ -576,8 +579,8 @@ function MatchTrackerView({
             </div>
             
             <div className="bg-black/40 px-3 py-1.5 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-green-400 relative z-10 border-b border-green-500/20">
-              <span>{isPending ? "Pre-Match Analysis" : isLive ? "Live Pitch Commentary" : "Match Replay"}</span>
-              <span className="text-yellow-400">{isPending ? "Upcoming" : isLive ? game.time_elapsed : "FT"}</span>
+              <span>{isFarAhead ? "Match Tracker Info" : isPending ? "Pre-Match Analysis" : isLive ? "Live Pitch Commentary" : "Match Replay"}</span>
+              <span className="text-yellow-400">{isFarAhead ? "Offline" : isPending ? "Upcoming" : isLive ? game.time_elapsed : "FT"}</span>
             </div>
             
             <div className="flex-1 p-3 relative z-10 overflow-hidden flex flex-col justify-end">
@@ -586,11 +589,16 @@ function MatchTrackerView({
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -10, opacity: 0 }}
-                  key={isPending ? "pending" : commentary}
+                  key={isFarAhead ? "far" : isPending ? "pending" : commentary}
                   className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
                 >
                   {isLive && <span className="text-yellow-400 mr-2">{game.time_elapsed}</span>}
-                  {isPending ? "Both teams are warming up on the pitch. Formations are announced and managers are reviewing their strategies. Kickoff is imminent." : commentary}
+                  {isFarAhead 
+                    ? "Live tracker is offline. Please check back closer to kickoff (activates 1 hour prior to game time)." 
+                    : isPending 
+                      ? "Both teams are warming up on the pitch. Formations are announced and managers are reviewing their strategies. Kickoff is imminent." 
+                      : commentary
+                  }
                 </motion.div>
               </AnimatePresence>
               
