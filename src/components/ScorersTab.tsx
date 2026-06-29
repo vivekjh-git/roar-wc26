@@ -14,6 +14,7 @@ import type {
 
 interface ScorersTabProps {
   data: AllData;
+  onPlayerClick?: (name: string, teamId: string) => void;
 }
 
 const TABS = [
@@ -25,7 +26,7 @@ const TABS = [
   { id: "penalties", icon: "🎯", label: "Penalty Goals" },
 ];
 
-export default function ScorersTab({ data }: ScorersTabProps) {
+export default function ScorersTab({ data, onPlayerClick }: ScorersTabProps) {
   const [activeTab, setActiveTab] = useState(TABS[0]!.id);
   const [expanded, setExpanded] = useState(false);
 
@@ -52,28 +53,28 @@ export default function ScorersTab({ data }: ScorersTabProps) {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "scorers": return <GoalScorersList list={liveTopScorers} expanded={expanded} variants={itemVariants} />;
-      case "contributors": return <ContributorsList list={liveKeyContributors} expanded={expanded} variants={itemVariants} />;
-      case "ratio": return <GoalsRatioList list={liveGoalsPerGame} expanded={expanded} variants={itemVariants} />;
+      case "scorers": return <GoalScorersList list={liveTopScorers} expanded={expanded} variants={itemVariants} onPlayerClick={onPlayerClick} />;
+      case "contributors": return <ContributorsList list={liveKeyContributors} expanded={expanded} variants={itemVariants} onPlayerClick={onPlayerClick} />;
+      case "ratio": return <GoalsRatioList list={liveGoalsPerGame} expanded={expanded} variants={itemVariants} onPlayerClick={onPlayerClick} />;
       case "cleansheets": return <CleanSheetsList list={liveCleanSheets} expanded={expanded} variants={itemVariants} />;
-      case "owngoals": return <OwnGoalsList list={liveOwnGoals} expanded={expanded} variants={itemVariants} />;
-      case "penalties": return <PenaltiesList list={livePenaltyGoals} expanded={expanded} variants={itemVariants} />;
+      case "owngoals": return <OwnGoalsList list={liveOwnGoals} expanded={expanded} variants={itemVariants} onPlayerClick={onPlayerClick} />;
+      case "penalties": return <PenaltiesList list={livePenaltyGoals} expanded={expanded} variants={itemVariants} onPlayerClick={onPlayerClick} />;
       default: return null;
     }
   };
 
   return (
     <div className="p-4 space-y-4">
-      {/* Scrollable Sub-tabs */}
-      <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-4 px-4 snap-x">
+      {/* Scrollable Sub-tabs with spacing and glowing borders */}
+      <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide snap-x px-0.5">
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => { setActiveTab(tab.id); setExpanded(false); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap snap-start transition-colors ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap snap-start transition-all border ${
               activeTab === tab.id 
-                ? "bg-yellow-400 text-black" 
-                : "bg-white/5 text-gray-400 border border-white/10"
+                ? "bg-yellow-400/10 text-yellow-300 border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.4)]" 
+                : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white"
             }`}
           >
             <span>{tab.icon}</span>
@@ -110,17 +111,17 @@ export default function ScorersTab({ data }: ScorersTabProps) {
 // ─── Sub-Components ─────────────────────────────────────────────────────────
 
 function RankBadge({ idx, medals = ["🥇", "🥈", "🥉"] }: { idx: number, medals?: string[] }) {
-  if (idx < 3) return <span className="text-lg">{medals[idx]}</span>;
-  return <span className="text-sm font-bold text-gray-500">#{idx + 1}</span>;
+  if (idx < 3) return <span className="text-base">{medals[idx]}</span>;
+  return <span className="text-xs font-bold text-gray-500">#{idx + 1}</span>;
 }
 
 function FlagImage({ src, alt }: { src: string, alt: string }) {
-  if (src) return <img src={src} alt={alt} className="w-8 h-6 object-cover rounded flex-shrink-0" />;
-  return <div className="w-8 h-6 bg-gray-700 rounded flex-shrink-0" />;
+  if (src) return <img src={src} alt={alt} className="w-6 h-4.5 object-cover rounded flex-shrink-0" />;
+  return <div className="w-6 h-4.5 bg-gray-700 rounded flex-shrink-0" />;
 }
 
 // 1. Goal Scorers
-function GoalScorersList({ list, expanded, variants }: { list: ScorerEntry[], expanded: boolean, variants: any }) {
+function GoalScorersList({ list, expanded, variants, onPlayerClick }: { list: ScorerEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
   const maxGoals = list[0]?.goals || 1;
   const displayList = expanded ? list : list.slice(0, 10);
   
@@ -132,18 +133,23 @@ function GoalScorersList({ list, expanded, variants }: { list: ScorerEntry[], ex
         <motion.div
           key={`${scorer.name}_${scorer.teamId}`}
           variants={variants}
-          className={`glass-card rounded-xl p-3 border transition-all ${idx === 0 ? "border-yellow-400/50 bg-yellow-400/5" : "border-white/5"}`}
+          className={`glass-card rounded-xl p-2.5 border transition-all ${idx === 0 ? "border-yellow-400/30 bg-yellow-400/5" : "border-white/5"}`}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-8 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
             <FlagImage src={scorer.flag} alt={scorer.teamName} />
             <div className="flex-1 min-w-0">
-              <div className={`font-bold truncate ${idx === 0 ? "text-yellow-400" : "text-white"}`}>{scorer.name}</div>
-              <div className="text-xs text-gray-400">{scorer.teamName}</div>
+              <div 
+                onClick={() => scorer.teamId && onPlayerClick?.(scorer.name, scorer.teamId)}
+                className={`font-bold truncate text-sm hover:underline cursor-pointer transition-colors inline-block max-w-full ${idx === 0 ? "text-yellow-400" : "text-white hover:text-yellow-400"}`}
+              >
+                {scorer.name}
+              </div>
+              <div className="text-[10px] text-gray-400 truncate">{scorer.teamName}</div>
             </div>
             <div className="text-right flex-shrink-0">
-              <div className={`text-xl font-black ${idx === 0 ? "text-yellow-400" : "text-white"}`}>{scorer.goals}</div>
-              <div className="text-[10px] text-gray-500">goals</div>
+              <div className={`text-base font-extrabold leading-none ${idx === 0 ? "text-yellow-400" : "text-white"}`}>{scorer.goals}</div>
+              <div className="text-[9px] text-gray-500 mt-0.5">goals</div>
             </div>
           </div>
           <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
@@ -156,22 +162,27 @@ function GoalScorersList({ list, expanded, variants }: { list: ScorerEntry[], ex
 }
 
 // 2. Key Contributors
-function ContributorsList({ list, expanded, variants }: { list: KeyContributorEntry[], expanded: boolean, variants: any }) {
+function ContributorsList({ list, expanded, variants, onPlayerClick }: { list: KeyContributorEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
   const displayList = expanded ? list : list.slice(0, 10);
   if (list.length === 0) return <EmptyState icon="🎯" message="No stats yet" />;
 
   return (
     <>
       {displayList.map((item, idx) => (
-        <motion.div key={item.name} variants={variants} className="glass-card rounded-xl p-3 border border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
+        <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
             <FlagImage src={item.flag} alt={item.teamName} />
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-white truncate">{item.name}</div>
-              <div className="text-[10px] text-gray-400">{item.teamName} • {item.goals}G ({item.penaltyGoals}P)</div>
+              <div 
+                onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
+                className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block max-w-full"
+              >
+                {item.name}
+              </div>
+              <div className="text-[10px] text-gray-400 truncate">{item.teamName} • {item.goals}G ({item.penaltyGoals}P)</div>
             </div>
-            <div className="text-right flex-shrink-0 text-cyan-400 font-black">{item.score} <span className="text-[10px] text-gray-500 font-normal">pts</span></div>
+            <div className="text-right flex-shrink-0 text-cyan-400 text-sm font-extrabold">{item.score} <span className="text-[9px] text-gray-500 font-normal">pts</span></div>
           </div>
         </motion.div>
       ))}
@@ -180,22 +191,27 @@ function ContributorsList({ list, expanded, variants }: { list: KeyContributorEn
 }
 
 // 3. Goals Ratio
-function GoalsRatioList({ list, expanded, variants }: { list: GoalsPerGameEntry[], expanded: boolean, variants: any }) {
+function GoalsRatioList({ list, expanded, variants, onPlayerClick }: { list: GoalsPerGameEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
   const displayList = expanded ? list : list.slice(0, 10);
   if (list.length === 0) return <EmptyState icon="📊" message="No data yet" />;
 
   return (
     <>
       {displayList.map((item, idx) => (
-        <motion.div key={item.name} variants={variants} className="glass-card rounded-xl p-3 border border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
+        <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
             <FlagImage src={item.flag} alt={item.teamName} />
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-white truncate">{item.name}</div>
-              <div className="text-[10px] text-gray-400">{item.teamName} • {item.goals} goals in {item.games} games</div>
+              <div 
+                onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
+                className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block max-w-full"
+              >
+                {item.name}
+              </div>
+              <div className="text-[10px] text-gray-400 truncate">{item.teamName} • {item.goals} goals in {item.games} games</div>
             </div>
-            <div className="text-right flex-shrink-0 text-green-400 font-black">{item.ratio.toFixed(2)}</div>
+            <div className="text-right flex-shrink-0 text-green-400 text-sm font-extrabold">{item.ratio.toFixed(2)}</div>
           </div>
         </motion.div>
       ))}
@@ -211,15 +227,15 @@ function CleanSheetsList({ list, expanded, variants }: { list: CleanSheetEntry[]
   return (
     <>
       {displayList.map((item, idx) => (
-        <motion.div key={item.teamName} variants={variants} className="glass-card rounded-xl p-3 border border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
+        <motion.div key={item.teamName} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
             <FlagImage src={item.flag} alt={item.teamName} />
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-white truncate">{item.teamName}</div>
-              <div className="text-[10px] text-gray-400">{item.gamesPlayed} games played</div>
+              <div className="font-bold text-white text-sm truncate">{item.teamName}</div>
+              <div className="text-[10px] text-gray-400 truncate">{item.gamesPlayed} games played</div>
             </div>
-            <div className="text-right flex-shrink-0 text-white font-black">{item.cleanSheets}</div>
+            <div className="text-right flex-shrink-0 text-white text-sm font-extrabold">{item.cleanSheets}</div>
           </div>
         </motion.div>
       ))}
@@ -228,22 +244,27 @@ function CleanSheetsList({ list, expanded, variants }: { list: CleanSheetEntry[]
 }
 
 // 5. Own Goals
-function OwnGoalsList({ list, expanded, variants }: { list: OwnGoalEntry[], expanded: boolean, variants: any }) {
+function OwnGoalsList({ list, expanded, variants, onPlayerClick }: { list: OwnGoalEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
   const displayList = expanded ? list : list.slice(0, 10);
   if (list.length === 0) return <EmptyState icon="🔴" message="No own goals yet" />;
 
   return (
     <>
       {displayList.map((item, idx) => (
-        <motion.div key={item.name} variants={variants} className="glass-card rounded-xl p-3 border border-red-500/20 bg-red-500/5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 text-center flex-shrink-0"><RankBadge idx={idx} medals={["🔴", "🔴", "🔴"]} /></div>
+        <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-red-500/20 bg-red-500/5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} medals={["🔴", "🔴", "🔴"]} /></div>
             <FlagImage src={item.flag} alt={item.teamName} />
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-red-400 truncate">{item.name}</div>
-              <div className="text-[10px] text-gray-400">{item.teamName} {item.matchInfos.join(", ")}</div>
+              <div 
+                onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
+                className="font-bold text-red-400 text-sm hover:underline cursor-pointer transition-colors truncate inline-block max-w-full"
+              >
+                {item.name}
+              </div>
+              <div className="text-[10px] text-gray-400 truncate">{item.teamName} {item.matchInfos.join(", ")}</div>
             </div>
-            <div className="text-right flex-shrink-0 text-red-400 font-black">{item.ownGoals}</div>
+            <div className="text-right flex-shrink-0 text-red-400 text-sm font-extrabold">{item.ownGoals}</div>
           </div>
         </motion.div>
       ))}
@@ -252,22 +273,27 @@ function OwnGoalsList({ list, expanded, variants }: { list: OwnGoalEntry[], expa
 }
 
 // 6. Penalty Goals
-function PenaltiesList({ list, expanded, variants }: { list: PenaltyGoalEntry[], expanded: boolean, variants: any }) {
+function PenaltiesList({ list, expanded, variants, onPlayerClick }: { list: PenaltyGoalEntry[], expanded: boolean, variants: any, onPlayerClick?: (name: string, teamId: string) => void }) {
   const displayList = expanded ? list : list.slice(0, 10);
   if (list.length === 0) return <EmptyState icon="🎯" message="No penalty goals yet" />;
 
   return (
     <>
       {displayList.map((item, idx) => (
-        <motion.div key={item.name} variants={variants} className="glass-card rounded-xl p-3 border border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
+        <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
             <FlagImage src={item.flag} alt={item.teamName} />
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-white truncate">{item.name}</div>
-              <div className="text-[10px] text-gray-400">{item.teamName}</div>
+              <div 
+                onClick={() => item.teamId && onPlayerClick?.(item.name, item.teamId)}
+                className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block max-w-full"
+              >
+                {item.name}
+              </div>
+              <div className="text-[10px] text-gray-400 truncate">{item.teamName}</div>
             </div>
-            <div className="text-right flex-shrink-0 text-white font-black">{item.penalties}</div>
+            <div className="text-right flex-shrink-0 text-white text-sm font-extrabold">{item.penalties}</div>
           </div>
         </motion.div>
       ))}

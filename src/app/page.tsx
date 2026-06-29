@@ -10,6 +10,7 @@ import ScorersTab from "@/components/ScorersTab";
 import RecordsTab from "@/components/RecordsTab";
 import PopularityTab from "@/components/PopularityTab";
 import TeamModal from "@/components/TeamModal";
+import PlayerModal from "@/components/PlayerModal";
 import type { 
   Team, Group, Game, Stadium, ScorerEntry, WCRecord, PopularityEntry,
   OwnGoalEntry, GoalsPerGameEntry, MaxGoalsMatchEntry, CleanSheetEntry,
@@ -70,6 +71,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<{ name: string; teamId: string } | null>(null);
   // PWA install prompt
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -216,7 +218,7 @@ export default function HomePage() {
                 />
               )}
               {activeTab === "scorers" && (
-                <ScorersTab data={data} />
+                <ScorersTab data={data} onPlayerClick={(name, teamId) => setSelectedPlayer({ name, teamId })} />
               )}
               {activeTab === "records" && (
                 <RecordsTab records={data.expandedRecords || data.records} />
@@ -246,6 +248,17 @@ export default function HomePage() {
           stadiums={data.stadiums}
           teamMap={teamMap}
           onClose={() => setSelectedTeam(null)}
+        />
+      )}
+
+      {/* Player detail modal */}
+      {selectedPlayer && data && (
+        <PlayerModal
+          playerName={selectedPlayer.name}
+          teamId={selectedPlayer.teamId}
+          games={data.games}
+          teams={data.teams}
+          onClose={() => setSelectedPlayer(null)}
         />
       )}
 

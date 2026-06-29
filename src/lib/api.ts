@@ -117,10 +117,65 @@ export function parseScorers(raw: string | null | undefined): string[] {
   return parts;
 }
 
+const PLAYER_NAME_ALIASES: { [raw: string]: string } = {
+  // France
+  "K. Mbappé": "Kylian Mbappé",
+  "Kylian Mbappé": "Kylian Mbappé",
+  "B. Barcola": "Bradley Barcola",
+  // England
+  "H. Kane": "Harry Kane",
+  "Hri Kin": "Harry Kane",
+  "J. Bellingham": "Jude Bellingham",
+  "Jvd Blingham": "Jude Bellingham",
+  // Brazil
+  "V. Júnior": "Vinícius Júnior",
+  "Vinícius Júnior": "Vinícius Júnior",
+  // Netherlands
+  "C. Summerville": "Crysencio Summerville",
+  "Kvdi Khakpv": "Cody Gakpo",
+  // Germany
+  "Dniz Avndav": "Deniz Undav",
+  "D. Undav": "Deniz Undav",
+  "K. Havertz": "Kai Havertz",
+  "J. Musiala": "Jamal Musiala",
+  // Morocco
+  "Asmaail Saibari": "Ismael Saibari",
+  "I. Saibari": "Ismael Saibari",
+  // Canada
+  "C. Larin": "Cyle Larin",
+  "Kail Larin": "Cyle Larin",
+  // Switzerland
+  "Rvbn Vargas": "Rubén Vargas",
+  "Rubén Vargas": "Rubén Vargas",
+  "Jvhan Mnzambi": "Johan Minzambi",
+  // Senegal
+  "Paph Gviih": "Pape Gueye",
+  "Ailman Andiaih": "Iliman Ndiaye",
+  // Colombia
+  "Dnil Mvnvz": "Daniel Muñoz",
+  "Lviiz Diaz": "Luis Díaz",
+  // Argentina
+  "Jivani Lv Slsv": "Giovani Lo Celso",
+  // Belgium
+  "Kevin De Bruyne": "Kevin De Bruyne",
+  // USA
+  "F. Balogun": "Folarin Balogun",
+  "G. Reyna": "Gio Reyna",
+  // Ecuador
+  "Gvnzalv Plata": "Gonzalo Plata",
+  // DR Congo
+  "Y. Wissa": "Yoane Wissa",
+  // Mexico
+  "“J. Quiñones": "Julián Quiñones",
+  "Jvlian Kviinvnz": "Julián Quiñones",
+  "”R. Jiménez": "Raúl Jiménez",
+};
+
 // Helper: extract player name from scorer string
 function extractName(scorerStr: string): string {
   const nameMatch = scorerStr.match(/^(.+?)\s+\d+/);
-  return nameMatch ? nameMatch[1].trim() : scorerStr.trim();
+  const name = nameMatch ? nameMatch[1].trim() : scorerStr.trim();
+  return PLAYER_NAME_ALIASES[name] || name;
 }
 
 // Helper: extract minute from scorer string (e.g. "Messi 67'" → 67)
@@ -183,6 +238,7 @@ export interface OwnGoalEntry {
   teamName: string;
   flag: string;
   matchInfos: string[];
+  teamId: string;
 }
 
 export function computeOwnGoals(games: Game[], teamMap: { [key: string]: Team }): OwnGoalEntry[] {
@@ -206,6 +262,7 @@ export function computeOwnGoals(games: Game[], teamMap: { [key: string]: Team })
             teamName: team?.name_en || teamName,
             flag: team?.flag || "",
             matchInfos: [],
+            teamId,
           };
         }
         ogMap[key]!.ownGoals += 1;
@@ -227,6 +284,7 @@ export interface PenaltyGoalEntry {
   penalties: number;
   teamName: string;
   flag: string;
+  teamId: string;
 }
 
 export function computePenaltyGoals(games: Game[], teamMap: { [key: string]: Team }): PenaltyGoalEntry[] {
@@ -249,6 +307,7 @@ export function computePenaltyGoals(games: Game[], teamMap: { [key: string]: Tea
             penalties: 0,
             teamName: team?.name_en || teamName,
             flag: team?.flag || "",
+            teamId,
           };
         }
         penMap[key]!.penalties += 1;
@@ -271,6 +330,7 @@ export interface GoalsPerGameEntry {
   games: number;
   teamName: string;
   flag: string;
+  teamId: string;
 }
 
 export function computeGoalsPerGame(games: Game[], teamMap: { [key: string]: Team }): GoalsPerGameEntry[] {
@@ -310,6 +370,7 @@ export function computeGoalsPerGame(games: Game[], teamMap: { [key: string]: Tea
         games: gamesCount,
         teamName: team?.name_en || d.teamName,
         flag: team?.flag || "",
+        teamId: d.teamId,
       };
     })
     .filter((e) => e.goals >= 2)
@@ -460,6 +521,7 @@ export interface KeyContributorEntry {
   penaltyGoals: number;
   teamName: string;
   flag: string;
+  teamId: string;
 }
 
 export function computeKeyContributors(games: Game[], teamMap: { [key: string]: Team }): KeyContributorEntry[] {
@@ -498,6 +560,7 @@ export function computeKeyContributors(games: Game[], teamMap: { [key: string]: 
         penaltyGoals: d.pens,
         teamName: team?.name_en || d.teamName,
         flag: team?.flag || "",
+        teamId: d.teamId,
       };
     })
     .sort((a, b) => b.score - a.score);
