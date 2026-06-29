@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { getPlayerImageSources } from "@/lib/player-images";
 
 interface CachedPlayerImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -11,20 +11,24 @@ interface CachedPlayerImageProps extends React.ImgHTMLAttributes<HTMLImageElemen
 
 export default function CachedPlayerImage({ playerName, flag, teamName, className, ...props }: CachedPlayerImageProps) {
   const sources = getPlayerImageSources(playerName);
-  const [currentSrc, setCurrentSrc] = useState<string>("");
-  const [sourceIndex, setSourceIndex] = useState<number>(0);
-
-  useEffect(() => {
-    // 1. Check if we have a cached successful URL in localStorage
-    const cached = localStorage.getItem(`player_headshot_${playerName}`);
-    if (cached) {
-      setCurrentSrc(cached);
-    } else {
-      // Start with the first source
-      setCurrentSrc(sources[0]);
-      setSourceIndex(0);
+  const [currentSrc, setCurrentSrc] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`player_headshot_${playerName}`) || sources[0];
     }
-  }, [playerName]);
+    return sources[0];
+  });
+  const [sourceIndex, setSourceIndex] = useState<number>(0);
+  const [prevPlayerName, setPrevPlayerName] = useState(playerName);
+
+  if (playerName !== prevPlayerName) {
+    setPrevPlayerName(playerName);
+    let initialSrc = sources[0];
+    if (typeof window !== "undefined") {
+      initialSrc = localStorage.getItem(`player_headshot_${playerName}`) || sources[0];
+    }
+    setCurrentSrc(initialSrc);
+    setSourceIndex(0);
+  }
 
   const handleError = () => {
     // If the current image fails to load, try the next source
