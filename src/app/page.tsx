@@ -73,6 +73,7 @@ export default function HomePage() {
   const [error, setError] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<{ name: string; teamId: string } | null>(null);
+  const [showCredits, setShowCredits] = useState(false);
   // PWA install prompt
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -254,6 +255,42 @@ export default function HomePage() {
         <p className="text-gray-600 text-[9px] font-mono mt-1.5 tracking-wider select-none">
           v{versionInfo.version}
         </p>
+
+        <button
+          onClick={() => setShowCredits(s => !s)}
+          className="mt-3 text-[9px] uppercase tracking-widest font-black text-gray-500 hover:text-yellow-400 transition-colors underline decoration-dotted underline-offset-4"
+        >
+          Credits & Sources
+        </button>
+
+        <AnimatePresence>
+          {showCredits && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="max-w-md mx-auto mt-4 px-4 text-left space-y-3 text-[10px] text-gray-400">
+                <div>
+                  <p className="font-black text-gray-300 uppercase tracking-wider text-[9px]">worldcup26.ir <span className="text-gray-600 normal-case font-normal">(unofficial)</span></p>
+                  <p className="mt-0.5">Tournament fixtures, schedule, scores, team rosters, flags, group standings, scorers and stadium info.</p>
+                </div>
+                <div>
+                  <p className="font-black text-gray-300 uppercase tracking-wider text-[9px]">api.fifa.com <span className="text-gray-600 normal-case font-normal">(unofficial — FIFA&apos;s public match-centre feed)</span></p>
+                  <p className="mt-0.5">Real live commentary, match events, and match stats (attempts, corners, fouls, offsides, saves, cards) for fixtures that can be matched to a real World Cup match.</p>
+                </div>
+                <div>
+                  <p className="font-black text-gray-300 uppercase tracking-wider text-[9px]">flagcdn.com <span className="text-gray-600 normal-case font-normal">(open source)</span></p>
+                  <p className="mt-0.5">Country flag images used throughout the app.</p>
+                </div>
+                <p className="pt-2 border-t border-white/5 text-gray-600 text-[9px]">
+                  This app is open source. Free to use — not for commercial use.
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </footer>
 
       {/* Team detail modal */}

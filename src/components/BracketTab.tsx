@@ -448,8 +448,30 @@ function MatchMomentum({
   readonly real: { home: RealTeamStats; away: RealTeamStats } | null;
   readonly cardCounts: { home: number; away: number } | null;
 }) {
-  if (isPending) return null;
-  if (!real) return <StatNotAvailable label="Match Stats" />;
+  if (isPending || !real) {
+    const statusLabel = isPending ? "Upcoming" : "Final";
+    return (
+      <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5">
+        <div className="flex justify-between items-center w-full text-[9px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">
+          <span>Match Stats</span>
+          <span className="text-gray-400 font-bold uppercase tracking-wider text-[8px]">{statusLabel}</span>
+        </div>
+        <div className="w-full grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1.5 border border-white/5 opacity-55">
+          <span className="font-black text-gray-500">—</span>
+          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Attempts</span>
+          <span className="font-black text-gray-500">—</span>
+
+          <span className="font-black text-gray-500">—</span>
+          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corners</span>
+          <span className="font-black text-gray-500">—</span>
+
+          <span className="font-black text-yellow-500/60">—</span>
+          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Cards</span>
+          <span className="font-black text-yellow-500/60">—</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5">
@@ -1132,7 +1154,7 @@ function FeaturedLiveCard({
                 </svg>
                 <span className="truncate">{s}</span>
               </div>
-            )) : ""}
+            )) : <span className="text-[9px] sm:text-xs text-transparent select-none font-bold">—</span>}
           </div>
           <div className={`text-gray-400 text-center leading-tight px-1 min-w-0 flex flex-col items-center justify-center gap-0.5
             ${(awayScorersStr ? awayScorersStr.split(", ").length : 0) > 1 ? "text-[8px] sm:text-[10px]" : "text-[9px] sm:text-xs"}`}
@@ -1150,7 +1172,7 @@ function FeaturedLiveCard({
                 </svg>
                 <span className="truncate">{s}</span>
               </div>
-            )) : ""}
+            )) : <span className="text-[9px] sm:text-xs text-transparent select-none font-bold">—</span>}
           </div>
         </div>
 
