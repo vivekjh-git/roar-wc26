@@ -979,6 +979,36 @@ function FeaturedLiveCard({
     return num > 90;
   })();
 
+  // Real data from FIFA's match centre, when our fixture can be matched to a real World Cup match.
+  // Falls back to the simulated commentary/stats below whenever this isn't matched or fails to load.
+  const [fifaData, setFifaData] = useState<{
+    matched: boolean;
+    events?: CommentaryEntry[];
+    cardCounts?: { home: number; away: number };
+  } | null>(null);
+
+  useEffect(() => {
+    const homeCode = homeTeam?.fifa_code;
+    const awayCode = awayTeam?.fifa_code;
+    if (!homeCode || !awayCode) return;
+    let cancelled = false;
+    const load = () => {
+      fetch(`/api/wc/fifa-match?home=${homeCode}&away=${awayCode}`)
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => { if (!cancelled && data) setFifaData(data); })
+        .catch(() => {});
+    };
+    load();
+    if (!isLive) return () => { cancelled = true; };
+    const interval = setInterval(load, 15000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [homeTeam?.fifa_code, awayTeam?.fifa_code, isLive]);
+
+  const realFeed = useMemo<CommentaryEntry[]>(
+    () => (fifaData?.matched && fifaData.events ? [...fifaData.events].reverse() : []),
+    [fifaData]
+  );
+
   const homeName = homeTeam?.name_en || game.home_team_label || game.home_team_name_en || "TBD";
   const awayName = awayTeam?.name_en || game.away_team_label || game.away_team_name_en || "TBD";
 
@@ -1024,8 +1054,12 @@ function FeaturedLiveCard({
   const homeCards = useMemo(() => (isLive ? homeCardDefs.filter(e => e.min <= currentMinNum) : []), [isLive, homeCardDefs, currentMinNum]);
   const awayCards = useMemo(() => (isLive ? awayCardDefs.filter(e => e.min <= currentMinNum) : []), [isLive, awayCardDefs, currentMinNum]);
 
-  const homeCardCount = finished ? homeCardDefs.length : homeCards.length;
-  const awayCardCount = finished ? awayCardDefs.length : awayCards.length;
+  const homeCardCount = fifaData?.matched && fifaData.cardCounts
+    ? fifaData.cardCounts.home
+    : finished ? homeCardDefs.length : homeCards.length;
+  const awayCardCount = fifaData?.matched && fifaData.cardCounts
+    ? fifaData.cardCounts.away
+    : finished ? awayCardDefs.length : awayCards.length;
 
   const homeScorersArr = useMemo(
     () => parseScorers(game.home_scorers).map(s => s.replace(/['"]/g, "").trim()).filter(Boolean),
@@ -1295,7 +1329,7 @@ function FeaturedLiveCard({
             {/* Live Penalty Score Badge in Main Card (Visible even when collapsed) */}
             {hasPenalties && (
               <div className="relative z-10 bg-orange-500/15 border border-orange-500/30 text-orange-400 text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.15)] animate-pulse">
-                Penalties: {hp} - {ap}
+                ({hp} - {ap} PEN)
               </div>
             )}
           </div>
@@ -1410,7 +1444,7 @@ function FeaturedLiveCard({
       {/* Live Match Tracker Section */}
       <MatchTrackerView
         showTracker={showTracker} isLive={isLive} isPending={isPending} game={game} commentary={commentary}
-        feed={isLive ? commentaryFeed : recapFeed} ballPos={ballPos}
+        feed={realFeed.length > 0 ? realFeed : (isLive ? commentaryFeed : recapFeed)} ballPos={ballPos}
         homeFlag={homeTeam?.flag} awayFlag={awayTeam?.flag}
         homeCode={homeTeam?.fifa_code || homeName} awayCode={awayTeam?.fifa_code || awayName}
         hs={hs} as_={as_} stageTag={stageTag}
