@@ -337,17 +337,17 @@ export default function HomePage() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             onClick={isInstalled ? handleUpdateClick : handleInstallClick}
-            className="fixed bottom-6 right-4 z-50 flex items-center gap-1.5 bg-[#131d35] border border-yellow-400/30 hover:border-yellow-400/60 rounded-full px-2.5 py-1.5 sm:px-3 sm:py-2 text-[9px] sm:text-[10px] font-black text-gray-300 hover:text-white shadow-[0_0_15px_rgba(250,204,21,0.1)] hover:shadow-[0_0_24px_rgba(250,204,21,0.25)] transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
+            className="fixed bottom-6 right-4 z-50 flex flex-col items-center justify-center gap-0.5 bg-[#131d35] border border-yellow-400/30 hover:border-yellow-400/60 rounded-xl px-2 py-1.5 text-[8px] sm:text-[9px] font-black text-gray-400 hover:text-white shadow-[0_0_15px_rgba(250,204,21,0.1)] hover:shadow-[0_0_24px_rgba(250,204,21,0.25)] transition-all active:scale-95 cursor-pointer uppercase tracking-wider min-w-[42px]"
             aria-label={isInstalled ? "Update app" : "Install app"}
           >
             {isInstalled ? (
-              <svg className="w-3 h-3 text-yellow-400 select-none animate-spin-slow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+              <svg className="w-3.5 h-3.5 text-yellow-400 select-none animate-spin-slow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
               </svg>
             ) : (
-              <img src="/favicon.png" className="w-3 h-3 object-contain select-none" alt="" />
+              <img src="/favicon.png" className="w-4 h-4 object-contain select-none" alt="" />
             )}
-            <span>{isInstalled ? "Update" : "Install"}</span>
+            <span className="mt-0.5 leading-none">{isInstalled ? "Update" : "Install"}</span>
           </motion.button>
         )}
       </AnimatePresence>
