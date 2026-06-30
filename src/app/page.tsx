@@ -337,7 +337,7 @@ export default function HomePage() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             onClick={isInstalled ? handleUpdateClick : handleInstallClick}
-            className="fixed bottom-6 right-4 z-50 flex flex-col items-center justify-center gap-0.5 bg-[#131d35] border border-yellow-400/30 hover:border-yellow-400/60 rounded-xl px-2 py-1.5 text-[8px] sm:text-[9px] font-black text-gray-400 hover:text-white shadow-[0_0_15px_rgba(250,204,21,0.1)] hover:shadow-[0_0_24px_rgba(250,204,21,0.25)] transition-all active:scale-95 cursor-pointer uppercase tracking-wider min-w-[42px]"
+            className="fixed bottom-6 right-4 z-50 flex flex-col items-center justify-center gap-0.5 bg-[#131d35] border border-yellow-400/30 hover:border-yellow-400/60 rounded-xl px-2 py-1.5 text-[7px] sm:text-[7.5px] font-medium text-gray-400 hover:text-white shadow-[0_0_15px_rgba(250,204,21,0.1)] hover:shadow-[0_0_24px_rgba(250,204,21,0.25)] transition-all active:scale-95 cursor-pointer uppercase tracking-wider min-w-[42px]"
             aria-label={isInstalled ? "Update app" : "Install app"}
           >
             {isInstalled ? (
