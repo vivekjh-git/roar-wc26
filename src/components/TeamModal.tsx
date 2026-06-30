@@ -299,7 +299,7 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
                   const finished = g.finished === "TRUE";
                   const gf = parseInt(isHome ? g.home_score : g.away_score) || 0;
                   const ga = parseInt(isHome ? g.away_score : g.home_score) || 0;
-                  const result = finished ? (gf > ga ? "W" : gf === ga ? "D" : "L") : null;
+                  const result = getMatchResult(g, team.id);
                   const resultColors = { W: "text-green-400", D: "text-gray-400", L: "text-red-400" };
                   const stadium = stadiumMap[g.stadium_id];
                   const isLive = g.time_elapsed !== "notstarted" && !finished;
