@@ -5,9 +5,12 @@ export const revalidate = 0;
 
 type EntryType = "goal" | "card" | "sub" | "marker" | "info";
 
+// Full taxonomy verified against every real match in this World Cup's calendar (see route history).
 const TYPE_MAP: Record<number, { type: EntryType; headline?: string }> = {
   0: { type: "goal", headline: "GOAL!" },
-  41: { type: "goal", headline: "GOAL!" },
+  41: { type: "goal", headline: "PENALTY GOAL!" },
+  34: { type: "goal", headline: "OWN GOAL!" },
+  6: { type: "info", headline: "PENALTY AWARDED!" },
   60: { type: "info", headline: "PENALTY MISSED!" },
   2: { type: "card", headline: "CARD!" },
   3: { type: "card", headline: "RED CARD!" },
@@ -16,7 +19,18 @@ const TYPE_MAP: Record<number, { type: EntryType; headline?: string }> = {
   78: { type: "marker", headline: "KICK OFF!" },
   8: { type: "marker" },
   26: { type: "marker", headline: "FULL TIME!" },
+  71: { type: "info", headline: "VAR CHECK!" },
 };
+
+// Own goals are logged against the team whose player put it in their own net — but for "which
+// side does this event belong to" purposes (flag, timeline placement) we attribute it to the
+// team that benefited on the scoreboard, matching how the score itself is read.
+function eventTeamSide(e: FifaTimelineEvent, homeTeamId: string): "home" | "away" | undefined {
+  if (!e.IdTeam) return undefined;
+  const isHomeActor = e.IdTeam === homeTeamId;
+  if (e.Type === 34) return isHomeActor ? "away" : "home";
+  return isHomeActor ? "home" : "away";
+}
 
 function toEntry(e: FifaTimelineEvent, homeTeamId: string, idx: number) {
   const mapped = TYPE_MAP[e.Type] ?? { type: "info" as EntryType };
@@ -28,8 +42,32 @@ function toEntry(e: FifaTimelineEvent, homeTeamId: string, idx: number) {
     headline: mapped.headline,
     detail,
     type: mapped.type,
-    team: e.IdTeam ? (e.IdTeam === homeTeamId ? "home" : "away") : undefined,
+    team: eventTeamSide(e, homeTeamId),
   };
+}
+
+type TimelineIconType = "goal" | "card" | "redCard" | "sub" | "attempt" | "foul" | "offside" | "corner";
+const TIMELINE_ICON_MAP: Record<number, TimelineIconType> = {
+  0: "goal", 41: "goal", 34: "goal",
+  2: "card",
+  3: "redCard",
+  5: "sub",
+  12: "attempt",
+  18: "foul",
+  15: "offside",
+  16: "corner",
+};
+
+function buildTimeline(events: FifaTimelineEvent[], homeTeamId: string) {
+  return events
+    .map(e => {
+      const iconType = TIMELINE_ICON_MAP[e.Type];
+      const team = eventTeamSide(e, homeTeamId);
+      if (!iconType || !team) return null;
+      const minute = Number.parseInt((e.MatchMinute || "0").match(/(\d+)/)?.[1] ?? "0", 10);
+      return { minute, type: iconType, team };
+    })
+    .filter((e): e is NonNullable<typeof e> => e !== null);
 }
 
 // Counts directly observable from the real event timeline. Each field here is something we can
