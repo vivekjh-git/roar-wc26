@@ -998,56 +998,9 @@ function MatchTrackerView({
               </div>
             )}
 
-            <div className="flex-1 p-3 relative z-10 overflow-hidden flex flex-col justify-end gap-1.5">
-              {isFarAhead || isPending ? (
-                <motion.div
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
-                >
-                  {isFarAhead
-                    ? "Live tracker is offline. Please check back closer to kickoff (activates 1 hour prior to game time)."
-                    : "Both teams are warming up on the pitch. Formations are announced and managers are reviewing their strategies. Kickoff is imminent."
-                  }
-                </motion.div>
-              ) : (
-                <AnimatePresence initial={false}>
-                  {feed.slice(0, 4).map((entry, i) => {
-                    const flag = entry.team === "home" ? homeFlag : entry.team === "away" ? awayFlag : undefined;
-                    return (
-                      <motion.div
-                        key={entry.id}
-                        layout
-                        initial={{ y: 14, opacity: 0, scale: 0.96 }}
-                        animate={{ y: 0, opacity: 1 - i * 0.2, scale: 1 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.35, ease: "easeOut" }}
-                        className="w-full text-[9px] sm:text-[11px] text-white bg-black/55 px-2.5 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5"
-                      >
-                        {flag && <img src={flag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shrink-0" />}
-                        <span className="text-yellow-400/90 font-bold shrink-0 tabular-nums">[{entry.minute}]</span>
-                        <span className="flex-1 truncate">
-                          {entry.headline && <span className="font-black">{entry.headline} </span>}
-                          {entry.detail}
-                        </span>
-                        <span className="shrink-0 text-xs">{COMMENTARY_ICON[entry.type]}</span>
-                      </motion.div>
-                    );
-                  })}
-                  {feed.length === 0 && (
-                    <motion.div
-                      key="placeholder"
-                      initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
-                    >
-                      {commentary}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              )}
-
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="flex-1 relative z-10 min-h-0">
+              {/* Ball — decorative overlay, stays centered regardless of feed scroll */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20">
                 <motion.div
                   animate={isLive ? { x: ballPos.x, y: ballPos.y } : { x: 0, y: 0 }}
                   transition={{ type: "spring", stiffness: 50, damping: 10 }}
@@ -1056,6 +1009,65 @@ function MatchTrackerView({
                   ⚽
                 </motion.div>
               </div>
+
+              {isFarAhead || isPending ? (
+                <div className="h-full p-3 flex flex-col justify-end">
+                  <motion.div
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
+                  >
+                    {isFarAhead
+                      ? "Live tracker is offline. Please check back closer to kickoff (activates 1 hour prior to game time)."
+                      : "Both teams are warming up on the pitch. Formations are announced and managers are reviewing their strategies. Kickoff is imminent."
+                    }
+                  </motion.div>
+                </div>
+              ) : (
+                <div className="h-full overflow-y-auto no-scrollbar p-3">
+                  <AnimatePresence initial={false}>
+                    {feed.length > 5 && (
+                      <div className="text-center text-[7px] text-gray-500 uppercase tracking-widest mb-1.5">
+                        Scroll for {feed.length - 5} more
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-1.5">
+                      {feed.map((entry) => {
+                        const flag = entry.team === "home" ? homeFlag : entry.team === "away" ? awayFlag : undefined;
+                        return (
+                          <motion.div
+                            key={entry.id}
+                            layout
+                            initial={{ y: 14, opacity: 0, scale: 0.96 }}
+                            animate={{ y: 0, opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.35, ease: "easeOut" }}
+                            className="w-full text-[9px] sm:text-[11px] text-white bg-black/55 px-2.5 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 shrink-0"
+                          >
+                            {flag && <img src={flag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shrink-0" />}
+                            <span className="text-yellow-400/90 font-bold shrink-0 tabular-nums">[{entry.minute}]</span>
+                            <span className="flex-1 truncate">
+                              {entry.headline && <span className="font-black">{entry.headline} </span>}
+                              {entry.detail}
+                            </span>
+                            <span className="shrink-0 text-xs">{COMMENTARY_ICON[entry.type]}</span>
+                          </motion.div>
+                        );
+                      })}
+                      {feed.length === 0 && (
+                        <motion.div
+                          key="placeholder"
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
+                        >
+                          {commentary}
+                        </motion.div>
+                      )}
+                    </div>
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
