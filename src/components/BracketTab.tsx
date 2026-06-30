@@ -1977,8 +1977,8 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">NPT — Nepal Standard Time</p>
             </div>
 
-            {/* Mobile Navigation Switcher (Only visible on narrow screens) */}
-            <div className="flex md:hidden justify-center mb-4 px-2">
+            {/* Navigation Switcher */}
+            <div className="flex justify-center mb-4 px-2">
               <div className="flex p-1 bg-black/40 rounded-xl border border-white/5 shadow-inner gap-1.5 w-full max-w-sm justify-between">
                 <button
                   onClick={() => scrollToBracketSection('left')}
