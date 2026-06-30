@@ -456,7 +456,15 @@ function DetailedMatchCard({
   );
 }
 
-function MatchMomentum({ gameId, isLive, isPending }: { gameId: string, isLive: boolean, isPending?: boolean }) {
+function MatchMomentum({
+  gameId, isLive, isPending, hs, as_
+}: {
+  readonly gameId: string;
+  readonly isLive: boolean;
+  readonly isPending?: boolean;
+  readonly hs: number;
+  readonly as_: number;
+}) {
   if (isPending) {
     return (
       <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5 opacity-50">
@@ -488,16 +496,24 @@ function MatchMomentum({ gameId, isLive, isPending }: { gameId: string, isLive: 
     );
   }
   
-  // Render for both live and finished games
-  
-  // Generate deterministic pseudo-random bars for visual effect based on gameId
   const seed = parseInt(gameId || "0", 10) || 123;
+  // Generate random looking but stable bars
   const bars = Array.from({ length: 40 }).map((_, i) => {
     const val = Math.sin(i * 0.4 + seed) * 40 + (Math.sin(i * 1.1) * 20) + 50;
     const isHome = val > 50;
     const height = Math.abs(val - 50);
     return { isHome, height: Math.max(8, height) };
   });
+
+  // Dynamically balance stats based on actual live/FT scores
+  const homePoss = 50 + (seed % 5) - 2;
+  const awayPoss = 100 - homePoss;
+
+  const homeShots = hs * 3 + 5 + (seed % 4);
+  const awayShots = as_ * 3 + 4 + (seed % 5);
+
+  const homeCorners = 3 + (seed % 3);
+  const awayCorners = 3 + (seed % 4);
 
   return (
     <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5">
@@ -525,17 +541,17 @@ function MatchMomentum({ gameId, isLive, isPending }: { gameId: string, isLive: 
         </div>
         {/* Compact Stats */}
         <div className="flex-shrink-0 w-[100px] grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1 border border-white/5">
-          <span className="font-black text-white">{50 + (seed % 15)}%</span>
+          <span className="font-black text-white">{homePoss}%</span>
           <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Poss</span>
-          <span className="font-black text-white">{50 - (seed % 15)}%</span>
+          <span className="font-black text-white">{awayPoss}%</span>
 
-          <span className="font-black text-white">{3 + (seed % 4)}</span>
+          <span className="font-black text-white">{homeShots}</span>
           <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Shots</span>
-          <span className="font-black text-white">{1 + (seed % 5)}</span>
+          <span className="font-black text-white">{awayShots}</span>
 
-          <span className="font-black text-white">{4 + (seed % 3)}</span>
+          <span className="font-black text-white">{homeCorners}</span>
           <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corn</span>
-          <span className="font-black text-white">{2 + (seed % 4)}</span>
+          <span className="font-black text-white">{awayCorners}</span>
         </div>
       </div>
     </div>
@@ -1002,6 +1018,15 @@ function FeaturedLiveCard({
 
   const [commentaryFeed, setCommentaryFeed] = useState<CommentaryEntry[]>([]);
   const [liveBallPos, setLiveBallPos] = useState({ x: 0, y: 0 });
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!isLive) return;
+    const interval = setInterval(() => {
+      setElapsedSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isLive]);
 
   useEffect(() => {
     if (!isLive) return;
@@ -1070,12 +1095,25 @@ function FeaturedLiveCard({
         }
       });
 
-      if (newEntries.length === 0) {
-        const text = flavorPool[Math.floor(Math.random() * flavorPool.length)];
-        newEntries.push({ id: `flv-${Date.now()}-${Math.random()}`, minute: `${currentMinNum}'`, type: "info", text });
+      // Prevent flooding: only add a new flavor commentary entry if at least 12 seconds have elapsed since the last flavor text
+      const now = Date.now();
+      const lastFlavorKey = Array.from(announced).find(k => k.startsWith("flv-"));
+      let timeDiff = 99999;
+      if (lastFlavorKey) {
+        const lastTime = parseInt(lastFlavorKey.split("-")[1]);
+        timeDiff = now - lastTime;
       }
 
-      setCommentaryFeed(prev => [...newEntries.reverse(), ...prev].slice(0, 6));
+      if (newEntries.length === 0 && timeDiff > 12000) {
+        const text = flavorPool[Math.floor(Math.random() * flavorPool.length)];
+        const key = `flv-${now}-${Math.random()}`;
+        announced.add(key);
+        newEntries.push({ id: key, minute: `${currentMinNum}'`, type: "info", text });
+      }
+
+      if (newEntries.length > 0) {
+        setCommentaryFeed(prev => [...newEntries.reverse(), ...prev].slice(0, 8));
+      }
       setLiveBallPos({
         x: Math.floor(Math.random() * 200) - 100,
         y: Math.floor(Math.random() * 90) - 45
@@ -1083,7 +1121,7 @@ function FeaturedLiveCard({
     };
 
     tick();
-    const interval = setInterval(tick, 500);
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [isLive, homeName, awayName, currentMinNum, isET, sid, homeSubs, awaySubs, homeCards, awayCards, homeScorersArr, awayScorersArr]);
 
@@ -1111,11 +1149,22 @@ function FeaturedLiveCard({
       </>
     );
   } else if (isLive) {
-    const liveTimeStr = game.time_elapsed.replace(/live/i, '').trim();
+    const liveTimeStr = (() => {
+      if (hasPenalties) return "PEN";
+      if (isET) {
+        const min = 90 + Math.min(30, Math.floor(elapsedSeconds / 2));
+        return `${min}'`;
+      }
+      const min = 90 + Math.min(5, Math.floor(elapsedSeconds / 5));
+      return `${min}'`;
+    })();
+
     matchStatusLabel = (
       <>
-        <span className={isET ? "text-orange-400" : ""}>{isET ? '\u26A1 EXTRA TIME' : 'In Progress'}</span>
-        <span className={`font-black text-base sm:text-lg leading-none mt-0.5 ${isET ? 'text-orange-300' : 'text-red-400'}`}>{liveTimeStr}</span>
+        <span className={isET || hasPenalties ? "text-orange-400 font-black animate-pulse" : "text-red-400 font-black animate-pulse"}>
+          {hasPenalties ? 'PENALTIES' : isET ? 'EXTRA TIME' : 'LIVE'}
+        </span>
+        <span className={`font-black text-sm sm:text-base leading-none mt-0.5 ${isET || hasPenalties ? 'text-orange-300' : 'text-red-400'}`}>{liveTimeStr}</span>
       </>
     );
   } else {
@@ -1179,10 +1228,19 @@ function FeaturedLiveCard({
             <img src="/tiger.png" alt="" className="w-full h-full object-contain select-none mix-blend-screen" />
           </div>
 
-          <div className="flex items-center justify-center gap-1.5 sm:gap-3 relative z-10">
-            <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-yellow-400" : "text-gray-500"}`}>{finished || isLive ? hs : "-"}</span>
-            <span className="text-lg sm:text-2xl text-gray-600 font-black mb-1">:</span>
-            <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-yellow-400" : "text-gray-500"}`}>{finished || isLive ? as_ : "-"}</span>
+          <div className="flex flex-col items-center justify-center gap-1">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-3 relative z-10">
+              <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-yellow-400" : "text-gray-500"}`}>{finished || isLive ? hs : "-"}</span>
+              <span className="text-lg sm:text-2xl text-gray-600 font-black mb-1">:</span>
+              <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-yellow-400" : "text-gray-500"}`}>{finished || isLive ? as_ : "-"}</span>
+            </div>
+            
+            {/* Live Penalty Score Badge in Main Card (Visible even when collapsed) */}
+            {hasPenalties && (
+              <div className="relative z-10 bg-orange-500/15 border border-orange-500/30 text-orange-400 text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.15)] animate-pulse">
+                Penalties: {hp} - {ap}
+              </div>
+            )}
           </div>
           <div className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1.5 bg-black/40 px-2.5 sm:px-3 py-1 rounded-full border border-white/5 text-center flex flex-col leading-tight relative z-10">
             {matchStatusLabel}
@@ -1284,7 +1342,7 @@ function FeaturedLiveCard({
       </div>
 
 
-      <MatchMomentum gameId={game.id} isLive={isLive} isPending={isPending} />
+      <MatchMomentum gameId={game.id} isLive={isLive} isPending={isPending} hs={hs} as_={as_} />
 
       <button 
         onClick={() => setShowTracker(!showTracker)}
