@@ -28,17 +28,20 @@ const TYPE_MAP: Record<number, { type: EntryType; headline?: string }> = {
 function eventTeamSide(e: FifaTimelineEvent, homeTeamId: string): "home" | "away" | undefined {
   if (!e.IdTeam) return undefined;
   const isHomeActor = e.IdTeam === homeTeamId;
-  if (e.Type === 34) return isHomeActor ? "away" : "home";
-  return isHomeActor ? "home" : "away";
+  const isOwnGoal = e.Type === 34;
+  const isHomeSide = isOwnGoal ? !isHomeActor : isHomeActor;
+  return isHomeSide ? "home" : "away";
 }
 
+const DEFAULT_ENTRY_TYPE: { type: EntryType } = { type: "info" };
+
 function toEntry(e: FifaTimelineEvent, homeTeamId: string, idx: number) {
-  const mapped = TYPE_MAP[e.Type] ?? { type: "info" as EntryType };
+  const mapped = TYPE_MAP[e.Type] ?? DEFAULT_ENTRY_TYPE;
   const detail = e.EventDescription?.[0]?.Description || "";
   if (!detail) return null;
   return {
     id: `fifa-${idx}-${e.Type}`,
-    minute: e.MatchMinute || "",
+    minute: e.MatchMinute || "PSO",
     headline: mapped.headline,
     detail,
     type: mapped.type,
@@ -63,8 +66,10 @@ function buildTimeline(events: FifaTimelineEvent[], homeTeamId: string) {
     .map(e => {
       const iconType = TIMELINE_ICON_MAP[e.Type];
       const team = eventTeamSide(e, homeTeamId);
-      if (!iconType || !team) return null;
-      const minute = Number.parseInt((e.MatchMinute || "0").match(/(\d+)/)?.[1] ?? "0", 10);
+      // Penalty shootout kicks have no MatchMinute (there's no clock) — they don't belong on a
+      // minute axis, so they're left out here (the shootout score is already shown separately).
+      if (!iconType || !team || !e.MatchMinute) return null;
+      const minute = Number.parseInt(e.MatchMinute.match(/(\d+)/)?.[1] ?? "0", 10);
       return { minute, type: iconType, team };
     })
     .filter((e): e is NonNullable<typeof e> => e !== null);
@@ -89,8 +94,8 @@ const BUCKET_SIZE = 5;
 function buildMomentum(events: FifaTimelineEvent[], homeTeamId: string) {
   const buckets = new Map<number, { home: number; away: number }>();
   for (const e of events) {
-    if (!MOMENTUM_TYPES.has(e.Type) || !e.IdTeam) continue;
-    const min = Number.parseInt((e.MatchMinute || "0").match(/(\d+)/)?.[1] ?? "0", 10);
+    if (!MOMENTUM_TYPES.has(e.Type) || !e.IdTeam || !e.MatchMinute) continue;
+    const min = Number.parseInt(e.MatchMinute.match(/(\d+)/)?.[1] ?? "0", 10);
     const bucketStart = Math.floor(min / BUCKET_SIZE) * BUCKET_SIZE;
     const bucket = buckets.get(bucketStart) ?? { home: 0, away: 0 };
     if (e.IdTeam === homeTeamId) bucket.home++; else bucket.away++;
@@ -154,6 +159,7 @@ export async function GET(req: NextRequest) {
       },
     },
     momentum: buildMomentum(evs, homeTeamId),
+    timeline: buildTimeline(evs, homeTeamId),
     possession: live.BallPossession,
     events,
   });

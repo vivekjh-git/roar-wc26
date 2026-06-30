@@ -440,86 +440,131 @@ function DetailedMatchCard({
   );
 }
 
-function MatchMomentum({
-  isLive, isPending, real, momentum, cardCounts
+interface TimelineMarker {
+  minute: number;
+  type: "goal" | "card" | "redCard" | "sub" | "attempt" | "foul";
+  team: "home" | "away";
+}
+
+function TimelineIcon({ type }: { readonly type: TimelineMarker["type"] }) {
+  switch (type) {
+    case "goal":
+      return <span className="text-[11px] leading-none drop-shadow">⚽</span>;
+    case "sub":
+      return <span className="text-[10px] leading-none">🚩</span>;
+    case "card":
+      return <span className="block w-1.5 h-2 bg-yellow-400 rounded-[1px] shadow-sm" />;
+    case "redCard":
+      return <span className="block w-1.5 h-2 bg-red-500 rounded-[1px] shadow-sm" />;
+    case "attempt":
+      return <span className="block w-1.5 h-1.5 rounded-full bg-white/80" />;
+    case "foul":
+      return <span className="block w-1 h-1 rounded-full bg-white/25" />;
+    default:
+      return null;
+  }
+}
+
+function MatchTimeline({
+  isLive, isPending, momentum, timeline, matched
 }: {
   readonly isLive: boolean;
   readonly isPending?: boolean;
-  readonly real: { home: RealTeamStats; away: RealTeamStats } | null;
   readonly momentum: Array<{ bucketStart: number; home: number; away: number }> | null;
-  readonly cardCounts: { home: number; away: number } | null;
+  readonly timeline: TimelineMarker[] | null;
+  readonly matched: boolean;
 }) {
-  if (isPending || !real) {
+  if (isPending || !matched) {
     const statusLabel = isPending ? "Upcoming" : "Not available";
     return (
       <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5 opacity-55">
         <div className="flex justify-between items-center w-full text-[9px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">
-          <span>Match Momentum</span>
+          <span>Match Timeline</span>
           <span className="text-gray-400 font-bold uppercase tracking-wider text-[8px]">{statusLabel}</span>
         </div>
-        <div className="flex items-center gap-3 w-full px-1">
-          <div className="flex-1 flex items-center justify-center h-12 relative">
-            <div className="h-[1px] w-full bg-white/20" />
-          </div>
-          <div className="flex-shrink-0 w-[110px] grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1 border border-white/5">
-            <span className="font-black text-gray-500">—</span>
-            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Atts</span>
-            <span className="font-black text-gray-500">—</span>
-
-            <span className="font-black text-gray-500">—</span>
-            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corn</span>
-            <span className="font-black text-gray-500">—</span>
-
-            <span className="font-black text-yellow-500/60">—</span>
-            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Cards</span>
-            <span className="font-black text-yellow-500/60">—</span>
-          </div>
+        <div className="w-full h-16 flex items-center justify-center">
+          <div className="h-[1px] w-full bg-white/20" />
         </div>
       </div>
     );
   }
 
+  const bucketSize = 5;
+  const dataMax = Math.max(
+    90,
+    ...(timeline ?? []).map(e => e.minute),
+    ...(momentum ?? []).map(b => b.bucketStart + bucketSize)
+  );
+  const axisMax = Math.ceil(dataMax / 15) * 15;
   const maxBucket = momentum?.length ? Math.max(1, ...momentum.map(b => Math.max(b.home, b.away))) : 1;
+  const ticks = Array.from({ length: axisMax / 15 + 1 }, (_, i) => i * 15);
+
+  // Group markers landing on the same minute+team+type so duplicates stack instead of overlapping.
+  const grouped = new Map<string, TimelineMarker[]>();
+  (timeline ?? []).forEach(m => {
+    const key = `${m.minute}-${m.team}-${m.type}`;
+    const arr = grouped.get(key) ?? [];
+    arr.push(m);
+    grouped.set(key, arr);
+  });
 
   return (
     <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5">
       <div className="flex justify-between items-center w-full text-[9px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">
-        <span>Match Momentum</span>
+        <span>Match Timeline</span>
         <span className={`flex items-center gap-1.5 ${isLive ? "text-red-400" : "text-gray-400"}`}>
            {isLive && <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>}
            {isLive ? "Live" : "Final"}
         </span>
       </div>
 
-      <div className="flex items-center gap-3 w-full px-1">
-        {/* Graph */}
-        <div className="flex-1 flex items-center justify-center gap-[2px] h-12 opacity-90">
+      <div className="w-full relative" style={{ height: 78 }}>
+        {/* HT / FT guide lines */}
+        <div className="absolute top-0 bottom-3 w-px bg-white/10" style={{ left: `${(45 / axisMax) * 100}%` }} />
+        <span className="absolute -top-0.5 text-[7px] text-gray-500 font-bold -translate-x-1/2" style={{ left: `${(45 / axisMax) * 100}%` }}>HT</span>
+        <span className="absolute -top-0.5 right-0 text-[7px] text-gray-500 font-bold">FT</span>
+
+        {/* Home icon lane */}
+        <div className="absolute top-2.5 left-0 right-0 h-4">
+          {[...grouped.entries()].filter(([k]) => k.includes("-home-")).map(([key, items]) => (
+            <div key={key} className="absolute flex flex-col items-center gap-[1px] -translate-x-1/2" style={{ left: `${(items[0].minute / axisMax) * 100}%` }} title={`${items[0].minute}'`}>
+              <TimelineIcon type={items[0].type} />
+              {items.length > 1 && <span className="text-[6px] text-gray-400 leading-none">×{items.length}</span>}
+            </div>
+          ))}
+        </div>
+
+        {/* Density bars */}
+        <div className="absolute top-7 bottom-7 left-0 right-0 flex items-center gap-px">
           {momentum && momentum.length > 0 ? momentum.map((bucket) => (
-            <div key={bucket.bucketStart} className="flex flex-col justify-center h-full flex-1 min-w-[2px]" title={`${bucket.bucketStart}'`}>
+            <div key={bucket.bucketStart} className="flex flex-col justify-center h-full" style={{ width: `${(bucketSize / axisMax) * 100}%` }}>
               <div className="h-1/2 flex items-end">
-                {bucket.home > 0 && <div className="w-full bg-blue-400 rounded-t-[1px]" style={{ height: `${(bucket.home / maxBucket) * 100}%` }} />}
+                {bucket.home > 0 && <div className="w-full bg-blue-400/70 rounded-t-[1px]" style={{ height: `${(bucket.home / maxBucket) * 100}%` }} />}
               </div>
-              <div className="h-[1px] w-full bg-white/10" />
+              <div className="h-px w-full bg-white/10" />
               <div className="h-1/2 flex items-start">
-                {bucket.away > 0 && <div className="w-full bg-orange-400 rounded-b-[1px]" style={{ height: `${(bucket.away / maxBucket) * 100}%` }} />}
+                {bucket.away > 0 && <div className="w-full bg-orange-400/70 rounded-b-[1px]" style={{ height: `${(bucket.away / maxBucket) * 100}%` }} />}
               </div>
             </div>
-          )) : <div className="h-[1px] w-full bg-white/20" />}
+          )) : <div className="h-px w-full bg-white/20" />}
         </div>
-        {/* Compact Stats */}
-        <div className="flex-shrink-0 w-[110px] grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1 border border-white/5">
-          <span className="font-black text-white">{real.home.attemptsAtGoal}</span>
-          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Atts</span>
-          <span className="font-black text-white">{real.away.attemptsAtGoal}</span>
 
-          <span className="font-black text-white">{real.home.corners}</span>
-          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corn</span>
-          <span className="font-black text-white">{real.away.corners}</span>
-
-          <span className="font-black text-yellow-400">{cardCounts?.home ?? "—"}</span>
-          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Cards</span>
-          <span className="font-black text-yellow-400">{cardCounts?.away ?? "—"}</span>
+        {/* Away icon lane */}
+        <div className="absolute bottom-0 left-0 right-0 h-4">
+          {[...grouped.entries()].filter(([k]) => k.includes("-away-")).map(([key, items]) => (
+            <div key={key} className="absolute flex flex-col items-center gap-[1px] -translate-x-1/2" style={{ left: `${(items[0].minute / axisMax) * 100}%` }} title={`${items[0].minute}'`}>
+              {items.length > 1 && <span className="text-[6px] text-gray-400 leading-none">×{items.length}</span>}
+              <TimelineIcon type={items[0].type} />
+            </div>
+          ))}
         </div>
+      </div>
+
+      {/* Minute axis */}
+      <div className="w-full relative h-3 mt-1">
+        {ticks.map(t => (
+          <span key={t} className="absolute text-[7px] text-gray-600 font-mono -translate-x-1/2" style={{ left: `${(t / axisMax) * 100}%` }}>{t}</span>
+        ))}
       </div>
     </div>
   );
@@ -974,6 +1019,7 @@ function FeaturedLiveCard({
     cardCounts?: { home: number; away: number };
     stats?: { home: RealTeamStats; away: RealTeamStats };
     momentum?: Array<{ bucketStart: number; home: number; away: number }>;
+    timeline?: TimelineMarker[];
   } | null>(null);
 
   // Fetch on mount, immediately again at key match-stage transitions (half time, extra time,
@@ -1018,6 +1064,7 @@ function FeaturedLiveCard({
   const awayCardCount = fifaData?.matched && fifaData.cardCounts ? fifaData.cardCounts.away : null;
   const realStats = fifaData?.matched && fifaData.stats ? fifaData.stats : null;
   const realMomentum = fifaData?.matched && fifaData.momentum ? fifaData.momentum : null;
+  const realTimeline = fifaData?.matched && fifaData.timeline ? fifaData.timeline : null;
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
@@ -1208,7 +1255,7 @@ function FeaturedLiveCard({
 
       </div>
 
-      <MatchMomentum isLive={isLive} isPending={isPending} real={realStats} momentum={realMomentum} cardCounts={fifaData?.matched ? fifaData.cardCounts ?? null : null} />
+      <MatchTimeline isLive={isLive} isPending={isPending} momentum={realMomentum} timeline={realTimeline} matched={!!fifaData?.matched} />
 
       <button 
         onClick={() => setShowTracker(!showTracker)}
