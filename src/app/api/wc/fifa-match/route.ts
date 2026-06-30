@@ -70,7 +70,8 @@ function buildTimeline(events: FifaTimelineEvent[], homeTeamId: string) {
       // minute axis, so they're left out here (the shootout score is already shown separately).
       if (!iconType || !team || !e.MatchMinute) return null;
       const minute = Number.parseInt(e.MatchMinute.match(/(\d+)/)?.[1] ?? "0", 10);
-      return { minute, type: iconType, team };
+      const detail = e.EventDescription?.[0]?.Description || "";
+      return { minute, type: iconType, team, detail };
     })
     .filter((e): e is NonNullable<typeof e> => e !== null);
 }

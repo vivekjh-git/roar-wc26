@@ -444,6 +444,7 @@ interface TimelineMarker {
   minute: number;
   type: "goal" | "card" | "redCard" | "sub" | "attempt" | "foul";
   team: "home" | "away";
+  detail: string;
 }
 
 function TimelineIcon({ type }: { readonly type: TimelineMarker["type"] }) {
@@ -465,15 +466,144 @@ function TimelineIcon({ type }: { readonly type: TimelineMarker["type"] }) {
   }
 }
 
+function TimelineEventsModal({
+  onClose, events, homeFlag, awayFlag, homeCode, awayCode
+}: {
+  readonly onClose: () => void;
+  readonly events: CommentaryEntry[];
+  readonly homeFlag?: string;
+  readonly awayFlag?: string;
+  readonly homeCode: string;
+  readonly awayCode: string;
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        ref={overlayRef}
+        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+        onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      >
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="relative z-10 w-full sm:w-[480px] max-h-[85vh] bg-[#0d1526] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl"
+        >
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/10 shrink-0">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white">
+              {homeFlag && <img src={homeFlag} alt="" className="w-4 h-3 object-cover rounded-sm" />}
+              <span>{homeCode}</span>
+              <span className="text-gray-600">vs</span>
+              <span>{awayCode}</span>
+              {awayFlag && <img src={awayFlag} alt="" className="w-4 h-3 object-cover rounded-sm" />}
+            </div>
+            <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-gray-400 hover:text-white">✕</button>
+          </div>
+          <div className="overflow-y-auto p-3 space-y-1.5">
+            {events.length === 0 && (
+              <p className="text-center text-xs text-gray-500 py-8">No events recorded yet.</p>
+            )}
+            {events.map(entry => {
+              const flag = entry.team === "home" ? homeFlag : entry.team === "away" ? awayFlag : undefined;
+              return (
+                <div key={entry.id} className="flex items-center gap-2 bg-black/30 rounded-lg px-2.5 py-2 text-[11px] text-white">
+                  {flag && <img src={flag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shrink-0" />}
+                  <span className="text-yellow-400/90 font-bold shrink-0 tabular-nums">[{entry.minute}]</span>
+                  <span className="flex-1">
+                    {entry.headline && <span className="font-black">{entry.headline} </span>}
+                    {entry.detail}
+                  </span>
+                  <span className="shrink-0 text-xs">{COMMENTARY_ICON[entry.type]}</span>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+const TIMELINE_PX_PER_MIN = 10;
+
 function MatchTimeline({
-  isLive, isPending, momentum, timeline, matched
+  isLive, isPending, isFinished, currentMinute, momentum, timeline, matched, events,
+  homeFlag, awayFlag, homeCode, awayCode
 }: {
   readonly isLive: boolean;
   readonly isPending?: boolean;
+  readonly isFinished: boolean;
+  readonly currentMinute: number | null;
   readonly momentum: Array<{ bucketStart: number; home: number; away: number }> | null;
   readonly timeline: TimelineMarker[] | null;
   readonly matched: boolean;
+  readonly events: CommentaryEntry[];
+  readonly homeFlag?: string;
+  readonly awayFlag?: string;
+  readonly homeCode: string;
+  readonly awayCode: string;
 }) {
+  const [showModal, setShowModal] = useState(false);
+  const [showJumpToLive, setShowJumpToLive] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const userScrolledRef = useRef(false);
+  const programmaticScrollRef = useRef(false);
+  const hasFinishedScrolledRef = useRef(false);
+
+  const bucketSize = 5;
+  const dataMax = Math.max(
+    90,
+    ...(timeline ?? []).map(e => e.minute),
+    ...(momentum ?? []).map(b => b.bucketStart + bucketSize)
+  );
+  const axisMax = Math.ceil(dataMax / 15) * 15;
+  const canvasWidth = axisMax * TIMELINE_PX_PER_MIN;
+  const maxBucket = momentum?.length ? Math.max(1, ...momentum.map(b => Math.max(b.home, b.away))) : 1;
+  const ticks = Array.from({ length: axisMax / 15 + 1 }, (_, i) => i * 15);
+
+  const scrollToMinute = (minute: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const target = Math.max(0, Math.min(canvasWidth - el.clientWidth, minute * TIMELINE_PX_PER_MIN - el.clientWidth * 0.6));
+    programmaticScrollRef.current = true;
+    el.scrollTo({ left: target, behavior: "smooth" });
+    window.setTimeout(() => { programmaticScrollRef.current = false; }, 700);
+  };
+
+  useEffect(() => {
+    if (!matched || isPending) return;
+    if (isLive && currentMinute != null && !userScrolledRef.current) {
+      scrollToMinute(currentMinute);
+    } else if (isFinished && !hasFinishedScrolledRef.current) {
+      hasFinishedScrolledRef.current = true;
+      const el = scrollRef.current;
+      if (el) {
+        programmaticScrollRef.current = true;
+        el.scrollTo({ left: canvasWidth - el.clientWidth, behavior: "smooth" });
+        window.setTimeout(() => { programmaticScrollRef.current = false; }, 700);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matched, isPending, isLive, isFinished, currentMinute, canvasWidth]);
+
+  const handleScroll = () => {
+    if (programmaticScrollRef.current) return;
+    userScrolledRef.current = true;
+    if (isLive) setShowJumpToLive(true);
+  };
+
+  const jumpToLive = () => {
+    userScrolledRef.current = false;
+    setShowJumpToLive(false);
+    if (currentMinute != null) scrollToMinute(currentMinute);
+  };
+
   if (isPending || !matched) {
     const statusLabel = isPending ? "Upcoming" : "Not available";
     return (
@@ -489,16 +619,6 @@ function MatchTimeline({
     );
   }
 
-  const bucketSize = 5;
-  const dataMax = Math.max(
-    90,
-    ...(timeline ?? []).map(e => e.minute),
-    ...(momentum ?? []).map(b => b.bucketStart + bucketSize)
-  );
-  const axisMax = Math.ceil(dataMax / 15) * 15;
-  const maxBucket = momentum?.length ? Math.max(1, ...momentum.map(b => Math.max(b.home, b.away))) : 1;
-  const ticks = Array.from({ length: axisMax / 15 + 1 }, (_, i) => i * 15);
-
   // Group markers landing on the same minute+team+type so duplicates stack instead of overlapping.
   const grouped = new Map<string, TimelineMarker[]>();
   (timeline ?? []).forEach(m => {
@@ -509,63 +629,90 @@ function MatchTimeline({
   });
 
   return (
-    <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5">
-      <div className="flex justify-between items-center w-full text-[9px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">
-        <span>Match Timeline</span>
+    <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5 relative">
+      <button
+        onClick={() => setShowModal(true)}
+        className="flex justify-between items-center w-full text-[9px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2 hover:text-gray-300 transition-colors"
+      >
+        <span className="flex items-center gap-1">Match Timeline <span className="text-gray-600 normal-case font-normal">(tap for full list)</span></span>
         <span className={`flex items-center gap-1.5 ${isLive ? "text-red-400" : "text-gray-400"}`}>
            {isLive && <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>}
            {isLive ? "Live" : "Final"}
         </span>
+      </button>
+
+      {showJumpToLive && (
+        <button
+          onClick={jumpToLive}
+          className="absolute top-6 right-2 z-10 text-[8px] font-black uppercase tracking-widest bg-red-500/90 text-white px-2 py-0.5 rounded-full shadow-lg animate-pulse"
+        >
+          ● Jump to live
+        </button>
+      )}
+
+      <div ref={scrollRef} onScroll={handleScroll} className="w-full overflow-x-auto no-scrollbar">
+        <div style={{ width: canvasWidth }}>
+          <div className="relative" style={{ height: 78 }}>
+            {/* HT / FT guide lines */}
+            <div className="absolute top-0 bottom-3 w-px bg-white/10" style={{ left: `${(45 / axisMax) * 100}%` }} />
+            <span className="absolute -top-0.5 text-[7px] text-gray-500 font-bold -translate-x-1/2" style={{ left: `${(45 / axisMax) * 100}%` }}>HT</span>
+            <span className="absolute -top-0.5 right-0 text-[7px] text-gray-500 font-bold">FT</span>
+
+            {/* Home icon lane */}
+            <div className="absolute top-2.5 left-0 right-0 h-4">
+              {[...grouped.entries()].filter(([k]) => k.includes("-home-")).map(([key, items]) => (
+                <button key={key} onClick={() => setShowModal(true)} className="absolute flex flex-col items-center gap-[1px] -translate-x-1/2" style={{ left: `${(items[0].minute / axisMax) * 100}%` }}>
+                  <TimelineIcon type={items[0].type} />
+                  {items.length > 1 && <span className="text-[6px] text-gray-400 leading-none">×{items.length}</span>}
+                </button>
+              ))}
+            </div>
+
+            {/* Density bars */}
+            <div className="absolute top-7 bottom-7 left-0 right-0 flex items-center gap-px">
+              {momentum && momentum.length > 0 ? momentum.map((bucket) => (
+                <div key={bucket.bucketStart} className="flex flex-col justify-center h-full" style={{ width: `${(bucketSize / axisMax) * 100}%` }}>
+                  <div className="h-1/2 flex items-end">
+                    {bucket.home > 0 && <div className="w-full bg-blue-400/70 rounded-t-[1px]" style={{ height: `${(bucket.home / maxBucket) * 100}%` }} />}
+                  </div>
+                  <div className="h-px w-full bg-white/10" />
+                  <div className="h-1/2 flex items-start">
+                    {bucket.away > 0 && <div className="w-full bg-orange-400/70 rounded-b-[1px]" style={{ height: `${(bucket.away / maxBucket) * 100}%` }} />}
+                  </div>
+                </div>
+              )) : <div className="h-px w-full bg-white/20" />}
+            </div>
+
+            {/* Away icon lane */}
+            <div className="absolute bottom-0 left-0 right-0 h-4">
+              {[...grouped.entries()].filter(([k]) => k.includes("-away-")).map(([key, items]) => (
+                <button key={key} onClick={() => setShowModal(true)} className="absolute flex flex-col items-center gap-[1px] -translate-x-1/2" style={{ left: `${(items[0].minute / axisMax) * 100}%` }}>
+                  {items.length > 1 && <span className="text-[6px] text-gray-400 leading-none">×{items.length}</span>}
+                  <TimelineIcon type={items[0].type} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Minute axis */}
+          <div className="relative h-3 mt-1">
+            {ticks.map(t => (
+              <span key={t} className="absolute text-[7px] text-gray-600 font-mono -translate-x-1/2" style={{ left: `${(t / axisMax) * 100}%` }}>{t}</span>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="w-full relative" style={{ height: 78 }}>
-        {/* HT / FT guide lines */}
-        <div className="absolute top-0 bottom-3 w-px bg-white/10" style={{ left: `${(45 / axisMax) * 100}%` }} />
-        <span className="absolute -top-0.5 text-[7px] text-gray-500 font-bold -translate-x-1/2" style={{ left: `${(45 / axisMax) * 100}%` }}>HT</span>
-        <span className="absolute -top-0.5 right-0 text-[7px] text-gray-500 font-bold">FT</span>
-
-        {/* Home icon lane */}
-        <div className="absolute top-2.5 left-0 right-0 h-4">
-          {[...grouped.entries()].filter(([k]) => k.includes("-home-")).map(([key, items]) => (
-            <div key={key} className="absolute flex flex-col items-center gap-[1px] -translate-x-1/2" style={{ left: `${(items[0].minute / axisMax) * 100}%` }} title={`${items[0].minute}'`}>
-              <TimelineIcon type={items[0].type} />
-              {items.length > 1 && <span className="text-[6px] text-gray-400 leading-none">×{items.length}</span>}
-            </div>
-          ))}
-        </div>
-
-        {/* Density bars */}
-        <div className="absolute top-7 bottom-7 left-0 right-0 flex items-center gap-px">
-          {momentum && momentum.length > 0 ? momentum.map((bucket) => (
-            <div key={bucket.bucketStart} className="flex flex-col justify-center h-full" style={{ width: `${(bucketSize / axisMax) * 100}%` }}>
-              <div className="h-1/2 flex items-end">
-                {bucket.home > 0 && <div className="w-full bg-blue-400/70 rounded-t-[1px]" style={{ height: `${(bucket.home / maxBucket) * 100}%` }} />}
-              </div>
-              <div className="h-px w-full bg-white/10" />
-              <div className="h-1/2 flex items-start">
-                {bucket.away > 0 && <div className="w-full bg-orange-400/70 rounded-b-[1px]" style={{ height: `${(bucket.away / maxBucket) * 100}%` }} />}
-              </div>
-            </div>
-          )) : <div className="h-px w-full bg-white/20" />}
-        </div>
-
-        {/* Away icon lane */}
-        <div className="absolute bottom-0 left-0 right-0 h-4">
-          {[...grouped.entries()].filter(([k]) => k.includes("-away-")).map(([key, items]) => (
-            <div key={key} className="absolute flex flex-col items-center gap-[1px] -translate-x-1/2" style={{ left: `${(items[0].minute / axisMax) * 100}%` }} title={`${items[0].minute}'`}>
-              {items.length > 1 && <span className="text-[6px] text-gray-400 leading-none">×{items.length}</span>}
-              <TimelineIcon type={items[0].type} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Minute axis */}
-      <div className="w-full relative h-3 mt-1">
-        {ticks.map(t => (
-          <span key={t} className="absolute text-[7px] text-gray-600 font-mono -translate-x-1/2" style={{ left: `${(t / axisMax) * 100}%` }}>{t}</span>
-        ))}
-      </div>
+      {showModal && (
+        <TimelineEventsModal
+          onClose={() => setShowModal(false)}
+          events={events}
+          homeFlag={homeFlag}
+          awayFlag={awayFlag}
+          homeCode={homeCode}
+          awayCode={awayCode}
+        />
+      )}
     </div>
   );
 }
@@ -1065,6 +1212,11 @@ function FeaturedLiveCard({
   const realStats = fifaData?.matched && fifaData.stats ? fifaData.stats : null;
   const realMomentum = fifaData?.matched && fifaData.momentum ? fifaData.momentum : null;
   const realTimeline = fifaData?.matched && fifaData.timeline ? fifaData.timeline : null;
+  const realEvents = fifaData?.matched && fifaData.events ? fifaData.events : [];
+  const currentMinute = isLive ? (() => {
+    const m = game.time_elapsed.replace(/live/i, '').trim().match(/(\d+)/);
+    return m ? Number.parseInt(m[1], 10) : null;
+  })() : null;
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
@@ -1255,7 +1407,12 @@ function FeaturedLiveCard({
 
       </div>
 
-      <MatchTimeline isLive={isLive} isPending={isPending} momentum={realMomentum} timeline={realTimeline} matched={!!fifaData?.matched} />
+      <MatchTimeline
+        isLive={isLive} isPending={isPending} isFinished={finished} currentMinute={currentMinute}
+        momentum={realMomentum} timeline={realTimeline} matched={!!fifaData?.matched} events={realEvents}
+        homeFlag={homeTeam?.flag} awayFlag={awayTeam?.flag}
+        homeCode={homeTeam?.fifa_code || homeName} awayCode={awayTeam?.fifa_code || awayName}
+      />
 
       <button 
         onClick={() => setShowTracker(!showTracker)}
