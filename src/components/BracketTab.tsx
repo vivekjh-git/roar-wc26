@@ -976,8 +976,8 @@ function FeaturedLiveCard({
       { min: 75 + ((base+6) % 10), out: `#${((base+2) % 5) + 4}`,   inn: `#${((base+2) % 4) + 15}` },
     ].filter(e => e.min <= currentMinNum);
   };
-  const homeSubs = isLive ? genSubEvents(true) : [];
-  const awaySubs = isLive ? genSubEvents(false) : [];
+  const homeSubs = useMemo(() => (isLive ? genSubEvents(true) : []), [isLive, sid, currentMinNum]);
+  const awaySubs = useMemo(() => (isLive ? genSubEvents(false) : []), [isLive, sid, currentMinNum]);
 
   const genCardEvents = (forHome: boolean) => {
     const base = forHome ? sid + 3 : sid + 11;
@@ -986,11 +986,17 @@ function FeaturedLiveCard({
       { min: 58 + ((base + 5) % 25), num: `#${((base + 3) % 9) + 2}` },
     ].filter(e => e.min <= currentMinNum);
   };
-  const homeCards = isLive ? genCardEvents(true) : [];
-  const awayCards = isLive ? genCardEvents(false) : [];
+  const homeCards = useMemo(() => (isLive ? genCardEvents(true) : []), [isLive, sid, currentMinNum]);
+  const awayCards = useMemo(() => (isLive ? genCardEvents(false) : []), [isLive, sid, currentMinNum]);
 
-  const homeScorersArr = parseScorers(game.home_scorers).map(s => s.replace(/['"]/g, "").trim()).filter(Boolean);
-  const awayScorersArr = parseScorers(game.away_scorers).map(s => s.replace(/['"]/g, "").trim()).filter(Boolean);
+  const homeScorersArr = useMemo(
+    () => parseScorers(game.home_scorers).map(s => s.replace(/['"]/g, "").trim()).filter(Boolean),
+    [game.home_scorers]
+  );
+  const awayScorersArr = useMemo(
+    () => parseScorers(game.away_scorers).map(s => s.replace(/['"]/g, "").trim()).filter(Boolean),
+    [game.away_scorers]
+  );
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
