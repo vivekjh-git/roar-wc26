@@ -1630,6 +1630,20 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
   const [activeTab, setActiveTab] = useState<'today' | 'tomorrow' | 'upcoming'>('today');
   const [viewType, setViewType] = useState<'tree' | 'fall'>('tree');
   const [startRound, setStartRound] = useState<'r32' | 'r16' | 'qf' | 'sf'>('r32');
+  const treeContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBracketSection = (section: 'left' | 'center' | 'right') => {
+    const el = treeContainerRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (section === 'left') {
+      el.scrollTo({ left: 0, behavior: 'smooth' });
+    } else if (section === 'center') {
+      el.scrollTo({ left: maxScroll / 2, behavior: 'smooth' });
+    } else {
+      el.scrollTo({ left: maxScroll, behavior: 'smooth' });
+    }
+  };
   // fallFilter: which round to start from in FALL (schedule) view
   const [fallFilter, setFallFilter] = useState<'all' | 'r32' | 'r16' | 'qf' | 'sf' | 'final'>('all');
   const teamMap = useMemo(() => Object.fromEntries(teams.map((t) => [t.id, t])), [teams]);
@@ -1963,8 +1977,32 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">NPT — Nepal Standard Time</p>
             </div>
 
+            {/* Mobile Navigation Switcher (Only visible on narrow screens) */}
+            <div className="flex md:hidden justify-center mb-4 px-2">
+              <div className="flex p-1 bg-black/40 rounded-xl border border-white/5 shadow-inner gap-1.5 w-full max-w-sm justify-between">
+                <button
+                  onClick={() => scrollToBracketSection('left')}
+                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider text-gray-300 hover:text-white bg-white/5 active:bg-white/10 transition-all border border-white/5 cursor-pointer"
+                >
+                  ◀ Left Bracket
+                </button>
+                <button
+                  onClick={() => scrollToBracketSection('center')}
+                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider text-yellow-400 hover:text-yellow-300 bg-yellow-400/10 active:bg-yellow-400/20 transition-all border border-yellow-400/10 cursor-pointer"
+                >
+                  🏆 Finals
+                </button>
+                <button
+                  onClick={() => scrollToBracketSection('right')}
+                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider text-gray-300 hover:text-white bg-white/5 active:bg-white/10 transition-all border border-white/5 cursor-pointer"
+                >
+                  Right Bracket ▶
+                </button>
+              </div>
+            </div>
+
             {/* Scrollable tree */}
-            <div className="w-full overflow-x-auto rounded-2xl border border-white/5 bg-[#080d19]/50 backdrop-blur-md p-4 shadow-2xl select-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            <div ref={treeContainerRef} className="w-full overflow-x-auto rounded-2xl border border-white/5 bg-[#080d19]/50 backdrop-blur-md p-4 shadow-2xl select-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
               <div className={`flex gap-0 items-center w-max mx-auto px-4 py-4 h-[675px] ${getMinWidthClass()}`}>
                 {startRound === 'r32' && (
                   <>
