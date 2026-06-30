@@ -43,6 +43,26 @@ function countByTeam(events: FifaTimelineEvent[], type: number, homeTeamId: stri
   return { home, away };
 }
 
+// "Momentum" derived from real attacking-event minutes (goals, attempts, corners) bucketed into
+// 5-minute windows — a genuine pressure timeline from FIFA's own event log, not a simulation.
+const MOMENTUM_TYPES = new Set([0, 41, 12, 16, 60]);
+const BUCKET_SIZE = 5;
+
+function buildMomentum(events: FifaTimelineEvent[], homeTeamId: string) {
+  const buckets = new Map<number, { home: number; away: number }>();
+  for (const e of events) {
+    if (!MOMENTUM_TYPES.has(e.Type) || !e.IdTeam) continue;
+    const min = Number.parseInt((e.MatchMinute || "0").match(/(\d+)/)?.[1] ?? "0", 10);
+    const bucketStart = Math.floor(min / BUCKET_SIZE) * BUCKET_SIZE;
+    const bucket = buckets.get(bucketStart) ?? { home: 0, away: 0 };
+    if (e.IdTeam === homeTeamId) bucket.home++; else bucket.away++;
+    buckets.set(bucketStart, bucket);
+  }
+  return [...buckets.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([bucketStart, counts]) => ({ bucketStart, ...counts }));
+}
+
 export async function GET(req: NextRequest) {
   const home = req.nextUrl.searchParams.get("home");
   const away = req.nextUrl.searchParams.get("away");
@@ -95,6 +115,7 @@ export async function GET(req: NextRequest) {
         redCards: redCardCount(live.AwayTeam.Bookings ?? []),
       },
     },
+    momentum: buildMomentum(evs, homeTeamId),
     possession: live.BallPossession,
     events,
   });

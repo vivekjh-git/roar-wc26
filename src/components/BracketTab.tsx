@@ -441,59 +441,85 @@ function DetailedMatchCard({
 }
 
 function MatchMomentum({
-  isLive, isPending, real, cardCounts
+  isLive, isPending, real, momentum, cardCounts
 }: {
   readonly isLive: boolean;
   readonly isPending?: boolean;
   readonly real: { home: RealTeamStats; away: RealTeamStats } | null;
+  readonly momentum: Array<{ bucketStart: number; home: number; away: number }> | null;
   readonly cardCounts: { home: number; away: number } | null;
 }) {
   if (isPending || !real) {
-    const statusLabel = isPending ? "Upcoming" : "Final";
+    const statusLabel = isPending ? "Upcoming" : "Not available";
     return (
-      <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5">
+      <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5 opacity-55">
         <div className="flex justify-between items-center w-full text-[9px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">
-          <span>Match Stats</span>
+          <span>Match Momentum</span>
           <span className="text-gray-400 font-bold uppercase tracking-wider text-[8px]">{statusLabel}</span>
         </div>
-        <div className="w-full grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1.5 border border-white/5 opacity-55">
-          <span className="font-black text-gray-500">—</span>
-          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Attempts</span>
-          <span className="font-black text-gray-500">—</span>
+        <div className="flex items-center gap-3 w-full px-1">
+          <div className="flex-1 flex items-center justify-center h-12 relative">
+            <div className="h-[1px] w-full bg-white/20" />
+          </div>
+          <div className="flex-shrink-0 w-[110px] grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1 border border-white/5">
+            <span className="font-black text-gray-500">—</span>
+            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Atts</span>
+            <span className="font-black text-gray-500">—</span>
 
-          <span className="font-black text-gray-500">—</span>
-          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corners</span>
-          <span className="font-black text-gray-500">—</span>
+            <span className="font-black text-gray-500">—</span>
+            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corn</span>
+            <span className="font-black text-gray-500">—</span>
 
-          <span className="font-black text-yellow-500/60">—</span>
-          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Cards</span>
-          <span className="font-black text-yellow-500/60">—</span>
+            <span className="font-black text-yellow-500/60">—</span>
+            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Cards</span>
+            <span className="font-black text-yellow-500/60">—</span>
+          </div>
         </div>
       </div>
     );
   }
 
+  const maxBucket = momentum?.length ? Math.max(1, ...momentum.map(b => Math.max(b.home, b.away))) : 1;
+
   return (
     <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5">
       <div className="flex justify-between items-center w-full text-[9px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">
-        <span>Match Stats</span>
+        <span>Match Momentum</span>
         <span className={`flex items-center gap-1.5 ${isLive ? "text-red-400" : "text-gray-400"}`}>
            {isLive && <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>}
            {isLive ? "Live" : "Final"}
         </span>
       </div>
-      <div className="w-full grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1.5 border border-white/5">
-        <span className="font-black text-white">{real.home.attemptsAtGoal}</span>
-        <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Attempts</span>
-        <span className="font-black text-white">{real.away.attemptsAtGoal}</span>
 
-        <span className="font-black text-white">{real.home.corners}</span>
-        <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corners</span>
-        <span className="font-black text-white">{real.away.corners}</span>
+      <div className="flex items-center gap-3 w-full px-1">
+        {/* Graph */}
+        <div className="flex-1 flex items-center justify-center gap-[2px] h-12 opacity-90">
+          {momentum && momentum.length > 0 ? momentum.map((bucket) => (
+            <div key={bucket.bucketStart} className="flex flex-col justify-center h-full flex-1 min-w-[2px]" title={`${bucket.bucketStart}'`}>
+              <div className="h-1/2 flex items-end">
+                {bucket.home > 0 && <div className="w-full bg-blue-400 rounded-t-[1px]" style={{ height: `${(bucket.home / maxBucket) * 100}%` }} />}
+              </div>
+              <div className="h-[1px] w-full bg-white/10" />
+              <div className="h-1/2 flex items-start">
+                {bucket.away > 0 && <div className="w-full bg-orange-400 rounded-b-[1px]" style={{ height: `${(bucket.away / maxBucket) * 100}%` }} />}
+              </div>
+            </div>
+          )) : <div className="h-[1px] w-full bg-white/20" />}
+        </div>
+        {/* Compact Stats */}
+        <div className="flex-shrink-0 w-[110px] grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1 border border-white/5">
+          <span className="font-black text-white">{real.home.attemptsAtGoal}</span>
+          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Atts</span>
+          <span className="font-black text-white">{real.away.attemptsAtGoal}</span>
 
-        <span className="font-black text-yellow-400">{cardCounts?.home ?? "—"}</span>
-        <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Cards</span>
-        <span className="font-black text-yellow-400">{cardCounts?.away ?? "—"}</span>
+          <span className="font-black text-white">{real.home.corners}</span>
+          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corn</span>
+          <span className="font-black text-white">{real.away.corners}</span>
+
+          <span className="font-black text-yellow-400">{cardCounts?.home ?? "—"}</span>
+          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Cards</span>
+          <span className="font-black text-yellow-400">{cardCounts?.away ?? "—"}</span>
+        </div>
       </div>
     </div>
   );
@@ -930,6 +956,15 @@ function FeaturedLiveCard({
     return num > 90;
   })();
 
+  const stageTag = (() => {
+    if (!isLive) return "";
+    const t = game.time_elapsed.toLowerCase();
+    if (t.includes("ht") || t.includes("half")) return "HT";
+    if (t.includes("pen") || /\bp\b/.test(t)) return "PEN";
+    if (isET) return "ET";
+    return "LIVE";
+  })();
+
   // Real data from FIFA's match centre, when our fixture can be matched to a real World Cup match.
   // We only ever show real numbers — if a match isn't matched (or a field isn't in FIFA's feed),
   // the UI says so explicitly instead of estimating or simulating anything.
@@ -938,8 +973,11 @@ function FeaturedLiveCard({
     events?: CommentaryEntry[];
     cardCounts?: { home: number; away: number };
     stats?: { home: RealTeamStats; away: RealTeamStats };
+    momentum?: Array<{ bucketStart: number; home: number; away: number }>;
   } | null>(null);
 
+  // Fetch on mount, immediately again at key match-stage transitions (half time, extra time,
+  // full time), and steadily every 15s while the match is live in between.
   useEffect(() => {
     const homeCode = homeTeam?.fifa_code;
     const awayCode = awayTeam?.fifa_code;
@@ -955,7 +993,7 @@ function FeaturedLiveCard({
     if (!isLive) return () => { cancelled = true; };
     const interval = setInterval(load, 15000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, [homeTeam?.fifa_code, awayTeam?.fifa_code, isLive]);
+  }, [homeTeam?.fifa_code, awayTeam?.fifa_code, isLive, stageTag, finished]);
 
   const realFeed = useMemo<CommentaryEntry[]>(
     () => (fifaData?.matched && fifaData.events ? [...fifaData.events].reverse() : []),
@@ -979,17 +1017,9 @@ function FeaturedLiveCard({
   const homeCardCount = fifaData?.matched && fifaData.cardCounts ? fifaData.cardCounts.home : null;
   const awayCardCount = fifaData?.matched && fifaData.cardCounts ? fifaData.cardCounts.away : null;
   const realStats = fifaData?.matched && fifaData.stats ? fifaData.stats : null;
+  const realMomentum = fifaData?.matched && fifaData.momentum ? fifaData.momentum : null;
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
-
-  const stageTag = (() => {
-    if (!isLive) return "";
-    const t = game.time_elapsed.toLowerCase();
-    if (t.includes("ht") || t.includes("half")) return "HT";
-    if (t.includes("pen") || /\bp\b/.test(t)) return "PEN";
-    if (isET) return "ET";
-    return "LIVE";
-  })();
 
   // Purely decorative ball-wander animation on the pitch widget — not data, just motion.
   const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
@@ -1178,7 +1208,7 @@ function FeaturedLiveCard({
 
       </div>
 
-      <MatchMomentum isLive={isLive} isPending={isPending} real={realStats} cardCounts={fifaData?.matched ? fifaData.cardCounts ?? null : null} />
+      <MatchMomentum isLive={isLive} isPending={isPending} real={realStats} momentum={realMomentum} cardCounts={fifaData?.matched ? fifaData.cardCounts ?? null : null} />
 
       <button 
         onClick={() => setShowTracker(!showTracker)}
@@ -1421,6 +1451,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
   const [viewType, setViewType] = useState<'tree' | 'fall'>('tree');
   const [startRound, setStartRound] = useState<'r32' | 'r16' | 'qf' | 'sf'>('r32');
   const treeContainerRef = useRef<HTMLDivElement>(null);
+  const [activeSection, setActiveSection] = useState<'left' | 'center' | 'right'>('center');
 
   const scrollToBracketSection = (section: 'left' | 'center' | 'right') => {
     const el = treeContainerRef.current;
@@ -1432,6 +1463,23 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
       el.scrollTo({ left: maxScroll / 2, behavior: 'smooth' });
     } else {
       el.scrollTo({ left: maxScroll, behavior: 'smooth' });
+    }
+    setActiveSection(section);
+  };
+
+  const handleTreeScroll = () => {
+    const el = treeContainerRef.current;
+    if (!el) return;
+    const scrollLeft = el.scrollLeft;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 0) return;
+    const pct = scrollLeft / maxScroll;
+    if (pct < 0.33) {
+      setActiveSection('left');
+    } else if (pct > 0.66) {
+      setActiveSection('right');
+    } else {
+      setActiveSection('center');
     }
   };
   // fallFilter: which round to start from in FALL (schedule) view
@@ -1772,27 +1820,46 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
               <div className="flex p-1 bg-black/40 rounded-xl border border-white/5 shadow-inner gap-1.5 w-full max-w-sm justify-between">
                 <button
                   onClick={() => scrollToBracketSection('left')}
-                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider text-gray-300 hover:text-white bg-white/5 active:bg-white/10 transition-all border border-white/5 cursor-pointer"
+                  className={`flex-1 flex items-center justify-center py-2.5 rounded-lg text-sm font-black transition-all border cursor-pointer ${
+                    activeSection === 'left'
+                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
+                      : 'bg-white/5 text-gray-400 border-white/5 hover:text-white hover:bg-white/10'
+                  }`}
+                  aria-label="Left Bracket"
                 >
-                  ◀ Left Bracket
+                  ◀
                 </button>
                 <button
                   onClick={() => scrollToBracketSection('center')}
-                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider text-yellow-400 hover:text-yellow-300 bg-yellow-400/10 active:bg-yellow-400/20 transition-all border border-yellow-400/10 cursor-pointer"
+                  className={`flex-1 flex items-center justify-center py-2.5 rounded-lg text-sm font-black transition-all border cursor-pointer ${
+                    activeSection === 'center'
+                      ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_12px_rgba(234,179,8,0.2)]'
+                      : 'bg-white/5 text-gray-400 border-white/5 hover:text-white hover:bg-white/10'
+                  }`}
+                  aria-label="Finals"
                 >
-                  🏆 Finals
+                  🏆
                 </button>
                 <button
                   onClick={() => scrollToBracketSection('right')}
-                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider text-gray-300 hover:text-white bg-white/5 active:bg-white/10 transition-all border border-white/5 cursor-pointer"
+                  className={`flex-1 flex items-center justify-center py-2.5 rounded-lg text-sm font-black transition-all border cursor-pointer ${
+                    activeSection === 'right'
+                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
+                      : 'bg-white/5 text-gray-400 border-white/5 hover:text-white hover:bg-white/10'
+                  }`}
+                  aria-label="Right Bracket"
                 >
-                  Right Bracket ▶
+                  ▶
                 </button>
               </div>
             </div>
 
             {/* Scrollable tree */}
-            <div ref={treeContainerRef} className="w-full overflow-x-auto rounded-2xl border border-white/5 bg-[#080d19]/50 backdrop-blur-md p-4 shadow-2xl select-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            <div 
+              ref={treeContainerRef} 
+              onScroll={handleTreeScroll}
+              className="w-full overflow-x-auto rounded-2xl border border-white/5 bg-[#080d19]/50 backdrop-blur-md p-4 shadow-2xl select-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+            >
               <div className={`flex gap-0 items-center w-max mx-auto px-4 py-4 h-[675px] ${getMinWidthClass()}`}>
                 {startRound === 'r32' && (
                   <>
