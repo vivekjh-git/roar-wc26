@@ -186,7 +186,7 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
               ✕
             </button>
 
-            <div className="flex items-center gap-4 relative z-10">
+            <div className="flex items-center gap-4 relative z-10 min-w-0">
               {team.flag && (
                 <motion.img
                   initial={{ scale: 0.8, rotate: -10 }}
@@ -194,18 +194,20 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
                   transition={{ type: "spring" }}
                   src={team.flag}
                   alt={team.name_en}
-                  className="w-16 h-12 object-cover rounded-lg shadow-lg border border-white/10"
+                  className="w-16 h-12 object-cover rounded-lg shadow-lg border border-white/10 shrink-0"
                 />
               )}
-              <div>
-                <h2 className="text-xl font-black text-white">{team.name_en}</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] bg-yellow-400/20 text-yellow-400 border border-yellow-400/30 rounded-full px-2 py-0.5 font-bold uppercase tracking-wider">
-                    GROUP {team.groups}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h2 className="text-xl font-black text-white truncate">{team.name_en}</h2>
+                  <span className="text-[11px] font-bold text-gray-500 tracking-wider shrink-0">{team.fifa_code}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                  <span className="text-[8px] bg-yellow-400/20 text-yellow-400 border border-yellow-400/30 rounded-full px-1.5 py-0.5 font-bold uppercase tracking-wider">
+                    Group {team.groups}
                   </span>
-                  <span className="text-[10px] text-gray-400 font-bold bg-white/5 px-2 py-0.5 rounded border border-white/5">{team.fifa_code}</span>
                   {teamStanding !== undefined && teamStanding >= 0 && (
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${
                       teamStanding < 2 ? "text-green-400 bg-green-400/10 border-green-400/20" :
                       teamStanding === 2 ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20" :
                       "text-gray-400 bg-gray-400/10 border-gray-400/20"
@@ -214,11 +216,11 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
                     </span>
                   )}
                   {isDisqualified ? (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-red-400 bg-red-400/10 border-red-400/30 uppercase tracking-wider">
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full border text-red-400 bg-red-400/10 border-red-400/30 uppercase tracking-wider">
                       Disqualified{statusRoundLabel ? ` — ${statusRoundLabel}` : ""}
                     </span>
                   ) : statusRoundLabel && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-blue-400 bg-blue-400/10 border-blue-400/20 uppercase tracking-wider">
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full border text-blue-400 bg-blue-400/10 border-blue-400/20 uppercase tracking-wider">
                       {statusRoundLabel}
                     </span>
                   )}
