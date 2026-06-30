@@ -1810,19 +1810,19 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
           >
             {/* Logo + title */}
             <div className="flex flex-col items-center justify-center mb-4 text-center">
-              <img src="/fifaworldcup_logo.svg" className="w-16 h-auto object-contain mb-2 select-none filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]" alt="FIFA World Cup 2026 Logo" />
+              <img src="/tiger.png" className="w-12 h-12 object-contain mb-2 select-none filter drop-shadow-[0_0_8px_rgba(255,94,0,0.25)]" alt="Roar Logo" />
               <h2 className="text-xl font-black tracking-tight text-white uppercase gold-text">2026 Knockout Bracket</h2>
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">NPT — Nepal Standard Time</p>
             </div>
 
             {/* Navigation Switcher */}
             <div className="flex justify-center mb-4 px-2">
-              <div className="flex p-1 bg-black/40 rounded-xl border border-white/5 shadow-inner gap-1.5 w-full max-w-sm justify-between">
+              <div className="flex p-0.5 bg-black/40 rounded-lg border border-white/5 shadow-inner gap-1 w-full max-w-[130px] justify-between">
                 <button
                   onClick={() => scrollToBracketSection('left')}
-                  className={`flex-1 flex items-center justify-center py-2.5 rounded-lg text-sm font-black transition-all border cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center py-1 rounded text-[10px] font-black transition-all border cursor-pointer ${
                     activeSection === 'left'
-                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
+                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.2)]'
                       : 'bg-white/5 text-gray-400 border-white/5 hover:text-white hover:bg-white/10'
                   }`}
                   aria-label="Left Bracket"
@@ -1831,9 +1831,9 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                 </button>
                 <button
                   onClick={() => scrollToBracketSection('center')}
-                  className={`flex-1 flex items-center justify-center py-2.5 rounded-lg text-sm font-black transition-all border cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center py-1 rounded text-[10px] font-black transition-all border cursor-pointer ${
                     activeSection === 'center'
-                      ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_12px_rgba(234,179,8,0.2)]'
+                      ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 shadow-[0_0_8px_rgba(234,179,8,0.2)]'
                       : 'bg-white/5 text-gray-400 border-white/5 hover:text-white hover:bg-white/10'
                   }`}
                   aria-label="Finals"
@@ -1842,9 +1842,9 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                 </button>
                 <button
                   onClick={() => scrollToBracketSection('right')}
-                  className={`flex-1 flex items-center justify-center py-2.5 rounded-lg text-sm font-black transition-all border cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center py-1 rounded text-[10px] font-black transition-all border cursor-pointer ${
                     activeSection === 'right'
-                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
+                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.2)]'
                       : 'bg-white/5 text-gray-400 border-white/5 hover:text-white hover:bg-white/10'
                   }`}
                   aria-label="Right Bracket"
