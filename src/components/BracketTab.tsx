@@ -638,15 +638,39 @@ function ExtendedMatchStats({ gameId, isPending }: { gameId: string, isPending?:
   );
 }
 
+interface CommentaryEntry {
+  id: string;
+  minute: string;
+  text: string;
+  type: "goal" | "card" | "sub" | "var" | "info";
+}
+
+const COMMENTARY_ICON: Record<CommentaryEntry["type"], string> = {
+  goal: "⚽",
+  card: "🟨",
+  sub: "🔄",
+  var: "📺",
+  info: "▶",
+};
+
 function MatchTrackerView({
-  showTracker, isLive, isPending = false, game, commentary, ballPos
+  showTracker, isLive, isPending = false, game, commentary, feed, ballPos,
+  homeFlag, awayFlag, homeCode, awayCode, hs, as_, stageTag
 }: {
   readonly showTracker: boolean;
   readonly isLive: boolean;
   readonly isPending?: boolean;
   readonly game: Game;
   readonly commentary: string;
+  readonly feed: CommentaryEntry[];
   readonly ballPos: { x: number; y: number };
+  readonly homeFlag?: string;
+  readonly awayFlag?: string;
+  readonly homeCode: string;
+  readonly awayCode: string;
+  readonly hs: number;
+  readonly as_: number;
+  readonly stageTag: string;
 }) {
   const [isFarAhead, setIsFarAhead] = useState(false);
 
@@ -662,6 +686,8 @@ function MatchTrackerView({
     return () => clearTimeout(timer);
   }, [isPending, game.local_date, game.stadium_id]);
 
+  const liveTimeStr = isLive ? game.time_elapsed.replace(/live/i, "").trim() : "";
+
   return (
     <AnimatePresence>
       {showTracker && (
@@ -671,42 +697,95 @@ function MatchTrackerView({
           exit={{ opacity: 0, height: 0 }}
           className="overflow-hidden relative z-10"
         >
-          <div className="mt-4 w-full h-40 relative rounded-xl border border-green-500/30 overflow-hidden bg-[#1e4d2a] flex flex-col shadow-inner">
+          <div className="mt-4 w-full h-64 sm:h-72 relative rounded-xl border border-green-500/30 overflow-hidden bg-[#1e4d2a] flex flex-col shadow-inner">
             <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: "linear-gradient(to right, transparent 49.5%, white 49.5%, white 50.5%, transparent 50.5%)" }}>
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-white rounded-full"></div>
-              <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-12 h-24 border-2 border-white rounded-lg"></div>
-              <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-12 h-24 border-2 border-white rounded-lg"></div>
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white rounded-full"></div>
+              <div className="absolute -left-5 top-1/2 -translate-y-1/2 w-16 h-36 border-2 border-white rounded-lg"></div>
+              <div className="absolute -right-5 top-1/2 -translate-y-1/2 w-16 h-36 border-2 border-white rounded-lg"></div>
             </div>
-            
+
             <div className="bg-black/40 px-3 py-1.5 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-green-400 relative z-10 border-b border-green-500/20">
               <span>{isFarAhead ? "Match Tracker Info" : isPending ? "Pre-Match Analysis" : isLive ? "Live Pitch Commentary" : "Match Replay"}</span>
-              <span className="text-yellow-400">{isFarAhead ? "Offline" : isPending ? "Upcoming" : isLive ? game.time_elapsed : "FT"}</span>
+              <span className="text-yellow-400">{isFarAhead ? "Offline" : isPending ? "Upcoming" : isLive ? "LIVE" : "FT"}</span>
             </div>
-            
-            <div className="flex-1 p-3 relative z-10 overflow-hidden flex flex-col justify-end">
-              <AnimatePresence mode="wait">
-                <motion.div 
+
+            {/* Compact Scoreboard: flags + score + stage */}
+            {!isFarAhead && !isPending && (
+              <div className="bg-black/30 px-2.5 py-1 flex items-center justify-center gap-2 text-[10px] sm:text-xs font-black text-white relative z-10 border-b border-green-500/10">
+                <span className={`tabular-nums ${isLive ? "text-yellow-300" : "text-gray-300"}`}>{isLive ? liveTimeStr : "FT"}</span>
+                <span className="flex items-center gap-1">
+                  {homeFlag ? <img src={homeFlag} alt="" className="w-4 h-3 object-cover rounded-sm shadow-sm" /> : null}
+                  <span className="text-gray-200">{homeCode}</span>
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-black/40 text-yellow-400">{hs}</span>
+                <img src="/tiger.png" alt="" className="w-3.5 h-3.5 rounded-full object-cover opacity-80" />
+                <span className="px-1.5 py-0.5 rounded bg-black/40 text-yellow-400">{as_}</span>
+                <span className="flex items-center gap-1">
+                  <span className="text-gray-200">{awayCode}</span>
+                  {awayFlag ? <img src={awayFlag} alt="" className="w-4 h-3 object-cover rounded-sm shadow-sm" /> : null}
+                </span>
+                {stageTag && (
+                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                    stageTag === "HT" ? "text-blue-300 border-blue-400/30 bg-blue-500/10"
+                    : stageTag === "ET" ? "text-orange-300 border-orange-400/30 bg-orange-500/10"
+                    : stageTag === "PEN" ? "text-purple-300 border-purple-400/30 bg-purple-500/10"
+                    : "text-red-300 border-red-400/30 bg-red-500/10"
+                  }`}>
+                    {stageTag}
+                  </span>
+                )}
+              </div>
+            )}
+
+            <div className="flex-1 p-3 relative z-10 overflow-hidden flex flex-col justify-end gap-1.5">
+              {isFarAhead || isPending ? (
+                <motion.div
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -10, opacity: 0 }}
-                  key={isFarAhead ? "far" : isPending ? "pending" : commentary}
                   className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
                 >
-                  {isLive && <span className="text-yellow-400 mr-2">{game.time_elapsed}</span>}
-                  {isFarAhead 
-                    ? "Live tracker is offline. Please check back closer to kickoff (activates 1 hour prior to game time)." 
-                    : isPending 
-                      ? "Both teams are warming up on the pitch. Formations are announced and managers are reviewing their strategies. Kickoff is imminent." 
-                      : commentary
+                  {isFarAhead
+                    ? "Live tracker is offline. Please check back closer to kickoff (activates 1 hour prior to game time)."
+                    : "Both teams are warming up on the pitch. Formations are announced and managers are reviewing their strategies. Kickoff is imminent."
                   }
                 </motion.div>
-              </AnimatePresence>
-              
+              ) : (
+                <AnimatePresence initial={false}>
+                  {feed.slice(0, 4).map((entry, i) => (
+                    <motion.div
+                      key={entry.id}
+                      layout
+                      initial={{ y: 14, opacity: 0, scale: 0.96 }}
+                      animate={{ y: 0, opacity: 1 - i * 0.22, scale: 1 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                      className={`text-[9px] sm:text-[11px] text-white font-semibold bg-black/60 px-2.5 py-1.5 rounded-lg border shadow-lg inline-flex items-center gap-1.5 w-fit max-w-[92%] ${
+                        entry.type === "goal" ? "border-yellow-400/40" : entry.type === "card" ? "border-yellow-300/30" : "border-white/10"
+                      }`}
+                    >
+                      <span className="text-yellow-400 shrink-0">{entry.minute}</span>
+                      <span className="shrink-0">{COMMENTARY_ICON[entry.type]}</span>
+                      <span>{entry.text}</span>
+                    </motion.div>
+                  ))}
+                  {feed.length === 0 && (
+                    <motion.div
+                      key="placeholder"
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      className="text-[10px] sm:text-xs text-white font-semibold bg-black/60 px-3 py-2 rounded-lg border border-white/10 shadow-lg inline-block w-fit max-w-[85%]"
+                    >
+                      {commentary}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
+
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 <motion.div
                   animate={isLive ? { x: ballPos.x, y: ballPos.y } : { x: 0, y: 0 }}
-                  transition={{ type: "spring", stiffness: 40, damping: 10 }}
-                  className="text-sm sm:text-base drop-shadow-md"
+                  transition={{ type: "spring", stiffness: 50, damping: 10 }}
+                  className="text-base sm:text-lg drop-shadow-md"
                 >
                   ⚽
                 </motion.div>
@@ -827,6 +906,11 @@ function FeaturedLiveCard({
     setShowTracker(false);
   }
 
+  const announcedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    announcedRef.current = new Set();
+  }, [game.id]);
+
   const homeTeam = teamMap[game.home_team_id];
   const awayTeam = teamMap[game.away_team_id];
   const stadium = stadiumMap[game.stadium_id];
@@ -895,56 +979,122 @@ function FeaturedLiveCard({
   const homeSubs = isLive ? genSubEvents(true) : [];
   const awaySubs = isLive ? genSubEvents(false) : [];
 
+  const genCardEvents = (forHome: boolean) => {
+    const base = forHome ? sid + 3 : sid + 11;
+    return [
+      { min: 18 + (base % 18), num: `#${(base % 9) + 2}` },
+      { min: 58 + ((base + 5) % 25), num: `#${((base + 3) % 9) + 2}` },
+    ].filter(e => e.min <= currentMinNum);
+  };
+  const homeCards = isLive ? genCardEvents(true) : [];
+  const awayCards = isLive ? genCardEvents(false) : [];
+
+  const homeScorersArr = parseScorers(game.home_scorers).map(s => s.replace(/['"]/g, "").trim()).filter(Boolean);
+  const awayScorersArr = parseScorers(game.away_scorers).map(s => s.replace(/['"]/g, "").trim()).filter(Boolean);
+
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
-  const [liveCommentary, setLiveCommentary] = useState(() => {
-    const commentaries = [
-      `${homeName} is keeping possession in the midfield...`,
-      `${awayName} pushes forward on the counter attack!`,
-      `A dangerous cross into the box!`,
-      `Solid defensive block by ${homeName}.`,
-      `The referee signals for a foul. Free kick to ${awayName}.`,
-      `${homeName} plays a beautiful through ball into the final third...`,
-      `Great intensity in the middle of the park.`
-    ];
-    return commentaries[Math.floor(Math.random() * commentaries.length)];
-  });
+  const [commentaryFeed, setCommentaryFeed] = useState<CommentaryEntry[]>([]);
   const [liveBallPos, setLiveBallPos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (!isLive) return;
-    const commentaries = [
-      `${homeName} is keeping possession in the midfield...`,
-      `${awayName} pushes forward on the counter attack!`,
-      `A dangerous cross into the box!`,
-      `Solid defensive block by ${homeName}.`,
-      `The referee signals for a foul. Free kick to ${awayName}.`,
+    const flavorPool = [
+      `${homeName} #${(sid % 5) + 4} keeps possession in midfield...`,
+      `${awayName} #${(sid % 6) + 7} pushes forward on the counter attack!`,
+      `A dangerous cross into the box from ${homeName}!`,
+      `Solid defensive block by ${awayName} #${(sid % 4) + 2}.`,
+      `The referee signals for a foul on #${(sid % 8) + 3}. Free kick to ${awayName}.`,
       `${homeName} plays a beautiful through ball into the final third...`,
       `Great intensity in the middle of the park.`,
       `${awayName} wins a corner kick on the right flank.`,
-      `Shot blocked! ${homeName} keeper was well positioned.`,
-      `🔄 SUBSTITUTION — ${homeName} makes a change as the game heats up.`,
-      `${awayName} midfielder goes down. The physio rushes onto the pitch.`,
-      `🔄 SUBSTITUTION — Fresh legs for ${awayName} in the ${currentMinNum + 2}th minute.`,
-      isET ? `⚡ EXTRA TIME — Both teams fighting for survival!` : `Pressure building in the final minutes!`,
-      `VAR check in progress. The referee is reviewing the decision.`,
+      `Shot blocked! ${homeName} keeper #1 was well positioned.`,
+      `${awayName} #${(sid % 7) + 5} goes down. The physio rushes onto the pitch.`,
+      `${homeName} working it patiently down the left wing.`,
+      `Half-chance for ${awayName}, but the angle was too tight.`,
+      `${homeName} keeper #1 plays it short to start the build-up.`,
+      `Tactical pause as the manager shouts instructions from the touchline.`,
+      isET ? `⚡ Extra time — both sides fighting for every inch of the pitch!` : `Pressure building as the clock ticks on!`,
     ];
-    
-    const interval = setInterval(() => {
-      setLiveCommentary(commentaries[Math.floor(Math.random() * commentaries.length)] || commentaries[0]);
-      setLiveBallPos({
-        x: Math.floor(Math.random() * 160) - 80,
-        y: Math.floor(Math.random() * 40) - 20
-      });
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [isLive, homeName, awayName, currentMinNum, isET]);
 
-  const commentary = finished 
+    const announced = announcedRef.current;
+    const tick = () => {
+      const newEntries: CommentaryEntry[] = [];
+
+      homeSubs.forEach((s, i) => {
+        const key = `hsub-${i}`;
+        if (!announced.has(key)) {
+          announced.add(key);
+          newEntries.push({ id: key, minute: `${s.min}'`, type: "sub", text: `${homeName}: ${s.out} makes way for ${s.inn}.` });
+        }
+      });
+      awaySubs.forEach((s, i) => {
+        const key = `asub-${i}`;
+        if (!announced.has(key)) {
+          announced.add(key);
+          newEntries.push({ id: key, minute: `${s.min}'`, type: "sub", text: `${awayName}: ${s.out} makes way for ${s.inn}.` });
+        }
+      });
+      homeCards.forEach((c, i) => {
+        const key = `hcard-${i}`;
+        if (!announced.has(key)) {
+          announced.add(key);
+          newEntries.push({ id: key, minute: `${c.min}'`, type: "card", text: `Yellow card for ${homeName} ${c.num} after a late challenge.` });
+        }
+      });
+      awayCards.forEach((c, i) => {
+        const key = `acard-${i}`;
+        if (!announced.has(key)) {
+          announced.add(key);
+          newEntries.push({ id: key, minute: `${c.min}'`, type: "card", text: `Yellow card for ${awayName} ${c.num} after a late challenge.` });
+        }
+      });
+      homeScorersArr.forEach((s, i) => {
+        const key = `hgoal-${i}`;
+        if (!announced.has(key)) {
+          announced.add(key);
+          newEntries.push({ id: key, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", type: "goal", text: `GOAL! ${s} scores for ${homeName}!` });
+        }
+      });
+      awayScorersArr.forEach((s, i) => {
+        const key = `agoal-${i}`;
+        if (!announced.has(key)) {
+          announced.add(key);
+          newEntries.push({ id: key, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", type: "goal", text: `GOAL! ${s} scores for ${awayName}!` });
+        }
+      });
+
+      if (newEntries.length === 0) {
+        const text = flavorPool[Math.floor(Math.random() * flavorPool.length)];
+        newEntries.push({ id: `flv-${Date.now()}-${Math.random()}`, minute: `${currentMinNum}'`, type: "info", text });
+      }
+
+      setCommentaryFeed(prev => [...newEntries.reverse(), ...prev].slice(0, 6));
+      setLiveBallPos({
+        x: Math.floor(Math.random() * 200) - 100,
+        y: Math.floor(Math.random() * 90) - 45
+      });
+    };
+
+    tick();
+    const interval = setInterval(tick, 500);
+    return () => clearInterval(interval);
+  }, [isLive, homeName, awayName, currentMinNum, isET, sid, homeSubs, awaySubs, homeCards, awayCards, homeScorersArr, awayScorersArr]);
+
+  const commentary = finished
     ? `Match has ended. Full time result: ${homeName} ${hs} - ${as_} ${awayName}.`
-    : isLive ? liveCommentary : "Match will begin soon. Waiting for kickoff...";
+    : isLive ? "" : "Match will begin soon. Waiting for kickoff...";
 
   const ballPos = isLive ? liveBallPos : { x: 0, y: 0 };
+
+  const stageTag = (() => {
+    if (!isLive) return "";
+    const t = game.time_elapsed.toLowerCase();
+    if (t.includes("ht") || t.includes("half")) return "HT";
+    if (t.includes("pen") || /\bp\b/.test(t)) return "PEN";
+    if (isET) return "ET";
+    return "LIVE";
+  })();
 
   let matchStatusLabel;
   if (finished) {
@@ -1148,7 +1298,13 @@ function FeaturedLiveCard({
       </button>
 
       {/* Live Match Tracker Section */}
-      <MatchTrackerView showTracker={showTracker} isLive={isLive} isPending={isPending} game={game} commentary={commentary} ballPos={ballPos} />
+      <MatchTrackerView
+        showTracker={showTracker} isLive={isLive} isPending={isPending} game={game} commentary={commentary}
+        feed={commentaryFeed} ballPos={ballPos}
+        homeFlag={homeTeam?.flag} awayFlag={awayTeam?.flag}
+        homeCode={homeTeam?.fifa_code || homeName} awayCode={awayTeam?.fifa_code || awayName}
+        hs={hs} as_={as_} stageTag={stageTag}
+      />
 
       {/* Details Extension Button — hidden when live (live tracker serves this purpose) */}
       {!isLive && (
