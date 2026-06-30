@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGames } from "@/lib/api";
 
-export const revalidate = 10;
+export const revalidate = 0;
 
 export async function GET() {
   try {

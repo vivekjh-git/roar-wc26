@@ -243,8 +243,17 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
 
             const hs = parseInt(game.home_score) || 0;
             const as_ = parseInt(game.away_score) || 0;
-            const homeWin = finished && hs > as_;
-            const awayWin = finished && as_ > hs;
+            const fhp = parseInt(game.home_penalty_score || '');
+            const fap = parseInt(game.away_penalty_score || '');
+            const fHasPen = !isNaN(fhp) && !isNaN(fap);
+            const homeWin = finished && (hs > as_ || (fHasPen && hs === as_ && fhp > fap));
+            const awayWin = finished && (as_ > hs || (fHasPen && hs === as_ && fap > fhp));
+            const isET = isLive && (() => {
+              const t = game.time_elapsed.toLowerCase().trim();
+              if (t.includes('et') || t.includes('extra')) return true;
+              const num = parseInt(t.match(/(\d+)/)?.[1] || '0');
+              return num > 90;
+            })();
 
             const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
             const timeNpt = formatTimeNPT(game.local_date, game.stadium_id);
@@ -259,13 +268,13 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
                 key={game.id}
                 className={`rounded-2xl border p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 relative overflow-hidden group shadow-md hover:shadow-lg
                   ${isLive 
-                    ? "border-red-500/40 bg-gradient-to-br from-red-950/15 to-[#0d1526] shadow-[0_0_20px_rgba(239,68,68,0.05)]" 
+                    ? (isET ? "border-orange-500/40 bg-gradient-to-br from-orange-950/15 to-[#0d1526]" : "border-red-500/40 bg-gradient-to-br from-red-950/15 to-[#0d1526] shadow-[0_0_20px_rgba(239,68,68,0.05)]") 
                     : "border-white/5 bg-[#111827]/25 hover:border-white/10"
                   }
                 `}
                 style={{
                   background: isLive 
-                    ? "linear-gradient(135deg, #1b0c0c 0%, #0d1526 100%)" 
+                    ? (isET ? "linear-gradient(135deg, #1a0d02 0%, #0d1526 100%)" : "linear-gradient(135deg, #1b0c0c 0%, #0d1526 100%)") 
                     : "linear-gradient(135deg, #111827/40 0%, #0d1526 100%)"
                 }}
               >
@@ -275,13 +284,17 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
                     Match {game.id} • {getStageLabel(game.type)} {game.group ? `• Group ${game.group}` : ""}
                   </span>
                   {isLive ? (
-                    <span className="text-[10px] text-red-400 font-black flex items-center gap-1.5 bg-red-500/10 px-2.5 py-0.5 rounded-full border border-red-500/20">
-                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full live-pulse"></span>
-                      LIVE {game.time_elapsed.replace(/live/i, "").trim()}
+                    <span className={`text-[10px] font-black flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border ${
+                      isET
+                        ? 'text-orange-400 bg-orange-500/10 border-orange-500/20'
+                        : 'text-red-400 bg-red-500/10 border-red-500/20'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full live-pulse ${isET ? 'bg-orange-500' : 'bg-red-500'}`}></span>
+                      {isET ? `⚡ ET ${game.time_elapsed.replace(/live/i, "").trim()}` : `LIVE ${game.time_elapsed.replace(/live/i, "").trim()}`}
                     </span>
                   ) : finished ? (
                     <span className="text-[9px] text-yellow-400 font-extrabold uppercase tracking-wider bg-yellow-400/10 border border-yellow-400/20 px-2.5 py-0.5 rounded-full">
-                      Full Time
+                      {fHasPen ? 'AET' : 'Full Time'}
                     </span>
                   ) : (
                     <span className="text-[9px] text-blue-400 font-extrabold uppercase tracking-wider bg-blue-400/10 border border-blue-400/20 px-2.5 py-0.5 rounded-full">
@@ -307,13 +320,18 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
                   </button>
 
                   {/* Score Box */}
-                  <div className="flex items-center justify-center shrink-0 bg-black/30 px-3 py-1.5 rounded-xl border border-white/5 font-black text-sm min-w-[64px]">
+                  <div className="flex flex-col items-center justify-center shrink-0 bg-black/30 px-3 py-1.5 rounded-xl border border-white/5 font-black text-sm min-w-[64px]">
                     {finished || isLive ? (
-                      <span className="flex items-center gap-1.5 text-white">
-                        <span className={homeWin ? "text-yellow-400" : ""}>{hs}</span>
-                        <span className="text-gray-600">:</span>
-                        <span className={awayWin ? "text-yellow-400" : ""}>{as_}</span>
-                      </span>
+                      <>
+                        <span className="flex items-center gap-1.5 text-white">
+                          <span className={homeWin ? "text-yellow-400" : ""}>{hs}</span>
+                          <span className="text-gray-600">:</span>
+                          <span className={awayWin ? "text-yellow-400" : ""}>{as_}</span>
+                        </span>
+                        {fHasPen && (
+                          <span className="text-[8px] text-orange-400 font-bold mt-0.5">P: {fhp}–{fap}</span>
+                        )}
+                      </>
                     ) : (
                       <span className="text-gray-500 uppercase tracking-widest text-[9px] font-black">
                         {timeNpt.replace(" NPT", "")}

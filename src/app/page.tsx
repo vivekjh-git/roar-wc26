@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Header from "@/components/Header";
 import GroupsTab from "@/components/GroupsTab";
@@ -113,24 +113,37 @@ export default function HomePage() {
 
     void loadInitial();
 
-    // Auto-refresh only games every 10 seconds to keep live data fast and lightweight
-    const interval = setInterval(async () => {
+    // Adaptive live polling: 1s when any game is live, 10s otherwise
+    let pollTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const pollGames = async () => {
+      if (!mounted) return;
       try {
         const res = await fetch("/api/wc/games", { cache: "no-store" });
-        if (res.ok) {
-          const newGames = await res.json();
-          if (mounted) {
-            setData(prev => prev ? { ...prev, games: newGames } : null);
-          }
+        if (res.ok && mounted) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const newGames: any[] = await res.json();
+          if (mounted) setData(prev => prev ? { ...prev, games: newGames } : null);
+          const hasLive = newGames.some(
+            g => g.finished !== "TRUE" &&
+                 g.time_elapsed !== "notstarted" &&
+                 g.time_elapsed?.toLowerCase() !== "finished"
+          );
+          if (mounted) pollTimeout = setTimeout(pollGames, hasLive ? 1000 : 10000);
+        } else {
+          if (mounted) pollTimeout = setTimeout(pollGames, 10000);
         }
-      } catch (e) {
-        // silent error for background polling
+      } catch {
+        if (mounted) pollTimeout = setTimeout(pollGames, 10000);
       }
-    }, 10000);
+    };
+
+    // Start polling 2s after initial load
+    pollTimeout = setTimeout(pollGames, 2000);
 
     return () => {
       mounted = false;
-      clearInterval(interval);
+      if (pollTimeout) clearTimeout(pollTimeout);
     };
   }, []);
 

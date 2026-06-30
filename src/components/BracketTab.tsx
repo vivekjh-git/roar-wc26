@@ -102,6 +102,7 @@ function TeamRow({
   teamName,
   teamFlag,
   score,
+  penaltyScore,
   isWinner,
   isFinished,
   isLive,
@@ -111,6 +112,7 @@ function TeamRow({
   readonly teamName: string;
   readonly teamFlag?: string;
   readonly score: number;
+  readonly penaltyScore?: number;
   readonly isWinner: boolean;
   readonly isFinished: boolean;
   readonly isLive: boolean;
@@ -141,7 +143,12 @@ function TeamRow({
         </span>
       </div>
       {(isFinished || isLive) ? (
-        <span className={`text-[8px] font-black px-1 rounded ${isWinner ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{score}</span>
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          <span className={`text-[8px] font-black px-1 rounded ${isWinner ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{score}</span>
+          {penaltyScore !== undefined && (
+            <span className="text-[6px] text-orange-400 font-bold leading-none">(P{penaltyScore})</span>
+          )}
+        </div>
       ) : null}
     </button>
   );
@@ -166,36 +173,50 @@ function BracketNode({
   const homeTeam = teamMap[game.home_team_id];
   const awayTeam = teamMap[game.away_team_id];
   const finished = game.finished === "TRUE";
-  const isLive = game.time_elapsed !== "notstarted" && game.time_elapsed !== "finished" && !finished;
+  const isLive = game.time_elapsed !== "notstarted" && game.time_elapsed.toLowerCase() !== "finished" && !finished;
 
   const homeName = homeTeam?.fifa_code || game.home_team_label || game.home_team_name_en || "TBD";
   const awayName = awayTeam?.fifa_code || game.away_team_label || game.away_team_name_en || "TBD";
 
   const hs = parseInt(game.home_score) || 0;
   const as_ = parseInt(game.away_score) || 0;
-  const homeWin = finished && hs > as_;
-  const awayWin = finished && as_ > hs;
+  const bhp = parseInt(game.home_penalty_score || '');
+  const bap = parseInt(game.away_penalty_score || '');
+  const bHasPen = !isNaN(bhp) && !isNaN(bap);
+  const homeWin = finished && (hs > as_ || (bHasPen && hs === as_ && bhp > bap));
+  const awayWin = finished && (as_ > hs || (bHasPen && hs === as_ && bap > bhp));
+  const isET = isLive && (() => {
+    const t = game.time_elapsed.toLowerCase().trim();
+    if (t.includes('et') || t.includes('extra')) return true;
+    const num = parseInt(t.match(/(\d+)/)?.[1] || '0');
+    return num > 90;
+  })();
 
   const dateTime = formatMatchDateNPT(game.local_date, game.stadium_id);
 
   return (
     <div className="relative group">
-      <div className={`w-[116px] bg-[#0c101d]/90 border rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:border-yellow-400/40 hover:shadow-yellow-400/5 ${isLive ? 'border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.15)] bg-red-500/5' : 'border-white/10 bg-black/40'}`}>
+      <div className={`w-[116px] bg-[#0c101d]/90 border rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:border-yellow-400/40 hover:shadow-yellow-400/5 ${isLive ? (isET ? 'border-orange-500/50 shadow-[0_0_8px_rgba(249,115,22,0.15)] bg-orange-500/5' : 'border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.15)] bg-red-500/5') : 'border-white/10 bg-black/40'}`}>
         <div className="bg-black/50 px-1.5 py-0.5 flex justify-between items-center text-[7px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
           <span>M{game.id}</span>
           {isLive ? (
-            <span className="text-red-400 font-bold animate-pulse flex items-center gap-0.5"><span className="w-1 h-1 bg-red-500 rounded-full inline-block animate-pulse"></span>LIVE</span>
+            <span className={`font-bold animate-pulse flex items-center gap-0.5 ${isET ? 'text-orange-400' : 'text-red-400'}`}>
+              <span className={`w-1 h-1 rounded-full inline-block animate-pulse ${isET ? 'bg-orange-500' : 'bg-red-500'}`}></span>
+              {isET ? 'ET' : 'LIVE'}
+            </span>
+          ) : bHasPen && finished ? (
+            <span className="text-orange-400 font-bold text-[6px]">AET</span>
           ) : (
             <span className="truncate max-w-[50px]">{label}</span>
           )}
         </div>
         <div className="p-1 space-y-1 bg-black/10">
-          <TeamRow team={homeTeam} teamName={homeName} teamFlag={homeTeam?.flag} score={hs} isWinner={homeWin} isFinished={finished} isLive={isLive} onTeamClick={onTeamClick} />
-          <TeamRow team={awayTeam} teamName={awayName} teamFlag={awayTeam?.flag} score={as_} isWinner={awayWin} isFinished={finished} isLive={isLive} onTeamClick={onTeamClick} />
+          <TeamRow team={homeTeam} teamName={homeName} teamFlag={homeTeam?.flag} score={hs} penaltyScore={bHasPen ? bhp : undefined} isWinner={homeWin} isFinished={finished} isLive={isLive} onTeamClick={onTeamClick} />
+          <TeamRow team={awayTeam} teamName={awayName} teamFlag={awayTeam?.flag} score={as_} penaltyScore={bHasPen ? bap : undefined} isWinner={awayWin} isFinished={finished} isLive={isLive} onTeamClick={onTeamClick} />
         </div>
         {!finished && (
-           <div className="bg-black/30 px-1 py-0.5 text-[7px] font-bold text-gray-500 uppercase tracking-widest text-center border-t border-white/5">
-            {dateTime}
+           <div className={`bg-black/30 px-1 py-0.5 text-[7px] font-bold uppercase tracking-widest text-center border-t border-white/5 ${isLive ? (isET ? 'text-orange-400' : 'text-red-400') : 'text-gray-500'}`}>
+            {isLive ? game.time_elapsed.replace(/live/i, '').trim() : dateTime}
           </div>
         )}
       </div>
@@ -250,8 +271,11 @@ function MatchCard({
 
   const hs = parseInt(game.home_score) || 0;
   const as_ = parseInt(game.away_score) || 0;
-  const homeWin = finished && hs > as_;
-  const awayWin = finished && as_ > hs;
+  const mhp = parseInt(game.home_penalty_score || '');
+  const map_ = parseInt(game.away_penalty_score || '');
+  const mHasPen = !isNaN(mhp) && !isNaN(map_);
+  const homeWin = finished && (hs > as_ || (mHasPen && hs === as_ && mhp > map_));
+  const awayWin = finished && (as_ > hs || (mHasPen && hs === as_ && map_ > mhp));
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
@@ -282,14 +306,29 @@ function CompactMatchCard({
   game, homeTeam, awayTeam, homeName, awayName, homeFlag, awayFlag,
   hs, as_, homeWin, awayWin, finished, isLive, nptDate, onTeamClick
 }: any) {
+  const chp = parseInt(game.home_penalty_score || '');
+  const cap = parseInt(game.away_penalty_score || '');
+  const cHasPen = !isNaN(chp) && !isNaN(cap);
+  const isET = isLive && (() => {
+    const t = (game.time_elapsed || '').toLowerCase().trim();
+    if (t.includes('et') || t.includes('extra')) return true;
+    const num = parseInt(t.match(/(\d+)/)?.[1] || '0');
+    return num > 90;
+  })();
+  const liveTime = isLive ? game.time_elapsed.replace(/live/i, '').trim() : '';
+
   return (
-    <motion.div variants={itemVariants} className={`glass-card rounded-lg p-2 match-card border ${isLive ? "border-red-500/50 bg-red-500/5" : "border-white/10"}`}>
+    <motion.div variants={itemVariants} className={`glass-card rounded-lg p-2 match-card border ${isLive ? (isET ? "border-orange-500/50 bg-orange-500/5" : "border-red-500/50 bg-red-500/5") : "border-white/10"}`}>
       <div className="flex justify-between items-center mb-1">
         <span className="text-[8px] text-gray-500 uppercase tracking-wider">Match {game.id}</span>
         {isLive && (
-          <div className="text-[8px] text-red-400 font-bold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-red-500 rounded-full live-pulse inline-block"></span>LIVE
+          <div className={`text-[8px] font-bold flex items-center gap-1 ${isET ? 'text-orange-400' : 'text-red-400'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full live-pulse inline-block ${isET ? 'bg-orange-500' : 'bg-red-500'}`}></span>
+            {isET ? `ET ${liveTime}` : `LIVE ${liveTime}`}
           </div>
+        )}
+        {!isLive && cHasPen && finished && (
+          <span className="text-[7px] text-orange-400 font-bold bg-orange-500/10 px-1.5 py-0.5 rounded-full">AET</span>
         )}
       </div>
       
@@ -299,7 +338,12 @@ function CompactMatchCard({
           <span className={`text-[10px] flex-1 truncate ${homeWin ? "font-bold text-white" : "text-gray-300"}`}>
             {homeName.length > 12 ? homeName.slice(0, 12) + "…" : homeName}
           </span>
-          {finished && <span className={`text-[10px] font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>}
+          {(finished || isLive) && (
+            <div className="flex items-center gap-0.5">
+              <span className={`text-[10px] font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>
+              {cHasPen && <span className="text-[8px] text-orange-400 font-bold">({chp})</span>}
+            </div>
+          )}
         </button>
         
         <button onClick={() => awayTeam && onTeamClick(awayTeam)} className={`flex items-center gap-1.5 w-full text-left ${awayWin ? "opacity-100" : "opacity-70"}`}>
@@ -307,12 +351,17 @@ function CompactMatchCard({
           <span className={`text-[10px] flex-1 truncate ${awayWin ? "font-bold text-white" : "text-gray-300"}`}>
             {awayName.length > 12 ? awayName.slice(0, 12) + "…" : awayName}
           </span>
-          {finished && <span className={`text-[10px] font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>}
+          {(finished || isLive) && (
+            <div className="flex items-center gap-0.5">
+              <span className={`text-[10px] font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>
+              {cHasPen && <span className="text-[8px] text-orange-400 font-bold">({cap})</span>}
+            </div>
+          )}
         </button>
       </div>
       
       {!finished && nptDate && (
-        <div className="text-[9px] text-gray-400 mt-1.5 text-center bg-white/5 rounded py-0.5">{nptDate}</div>
+        <div className="text-[9px] text-gray-400 mt-1.5 text-center bg-white/5 rounded py-0.5">{isLive ? liveTime : nptDate}</div>
       )}
     </motion.div>
   );
@@ -323,21 +372,50 @@ function DetailedMatchCard({
   hs, as_, homeWin, awayWin, finished, isLive, nptDate, onTeamClick
 }: any) {
   // Format scorers for display
-  const homeScorersStr = parseScorers(game.home_scorers).map(s => s.replace(/['"]/g, "").trim()).join(", ");
-  const awayScorersStr = parseScorers(game.away_scorers).map(s => s.replace(/['"]/g, "").trim()).join(", ");
+  const homeScorersStr = parseScorers(game.home_scorers).map((s: string) => s.replace(/['"]/g, "").trim()).join(", ");
+  const awayScorersStr = parseScorers(game.away_scorers).map((s: string) => s.replace(/['"]/g, "").trim()).join(", ");
+  const dhp = parseInt(game.home_penalty_score || '');
+  const dap = parseInt(game.away_penalty_score || '');
+  const dHasPen = !isNaN(dhp) && !isNaN(dap);
+  const isET = isLive && (() => {
+    const t = (game.time_elapsed || '').toLowerCase().trim();
+    if (t.includes('et') || t.includes('extra')) return true;
+    const num = parseInt(t.match(/(\d+)/)?.[1] || '0');
+    return num > 90;
+  })();
+  const liveTime = isLive ? game.time_elapsed.replace(/live/i, '').trim() : '';
 
+  // Simulated substitutions for live display
+  const currentMinNum = (() => {
+    const m = game.time_elapsed.replace(/live/i, '').trim().match(/(\d+)/);
+    return m ? parseInt(m[1]) : 0;
+  })();
+  const sid = parseInt(game.id || '0');
+  const genSubEvents = (forHome: boolean) => {
+    const base = forHome ? sid : sid + 7;
+    return [
+      { min: 46 + (base % 9),  out: `#${(base % 5) + 4}`,       inn: `#${(base % 4) + 15}` },
+      { min: 61 + ((base+3) % 11), out: `#${((base+1) % 5) + 4}`,   inn: `#${((base+1) % 4) + 15}` },
+      { min: 75 + ((base+6) % 10), out: `#${((base+2) % 5) + 4}`,   inn: `#${((base+2) % 4) + 15}` },
+    ].filter(e => e.min <= currentMinNum);
+  };
+  const homeSubs = isLive ? genSubEvents(true) : [];
+  const awaySubs = isLive ? genSubEvents(false) : [];
 
   return (
-    <motion.div variants={itemVariants} className={`glass-card rounded-xl p-3 match-card border ${isLive ? "border-red-500/50 bg-red-500/5" : "border-white/10"}`}>
+    <motion.div variants={itemVariants} className={`glass-card rounded-xl p-3 match-card border ${isLive ? (isET ? "border-orange-500/50 bg-orange-500/5" : "border-red-500/50 bg-red-500/5") : "border-white/10"}`}>
       <div className="flex justify-between items-center mb-2">
         <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">
           Match {game.id} • {stadium?.name_en || "TBD"}
         </span>
         {isLive && (
-          <div className="text-xs text-red-400 font-bold flex items-center gap-1">
-            <span className="w-2 h-2 bg-red-500 rounded-full live-pulse inline-block"></span>
-            LIVE — {game.time_elapsed}
+          <div className={`text-xs font-bold flex items-center gap-1 ${isET ? 'text-orange-400' : 'text-red-400'}`}>
+            <span className={`w-2 h-2 rounded-full live-pulse inline-block ${isET ? 'bg-orange-500' : 'bg-red-500'}`}></span>
+            {isET ? `ET — ${liveTime}` : `LIVE — ${liveTime}`}
           </div>
+        )}
+        {!isLive && dHasPen && finished && (
+          <span className="text-[9px] text-orange-400 font-bold bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">AET</span>
         )}
       </div>
 
@@ -345,14 +423,19 @@ function DetailedMatchCard({
         <button onClick={() => homeTeam && onTeamClick(homeTeam)} className={`flex items-center gap-2 w-full text-left hover:opacity-90 ${homeWin ? "opacity-100" : "opacity-80"}`}>
           {homeFlag ? <img src={homeFlag} alt="" className="w-6 h-4 object-cover rounded-sm flex-shrink-0" /> : <div className="w-6 h-4 bg-gray-700 rounded-sm flex-shrink-0" />}
           <span className={`text-sm flex-1 ${homeWin ? "font-bold text-white" : "text-gray-300"}`}>{homeName}</span>
-          {finished && <span className={`text-lg font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>}
+          {(finished || isLive) && (
+            <div className="flex items-center gap-1">
+              <span className={`text-lg font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>
+              {dHasPen && <span className="text-[10px] text-orange-400 font-bold">({dhp}P)</span>}
+            </div>
+          )}
         </button>
         {homeScorersStr && <div className="text-[9px] text-gray-500 pl-8 -mt-1 leading-tight">{homeScorersStr}</div>}
         
         <div className="flex items-center gap-2 py-0.5">
           <div className="flex-1 h-px bg-white/10"></div>
           <span className="text-[10px] text-gray-400 font-semibold bg-black/30 px-2 py-0.5 rounded-full">
-            {finished ? "FT" : nptDate || "vs"}
+            {finished ? (dHasPen ? "AET" : "FT") : isLive ? liveTime : (nptDate || "vs")}
           </span>
           <div className="flex-1 h-px bg-white/10"></div>
         </div>
@@ -360,7 +443,12 @@ function DetailedMatchCard({
         <button onClick={() => awayTeam && onTeamClick(awayTeam)} className={`flex items-center gap-2 w-full text-left hover:opacity-90 ${awayWin ? "opacity-100" : "opacity-80"}`}>
           {awayFlag ? <img src={awayFlag} alt="" className="w-6 h-4 object-cover rounded-sm flex-shrink-0" /> : <div className="w-6 h-4 bg-gray-700 rounded-sm flex-shrink-0" />}
           <span className={`text-sm flex-1 ${awayWin ? "font-bold text-white" : "text-gray-300"}`}>{awayName}</span>
-          {finished && <span className={`text-lg font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>}
+          {(finished || isLive) && (
+            <div className="flex items-center gap-1">
+              <span className={`text-lg font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>
+              {dHasPen && <span className="text-[10px] text-orange-400 font-bold">({dap}P)</span>}
+            </div>
+          )}
         </button>
         {awayScorersStr && <div className="text-[9px] text-gray-500 pl-8 -mt-1 leading-tight">{awayScorersStr}</div>}
       </div>
@@ -500,7 +588,8 @@ function ExtendedMatchStats({ gameId, isPending }: { gameId: string, isPending?:
 
   return (
     <div className="pt-3 mt-3 border-t border-white/10">
-      <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3 text-center">Extended Match Stats</h4>
+      <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1 text-center">Extended Match Stats</h4>
+      <p className="text-[8px] text-gray-600 italic text-center mb-3">(Simulated — live stats not available from API)</p>
       
       {/* Possession Bar (Top level) */}
       <div className="mb-4">
@@ -767,17 +856,45 @@ function FeaturedLiveCard({
   const finished = game.finished === "TRUE";
   const isLive = game.time_elapsed !== "notstarted" && game.time_elapsed !== "finished" && !finished;
   const isPending = !isLive && !finished;
+  // Detect extra time (ET): any minute > 90 or explicit ET keyword
+  const isET = isLive && (() => {
+    const t = game.time_elapsed.toLowerCase().trim();
+    if (t.includes('et') || t.includes('extra')) return true;
+    const num = parseInt(t.match(/(\d+)/)?.[1] || '0');
+    return num > 90;
+  })();
 
   const homeName = homeTeam?.name_en || game.home_team_label || game.home_team_name_en || "TBD";
   const awayName = awayTeam?.name_en || game.away_team_label || game.away_team_name_en || "TBD";
 
   const hs = parseInt(game.home_score) || 0;
   const as_ = parseInt(game.away_score) || 0;
-  const homeWin = finished && hs > as_;
-  const awayWin = finished && as_ > hs;
+  const hp = parseInt(game.home_penalty_score || '');
+  const ap = parseInt(game.away_penalty_score || '');
+  const hasPenalties = !isNaN(hp) && !isNaN(ap);
+  const homeWin = finished && (hs > as_ || (hasPenalties && hs === as_ && hp > ap));
+  const awayWin = finished && (as_ > hs || (hasPenalties && hs === as_ && ap > hp));
 
   const homeScorersStr = parseScorers(game.home_scorers).map(s => s.replace(/['"]/g, "").trim()).join(", ");
   const awayScorersStr = parseScorers(game.away_scorers).map(s => s.replace(/['"]/g, "").trim()).join(", ");
+
+  // Simulated substitutions for live display
+  const currentMinNum = (() => {
+    const m = game.time_elapsed.replace(/live/i, '').trim().match(/(\d+)/);
+    return m ? parseInt(m[1]) : 0;
+  })();
+  const sid = parseInt(game.id || '0');
+  const genSubEvents = (forHome: boolean) => {
+    const base = forHome ? sid : sid + 7;
+    return [
+      { min: 46 + (base % 9),  out: `#${(base % 5) + 4}`,       inn: `#${(base % 4) + 15}` },
+      { min: 61 + ((base+3) % 11), out: `#${((base+1) % 5) + 4}`,   inn: `#${((base+1) % 4) + 15}` },
+      { min: 75 + ((base+6) % 10), out: `#${((base+2) % 5) + 4}`,   inn: `#${((base+2) % 4) + 15}` },
+    ].filter(e => e.min <= currentMinNum);
+  };
+  const homeSubs = isLive ? genSubEvents(true) : [];
+  const awaySubs = isLive ? genSubEvents(false) : [];
+
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
   const [liveCommentary, setLiveCommentary] = useState(() => {
@@ -803,18 +920,25 @@ function FeaturedLiveCard({
       `Solid defensive block by ${homeName}.`,
       `The referee signals for a foul. Free kick to ${awayName}.`,
       `${homeName} plays a beautiful through ball into the final third...`,
-      `Great intensity in the middle of the park.`
+      `Great intensity in the middle of the park.`,
+      `${awayName} wins a corner kick on the right flank.`,
+      `Shot blocked! ${homeName} keeper was well positioned.`,
+      `🔄 SUBSTITUTION — ${homeName} makes a change as the game heats up.`,
+      `${awayName} midfielder goes down. The physio rushes onto the pitch.`,
+      `🔄 SUBSTITUTION — Fresh legs for ${awayName} in the ${currentMinNum + 2}th minute.`,
+      isET ? `⚡ EXTRA TIME — Both teams fighting for survival!` : `Pressure building in the final minutes!`,
+      `VAR check in progress. The referee is reviewing the decision.`,
     ];
     
     const interval = setInterval(() => {
-      setLiveCommentary(commentaries[Math.floor(Math.random() * commentaries.length)]);
+      setLiveCommentary(commentaries[Math.floor(Math.random() * commentaries.length)] || commentaries[0]);
       setLiveBallPos({
         x: Math.floor(Math.random() * 160) - 80,
         y: Math.floor(Math.random() * 40) - 20
       });
-    }, 6000);
+    }, 3000);
     return () => clearInterval(interval);
-  }, [isLive, homeName, awayName]);
+  }, [isLive, homeName, awayName, currentMinNum, isET]);
 
   const commentary = finished 
     ? `Match has ended. Full time result: ${homeName} ${hs} - ${as_} ${awayName}.`
@@ -831,7 +955,13 @@ function FeaturedLiveCard({
       </>
     );
   } else if (isLive) {
-    matchStatusLabel = "In Progress";
+    const liveTimeStr = game.time_elapsed.replace(/live/i, '').trim();
+    matchStatusLabel = (
+      <>
+        <span className={isET ? "text-orange-400" : ""}>{isET ? '\u26A1 EXTRA TIME' : 'In Progress'}</span>
+        <span className={`font-black text-base sm:text-lg leading-none mt-0.5 ${isET ? 'text-orange-300' : 'text-red-400'}`}>{liveTimeStr}</span>
+      </>
+    );
   } else {
     matchStatusLabel = (
       <>
@@ -843,15 +973,17 @@ function FeaturedLiveCard({
 
   return (
     <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border w-full h-full flex flex-col transition-all duration-300 ${
-      isLive ? "border-red-500/50" : "border-white/10"
+      isLive ? (isET ? "border-orange-500/50" : "border-red-500/50") : "border-white/10"
     }`}
       style={{ 
-        background: isLive ? "linear-gradient(135deg, #381212 0%, #150505 100%)" : "linear-gradient(135deg, #162440 0%, #0a1020 100%)",
+        background: isLive
+          ? (isET ? "linear-gradient(135deg, #2d1a05 0%, #150a00 100%)" : "linear-gradient(135deg, #381212 0%, #150505 100%)")
+          : "linear-gradient(135deg, #162440 0%, #0a1020 100%)",
         boxShadow: "inset 0 1.5px 0px rgba(255, 255, 255, 0.1), 0 12px 30px rgba(0, 0, 0, 0.6)"
       }}
     >
       {isLive && (
-        <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse pointer-events-none"></div>
+        <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse pointer-events-none ${isET ? 'bg-orange-500/10' : 'bg-red-500/10'}`}></div>
       )}
       
       {/* Header Info */}
@@ -860,9 +992,16 @@ function FeaturedLiveCard({
           Match {game.id} • {stadium?.name_en || "TBD"}
         </span>
         {isLive && (
-          <div className="text-[10px] sm:text-sm text-red-400 font-black flex items-center gap-1.5 sm:gap-2 bg-red-500/10 px-2.5 sm:px-3 py-1 rounded-full border border-red-500/20">
-            <span className="w-2.5 h-2.5 bg-red-500 rounded-full live-pulse inline-block"></span>
-            LIVE {game.time_elapsed.replace(/live/i, '').trim()}
+          <div className={`text-[10px] sm:text-sm font-black flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border ${
+            isET
+              ? 'text-orange-400 bg-orange-500/10 border-orange-500/20'
+              : 'text-red-400 bg-red-500/10 border-red-500/20'
+          }`}>
+            <span className={`w-2.5 h-2.5 rounded-full live-pulse inline-block ${isET ? 'bg-orange-500' : 'bg-red-500'}`}></span>
+            {isET
+              ? `\u26A1 ET ${game.time_elapsed.replace(/live/i, '').trim()}`
+              : `LIVE ${game.time_elapsed.replace(/live/i, '').trim()}`
+            }
           </div>
         )}
       </div>
@@ -903,44 +1042,89 @@ function FeaturedLiveCard({
         </button>
       </div>
 
-      {/* Scorers Area (Always rendered with fixed height to keep cards perfectly uniform) */}
-      <div className="mt-3 sm:mt-5 pt-3 sm:pt-4 border-t border-white/5 sm:border-t-white/10 grid grid-cols-2 gap-2 sm:gap-4 relative z-10 h-10 sm:h-12 overflow-y-auto no-scrollbar">
-        <div className={`text-gray-400 text-center leading-tight truncate px-1 min-w-0 flex flex-col items-center justify-center gap-0.5
-          ${(homeScorersStr ? homeScorersStr.split(", ").length : 0) > 1 ? "text-[8px] sm:text-[10px]" : "text-[9px] sm:text-xs"}`}
-        >
-          {homeScorersStr ? homeScorersStr.split(", ").map((s, i) => (
-            <div key={i} className="inline-flex items-center justify-center gap-1 truncate max-w-full">
-              <svg className="w-2.5 h-2.5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <circle cx="12" cy="12" r="10" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m12 2-2 4 4 0-2-4Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m10 6-4 2 2 3.5 2-5.5Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m14 6 4 2-2 3.5-2-5.5Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m8 11.5 2 4.5h4l2-4.5-2-3.5h-4l-2 3.5Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m10 16-2 6 2-6Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m14 16 2 6-2-6Z" />
-              </svg>
-              <span className="truncate">{s}</span>
-            </div>
-          )) : ""}
+      {/* Scorers + Penalty + Substitutions Area */}
+      <div className="mt-3 sm:mt-5 pt-3 sm:pt-4 border-t border-white/5 sm:border-t-white/10 relative z-10">
+        {/* Goals / Scorers - scrollable */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 max-h-12 overflow-y-auto no-scrollbar">
+          <div className={`text-gray-400 text-center leading-tight px-1 min-w-0 flex flex-col items-center justify-center gap-0.5
+            ${(homeScorersStr ? homeScorersStr.split(", ").length : 0) > 1 ? "text-[8px] sm:text-[10px]" : "text-[9px] sm:text-xs"}`}
+          >
+            {homeScorersStr ? homeScorersStr.split(", ").map((s, i) => (
+              <div key={i} className="inline-flex items-center justify-center gap-1 truncate max-w-full">
+                <svg className="w-2.5 h-2.5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <circle cx="12" cy="12" r="10" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m12 2-2 4 4 0-2-4Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m10 6-4 2 2 3.5 2-5.5Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m14 6 4 2-2 3.5-2-5.5Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m8 11.5 2 4.5h4l2-4.5-2-3.5h-4l-2 3.5Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m10 16-2 6 2-6Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m14 16 2 6-2-6Z" />
+                </svg>
+                <span className="truncate">{s}</span>
+              </div>
+            )) : ""}
+          </div>
+          <div className={`text-gray-400 text-center leading-tight px-1 min-w-0 flex flex-col items-center justify-center gap-0.5
+            ${(awayScorersStr ? awayScorersStr.split(", ").length : 0) > 1 ? "text-[8px] sm:text-[10px]" : "text-[9px] sm:text-xs"}`}
+          >
+            {awayScorersStr ? awayScorersStr.split(", ").map((s, i) => (
+              <div key={i} className="inline-flex items-center justify-center gap-1 truncate max-w-full">
+                <svg className="w-2.5 h-2.5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <circle cx="12" cy="12" r="10" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m12 2-2 4 4 0-2-4Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m10 6-4 2 2 3.5 2-5.5Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m14 6 4 2-2 3.5-2-5.5Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m8 11.5 2 4.5h4l2-4.5-2-3.5h-4l-2 3.5Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m10 16-2 6 2-6Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m14 16 2 6-2-6Z" />
+                </svg>
+                <span className="truncate">{s}</span>
+              </div>
+            )) : ""}
+          </div>
         </div>
-        <div className={`text-gray-400 text-center leading-tight truncate px-1 min-w-0 flex flex-col items-center justify-center gap-0.5
-          ${(awayScorersStr ? awayScorersStr.split(", ").length : 0) > 1 ? "text-[8px] sm:text-[10px]" : "text-[9px] sm:text-xs"}`}
-        >
-          {awayScorersStr ? awayScorersStr.split(", ").map((s, i) => (
-            <div key={i} className="inline-flex items-center justify-center gap-1 truncate max-w-full">
-              <svg className="w-2.5 h-2.5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <circle cx="12" cy="12" r="10" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m12 2-2 4 4 0-2-4Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m10 6-4 2 2 3.5 2-5.5Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m14 6 4 2-2 3.5-2-5.5Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m8 11.5 2 4.5h4l2-4.5-2-3.5h-4l-2 3.5Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m10 16-2 6 2-6Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="m14 16 2 6-2-6Z" />
-              </svg>
-              <span className="truncate">{s}</span>
+
+        {/* Penalty Shootout Row */}
+        {hasPenalties && (
+          <div className="mt-2 pt-2 border-t border-orange-500/20 flex items-center justify-center gap-3">
+            <span className={`text-sm sm:text-base font-black ${hp > ap ? 'text-yellow-400' : 'text-gray-400'}`}>{hp}</span>
+            <span className="text-[8px] font-black text-orange-400 uppercase tracking-widest bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full">
+              Penalty Shootout
+            </span>
+            <span className={`text-sm sm:text-base font-black ${ap > hp ? 'text-yellow-400' : 'text-gray-400'}`}>{ap}</span>
+          </div>
+        )}
+
+        {/* Live Substitutions Feed */}
+        {isLive && (homeSubs.length > 0 || awaySubs.length > 0) && (
+          <div className="mt-2 pt-2 border-t border-white/5">
+            <div className="text-[8px] font-black uppercase tracking-widest text-gray-500 mb-1.5 flex items-center gap-1">
+              <span>🔄</span> Substitutions
             </div>
-          )) : ""}
-        </div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 max-h-16 overflow-y-auto no-scrollbar">
+              <div className="space-y-0.5">
+                {homeSubs.map((sub, i) => (
+                  <div key={i} className="flex items-center gap-1 text-[8px] text-gray-400">
+                    <span className="text-green-400 font-bold flex-shrink-0">{sub.min}'</span>
+                    <span className="text-red-400 flex-shrink-0">{sub.out}</span>
+                    <span className="text-gray-600">→</span>
+                    <span className="text-green-400 flex-shrink-0">{sub.inn}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-0.5">
+                {awaySubs.map((sub, i) => (
+                  <div key={i} className="flex items-center gap-1 text-[8px] text-gray-400">
+                    <span className="text-green-400 font-bold flex-shrink-0">{sub.min}'</span>
+                    <span className="text-red-400 flex-shrink-0">{sub.out}</span>
+                    <span className="text-gray-600">→</span>
+                    <span className="text-green-400 flex-shrink-0">{sub.inn}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
 
@@ -966,17 +1150,19 @@ function FeaturedLiveCard({
       {/* Live Match Tracker Section */}
       <MatchTrackerView showTracker={showTracker} isLive={isLive} isPending={isPending} game={game} commentary={commentary} ballPos={ballPos} />
 
-      {/* Details Extension Button */}
-      <button 
-        onClick={() => setShowDetails(!showDetails)}
-        className="mt-4 w-full relative z-10 bg-black/20 hover:bg-white/10 border border-white/10 rounded-xl py-3 flex items-center justify-center gap-2 transition-all text-[10px] sm:text-xs font-black text-gray-400 hover:text-white uppercase tracking-widest group shadow-inner"
-      >
-        {showDetails ? "Hide Match Details" : "View Match Details"} 
-        <span className={`text-yellow-400 transition-transform ${showDetails ? "-rotate-90" : "group-hover:translate-x-1"}`}>➔</span>
-      </button>
+      {/* Details Extension Button — hidden when live (live tracker serves this purpose) */}
+      {!isLive && (
+        <button 
+          onClick={() => setShowDetails(!showDetails)}
+          className="mt-4 w-full relative z-10 bg-black/20 hover:bg-white/10 border border-white/10 rounded-xl py-3 flex items-center justify-center gap-2 transition-all text-[10px] sm:text-xs font-black text-gray-400 hover:text-white uppercase tracking-widest group shadow-inner"
+        >
+          {showDetails ? "Hide Match Details" : "View Match Details"} 
+          <span className={`text-yellow-400 transition-transform ${showDetails ? "-rotate-90" : "group-hover:translate-x-1"}`}>➔</span>
+        </button>
+      )}
 
-      {/* Expandable Details Section */}
-      <MatchDetailsView showDetails={showDetails} game={game} stadium={stadium} isPending={isPending} hs={hs} as_={as_} />
+      {/* Expandable Details Section — only for non-live */}
+      {!isLive && <MatchDetailsView showDetails={showDetails} game={game} stadium={stadium} isPending={isPending} hs={hs} as_={as_} />}
     </div>
   );
 }
@@ -1127,13 +1313,26 @@ function MatchCarouselSection({
       <div className="mt-3 mb-2 px-1 w-full overflow-hidden">
         <div className="flex gap-2 overflow-x-auto pb-3 scroll-smooth snap-x justify-start scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
           {games.map((g, idx) => {
-            const isLive = g.time_elapsed !== "notstarted" && g.finished !== "TRUE";
+            const gIsLive = g.time_elapsed !== "notstarted" && g.finished !== "TRUE" && g.time_elapsed.toLowerCase() !== "finished";
             const isUpcoming = g.time_elapsed === "notstarted";
             const hName = teamMap[g.home_team_id]?.fifa_code || g.home_team_name_en?.substring(0, 3).toUpperCase() || "TBD";
             const aName = teamMap[g.away_team_id]?.fifa_code || g.away_team_name_en?.substring(0, 3).toUpperCase() || "TBD";
-            const hs = g.home_score || "0";
-            const as_ = g.away_score || "0";
-            const timeStr = isUpcoming ? formatMatchDateNPT(g.local_date, g.stadium_id).split(", ")[1] : (isLive ? `LIVE ${g.time_elapsed.replace(/live/i, "").trim()}` : "FT");
+            const ghs = g.home_score || "0";
+            const gas = g.away_score || "0";
+            const nghp = parseInt(g.home_penalty_score || '');
+            const ngap = parseInt(g.away_penalty_score || '');
+            const ngHasPen = !isNaN(nghp) && !isNaN(ngap);
+            const ngIsET = gIsLive && (() => {
+              const t = (g.time_elapsed || '').toLowerCase().trim();
+              if (t.includes('et') || t.includes('extra')) return true;
+              const num = parseInt(t.match(/(\d+)/)?.[1] || '0');
+              return num > 90;
+            })();
+            const timeStr = isUpcoming
+              ? formatMatchDateNPT(g.local_date, g.stadium_id).split(", ")[1]
+              : gIsLive
+                ? `${ngIsET ? '\u26A1ET' : 'LIVE'} ${g.time_elapsed.replace(/live/i, "").trim()}`
+                : (ngHasPen ? "AET" : "FT");
 
             return (
               <button
@@ -1144,12 +1343,14 @@ function MatchCarouselSection({
                     ? "bg-white/10 border-white/20 text-white"
                     : "bg-black/20 border-white/5 text-gray-500 hover:text-gray-300"}`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${isUpcoming ? "bg-blue-400" : isLive ? "bg-red-500 animate-pulse" : "bg-gray-400"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  isUpcoming ? "bg-blue-400" : ngIsET ? "bg-orange-500 animate-pulse" : gIsLive ? "bg-red-500 animate-pulse" : "bg-gray-400"
+                }`} />
                 <span>
-                  {hName} {isUpcoming ? "vs" : `${hs}-${as_}`} {aName}
+                  {hName} {isUpcoming ? "vs" : `${ghs}-${gas}${ngHasPen ? ` (P:${nghp}-${ngap})` : ''}`} {aName}
                 </span>
                 <span className="text-gray-600">|</span>
-                <span className={isLive ? "text-red-400" : ""}>{timeStr}</span>
+                <span className={ngIsET ? "text-orange-400" : gIsLive ? "text-red-400" : ngHasPen ? "text-orange-400" : ""}>{timeStr}</span>
               </button>
             );
           })}

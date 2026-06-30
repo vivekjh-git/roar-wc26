@@ -45,6 +45,8 @@ export interface Game {
   away_team_name_en?: string;
   home_team_label?: string;
   away_team_label?: string;
+  home_penalty_score?: string;
+  away_penalty_score?: string;
 }
 
 export interface Stadium {
