@@ -551,6 +551,7 @@ function MatchTimeline({
 }) {
   const [showModal, setShowModal] = useState(false);
   const [showJumpToLive, setShowJumpToLive] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const userScrolledRef = useRef(false);
   const programmaticScrollRef = useRef(false);
@@ -563,13 +564,13 @@ function MatchTimeline({
     ...(momentum ?? []).map(b => b.bucketStart + bucketSize)
   );
   const axisMax = Math.ceil(dataMax / 15) * 15;
-  const canvasWidth = axisMax * TIMELINE_PX_PER_MIN;
+  const canvasWidth = expanded ? axisMax * TIMELINE_PX_PER_MIN : undefined;
   const maxBucket = momentum?.length ? Math.max(1, ...momentum.map(b => Math.max(b.home, b.away))) : 1;
   const ticks = Array.from({ length: axisMax / 15 + 1 }, (_, i) => i * 15);
 
   const scrollToMinute = (minute: number) => {
     const el = scrollRef.current;
-    if (!el) return;
+    if (!el || !canvasWidth) return;
     const target = Math.max(0, Math.min(canvasWidth - el.clientWidth, minute * TIMELINE_PX_PER_MIN - el.clientWidth * 0.6));
     programmaticScrollRef.current = true;
     el.scrollTo({ left: target, behavior: "smooth" });
@@ -577,7 +578,7 @@ function MatchTimeline({
   };
 
   useEffect(() => {
-    if (!matched || isPending) return;
+    if (!expanded || !matched || isPending || !canvasWidth) return;
     if (isLive && currentMinute != null && !userScrolledRef.current) {
       scrollToMinute(currentMinute);
     } else if (isFinished && !hasFinishedScrolledRef.current) {
@@ -590,7 +591,7 @@ function MatchTimeline({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matched, isPending, isLive, isFinished, currentMinute, canvasWidth]);
+  }, [expanded, matched, isPending, isLive, isFinished, currentMinute, canvasWidth]);
 
   const handleScroll = () => {
     if (programmaticScrollRef.current) return;
@@ -602,6 +603,52 @@ function MatchTimeline({
     userScrolledRef.current = false;
     setShowJumpToLive(false);
     if (currentMinute != null) scrollToMinute(currentMinute);
+  };
+
+  const toggleExpanded = () => {
+    setExpanded(prev => {
+      const next = !prev;
+      if (next) {
+        // Re-enter expanded mode with a fresh follow-live lock.
+        userScrolledRef.current = false;
+        hasFinishedScrolledRef.current = false;
+        setShowJumpToLive(false);
+      }
+      return next;
+    });
+  };
+
+  // Click-and-drag scrolling for desktop mice (touch devices already scroll natively).
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartScrollRef = useRef(0);
+  const dragMovedRef = useRef(false);
+
+  const onTimelineMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    isDraggingRef.current = true;
+    dragMovedRef.current = false;
+    dragStartXRef.current = e.pageX;
+    dragStartScrollRef.current = scrollRef.current.scrollLeft;
+  };
+  const onTimelineMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current || !scrollRef.current) return;
+    const dx = e.pageX - dragStartXRef.current;
+    if (Math.abs(dx) > 4) {
+      dragMovedRef.current = true;
+      userScrolledRef.current = true;
+      if (isLive) setShowJumpToLive(true);
+    }
+    scrollRef.current.scrollLeft = dragStartScrollRef.current - dx;
+  };
+  const endTimelineDrag = () => { isDraggingRef.current = false; };
+  // Swallow the click that follows a drag so it doesn't also open the icon/modal underneath.
+  const onTimelineClickCapture = (e: React.MouseEvent) => {
+    if (dragMovedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragMovedRef.current = false;
+    }
   };
 
   if (isPending || !matched) {
@@ -630,18 +677,29 @@ function MatchTimeline({
 
   return (
     <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5 relative">
-      <button
-        onClick={() => setShowModal(true)}
-        className="flex justify-between items-center w-full text-[9px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2 hover:text-gray-300 transition-colors"
-      >
-        <span className="flex items-center gap-1">Match Timeline <span className="text-gray-600 normal-case font-normal">(tap for full list)</span></span>
-        <span className={`flex items-center gap-1.5 ${isLive ? "text-red-400" : "text-gray-400"}`}>
-           {isLive && <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>}
-           {isLive ? "Live" : "Final"}
-        </span>
-      </button>
+      <div className="flex justify-between items-center w-full px-2 mb-2 gap-2">
+        <button
+          onClick={() => setShowModal(true)}
+          className="text-[9px] font-bold text-gray-500 uppercase tracking-widest hover:text-gray-300 transition-colors truncate"
+        >
+          Match Timeline <span className="text-gray-600 normal-case font-normal">(tap for full list)</span>
+        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-wider ${isLive ? "text-red-400" : "text-gray-400"}`}>
+             {isLive && <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>}
+             {isLive ? "Live" : "Final"}
+          </span>
+          <button
+            onClick={toggleExpanded}
+            title={expanded ? "Collapse timeline" : "Expand timeline (scrollable)"}
+            className="w-4 h-4 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-gray-400 hover:text-white text-[10px] leading-none transition-colors"
+          >
+            {expanded ? "⊖" : "⊕"}
+          </button>
+        </div>
+      </div>
 
-      {showJumpToLive && (
+      {showJumpToLive && expanded && (
         <button
           onClick={jumpToLive}
           className="absolute top-6 right-2 z-10 text-[8px] font-black uppercase tracking-widest bg-red-500/90 text-white px-2 py-0.5 rounded-full shadow-lg animate-pulse"
@@ -650,8 +708,17 @@ function MatchTimeline({
         </button>
       )}
 
-      <div ref={scrollRef} onScroll={handleScroll} className="w-full overflow-x-auto no-scrollbar">
-        <div style={{ width: canvasWidth }}>
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        onMouseDown={onTimelineMouseDown}
+        onMouseMove={onTimelineMouseMove}
+        onMouseUp={endTimelineDrag}
+        onMouseLeave={endTimelineDrag}
+        onClickCapture={onTimelineClickCapture}
+        className={`w-full overflow-x-auto no-scrollbar select-none ${expanded ? "cursor-grab active:cursor-grabbing" : ""}`}
+      >
+        <div className={!expanded ? "w-full" : undefined} style={{ width: canvasWidth }}>
           <div className="relative" style={{ height: 78 }}>
             {/* HT / FT guide lines */}
             <div className="absolute top-0 bottom-3 w-px bg-white/10" style={{ left: `${(45 / axisMax) * 100}%` }} />
