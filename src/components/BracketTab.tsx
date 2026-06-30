@@ -2054,7 +2054,11 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
               onClick={() => {
                 setFallFilter(r.key);
                 // Also sync startRound for tree view
-                if (r.key !== 'all' && r.key !== 'final') setStartRound(r.key);
+                if (r.key === 'all') {
+                  setStartRound('r32');
+                } else if (r.key !== 'final') {
+                  setStartRound(r.key);
+                }
               }}
               className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-150 ${
                 fallFilter === r.key

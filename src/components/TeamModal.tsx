@@ -15,6 +15,24 @@ interface TeamModalProps {
   onClose: () => void;
 }
 
+// From the round of 32 onward a level scoreline is decided on penalties — once penalty scores
+// are present, they determine the result instead of treating it as a draw.
+function getMatchResult(g: Game, teamId: string): "W" | "D" | "L" | null {
+  if (g.finished !== "TRUE") return null;
+  const isHome = g.home_team_id === teamId;
+  const gf = parseInt(isHome ? g.home_score : g.away_score) || 0;
+  const ga = parseInt(isHome ? g.away_score : g.home_score) || 0;
+  if (gf !== ga) return gf > ga ? "W" : "L";
+  const hp = parseInt(g.home_penalty_score || "");
+  const ap = parseInt(g.away_penalty_score || "");
+  if (!isNaN(hp) && !isNaN(ap)) {
+    const teamPen = isHome ? hp : ap;
+    const oppPen = isHome ? ap : hp;
+    if (teamPen !== oppPen) return teamPen > oppPen ? "W" : "L";
+  }
+  return "D";
+}
+
 function StatBox({ label, value, sub, delay }: { label: string; value: string | number; sub?: string; delay: number }) {
   return (
     <motion.div 
@@ -71,8 +89,9 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
     const ga = parseInt(isHome ? g.away_score : g.home_score) || 0;
     goalsFor += gf;
     goalsAgainst += ga;
-    if (gf > ga) wins++;
-    else if (gf === ga) draws++;
+    const result = getMatchResult(g, team.id);
+    if (result === "W") wins++;
+    else if (result === "D") draws++;
     else losses++;
   }
 
@@ -83,6 +102,14 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
     .findIndex((t) => t.team_id === team.id);
 
   const stadiumMap = Object.fromEntries(stadiums.map((s) => [s.id, s]));
+
+  // A team is out once every game we know about for them is finished and none remain scheduled
+  // (the bracket pre-creates each round's fixture once a team is confirmed into it).
+  const hasFutureOrLiveGame = teamGames.some((g) => g.finished !== "TRUE");
+  const isDisqualified = finishedGames.length > 0 && !hasFutureOrLiveGame;
+  const statusGame = hasFutureOrLiveGame
+    ? teamGames.find((g) => g.finished !== "TRUE")
+    : finishedGames[finishedGames.length - 1];
 
   // Compute team's scorers
   const scorerCounts: { [name: string]: number } = {};
@@ -113,6 +140,8 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
     };
     return map[type] || type.toUpperCase();
   };
+
+  const statusRoundLabel = statusGame ? getStageLabel(statusGame.type) : null;
 
   return (
     <AnimatePresence>
@@ -177,11 +206,20 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
                   <span className="text-[10px] text-gray-400 font-bold bg-white/5 px-2 py-0.5 rounded border border-white/5">{team.fifa_code}</span>
                   {teamStanding !== undefined && teamStanding >= 0 && (
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                      teamStanding < 2 ? "text-green-400 bg-green-400/10 border-green-400/20" : 
-                      teamStanding === 2 ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20" : 
+                      teamStanding < 2 ? "text-green-400 bg-green-400/10 border-green-400/20" :
+                      teamStanding === 2 ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20" :
                       "text-gray-400 bg-gray-400/10 border-gray-400/20"
                     }`}>
                       #{teamStanding + 1} in group
+                    </span>
+                  )}
+                  {isDisqualified ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-red-400 bg-red-400/10 border-red-400/30 uppercase tracking-wider">
+                      Disqualified{statusRoundLabel ? ` — ${statusRoundLabel}` : ""}
+                    </span>
+                  ) : statusRoundLabel && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-blue-400 bg-blue-400/10 border-blue-400/20 uppercase tracking-wider">
+                      {statusRoundLabel}
                     </span>
                   )}
                 </div>
@@ -207,11 +245,8 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
                 </h3>
                 <div className="flex gap-2">
                   {finishedGames.slice(-5).map((g) => {
-                    const isHome = g.home_team_id === team.id;
-                    const gf = parseInt(isHome ? g.home_score : g.away_score) || 0;
-                    const ga = parseInt(isHome ? g.away_score : g.home_score) || 0;
-                    const result = gf > ga ? "W" : gf === ga ? "D" : "L";
-                    const colors = { 
+                    const result = getMatchResult(g, team.id) ?? "D";
+                    const colors = {
                       W: "bg-green-500/20 text-green-400 border-green-500/30", 
                       D: "bg-gray-500/20 text-gray-400 border-gray-500/30", 
                       L: "bg-red-500/20 text-red-400 border-red-500/30" 
