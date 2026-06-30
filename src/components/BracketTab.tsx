@@ -1237,22 +1237,42 @@ function FeaturedLiveCard({
   } | null>(null);
 
   // Fetch on mount, immediately again at key match-stage transitions (half time, extra time,
-  // full time), and steadily every 15s while the match is live in between.
+  // full time), and steadily every 15s while the match is live in between. A single fetch
+  // failure (cold serverless start, brief network blip) shouldn't permanently strand the UI on
+  // "not available", so failed/unmatched attempts retry a few times with backoff before giving up.
   useEffect(() => {
     const homeCode = homeTeam?.fifa_code;
     const awayCode = awayTeam?.fifa_code;
     if (!homeCode || !awayCode) return;
     let cancelled = false;
-    const load = () => {
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+    let attempt = 0;
+    const maxRetries = 3;
+
+    const scheduleRetry = () => {
+      if (cancelled || attempt >= maxRetries) return;
+      attempt++;
+      retryTimeout = setTimeout(load, attempt * 3000);
+    };
+
+    function load() {
       fetch(`/api/wc/fifa-match?home=${homeCode}&away=${awayCode}`)
         .then(res => (res.ok ? res.json() : null))
-        .then(data => { if (!cancelled && data) setFifaData(data); })
-        .catch(() => {});
-    };
+        .then(data => {
+          if (cancelled) return;
+          if (data) {
+            setFifaData(data);
+            if (data.matched) { attempt = 0; return; }
+          }
+          scheduleRetry();
+        })
+        .catch(scheduleRetry);
+    }
+
     load();
-    if (!isLive) return () => { cancelled = true; };
+    if (!isLive) return () => { cancelled = true; if (retryTimeout) clearTimeout(retryTimeout); };
     const interval = setInterval(load, 15000);
-    return () => { cancelled = true; clearInterval(interval); };
+    return () => { cancelled = true; if (retryTimeout) clearTimeout(retryTimeout); clearInterval(interval); };
   }, [homeTeam?.fifa_code, awayTeam?.fifa_code, isLive, stageTag, finished]);
 
   const realFeed = useMemo<CommentaryEntry[]>(
