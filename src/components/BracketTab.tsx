@@ -1720,7 +1720,7 @@ function MatchCarouselSection({
 export default function BracketTab({ games, teams, stadiums, onTeamClick }: BracketTabProps) {
   const [activeTab, setActiveTab] = useState<'today' | 'tomorrow' | 'upcoming'>('today');
   const [viewType, setViewType] = useState<'tree' | 'fall'>('tree');
-  const [startRound, setStartRound] = useState<'r32' | 'r16' | 'qf' | 'sf'>('r32');
+  const [startRound, setStartRound] = useState<'r32' | 'r16' | 'qf' | 'sf' | 'final'>('r32');
   const treeContainerRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState<'left' | 'center' | 'right'>('center');
 
@@ -1841,6 +1841,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
       case 'r16': return 'min-w-[900px]';
       case 'qf': return 'min-w-[650px]';
       case 'sf': return 'min-w-[400px]';
+      case 'final': return 'min-w-[240px]';
       default: return 'min-w-[1150px]';
     }
   };
@@ -2056,7 +2057,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                 // Also sync startRound for tree view
                 if (r.key === 'all') {
                   setStartRound('r32');
-                } else if (r.key !== 'final') {
+                } else {
                   setStartRound(r.key);
                 }
               }}
@@ -2171,10 +2172,14 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                     <ConnectorColQFToSF side="left" />
                   </>
                 )}
-                <div className="flex flex-col justify-around h-full animate-fade-in">
-                  <BracketNode gameId="101" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="SF" />
-                </div>
-                <ConnectorColSFToFinal side="left" />
+                {startRound !== 'final' && (
+                  <>
+                    <div className="flex flex-col justify-around h-full animate-fade-in">
+                      <BracketNode gameId="101" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="SF" />
+                    </div>
+                    <ConnectorColSFToFinal side="left" />
+                  </>
+                )}
 
                 {/* Center: logo + Final + 3rd */}
                 <div className="flex flex-col items-center justify-center gap-6 h-full w-[180px] relative animate-fade-in">
@@ -2196,10 +2201,14 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                   </div>
                 </div>
 
-                <ConnectorColSFToFinal side="right" />
-                <div className="flex flex-col justify-around h-full animate-fade-in">
-                  <BracketNode gameId="102" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="SF" />
-                </div>
+                {startRound !== 'final' && (
+                  <>
+                    <ConnectorColSFToFinal side="right" />
+                    <div className="flex flex-col justify-around h-full animate-fade-in">
+                      <BracketNode gameId="102" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="SF" />
+                    </div>
+                  </>
+                )}
                 {(startRound === 'r32' || startRound === 'r16' || startRound === 'qf') && (
                   <>
                     <ConnectorColQFToSF side="right" />
