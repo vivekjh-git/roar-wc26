@@ -1810,7 +1810,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
           >
             {/* Logo + title */}
             <div className="flex flex-col items-center justify-center mb-4 text-center">
-              <img src="/tiger.png" className="w-12 h-12 object-contain mb-2 select-none filter drop-shadow-[0_0_8px_rgba(255,94,0,0.25)]" alt="Roar Logo" />
+              <img src="/fifaworldcup_logo.svg" className="w-16 h-auto object-contain mb-2 select-none filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]" alt="FIFA World Cup 2026 Logo" />
               <h2 className="text-xl font-black tracking-tight text-white uppercase gold-text">2026 Knockout Bracket</h2>
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">NPT — Nepal Standard Time</p>
             </div>
@@ -1838,7 +1838,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
                   }`}
                   aria-label="Finals"
                 >
-                  🏆
+                  <img src="/favicon.png" className="w-3.5 h-3.5 object-contain select-none" alt="Finals" />
                 </button>
                 <button
                   onClick={() => scrollToBracketSection('right')}
