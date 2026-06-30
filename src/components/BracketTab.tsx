@@ -441,118 +441,48 @@ function DetailedMatchCard({
 }
 
 function MatchMomentum({
-  gameId, isLive, isPending, hs, as_, homeCards, awayCards
+  isLive, isPending, real, cardCounts
 }: {
-  readonly gameId: string;
   readonly isLive: boolean;
   readonly isPending?: boolean;
-  readonly hs: number;
-  readonly as_: number;
-  readonly homeCards: number;
-  readonly awayCards: number;
+  readonly real: { home: RealTeamStats; away: RealTeamStats } | null;
+  readonly cardCounts: { home: number; away: number } | null;
 }) {
-  if (isPending) {
-    return (
-      <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5 opacity-50">
-        <div className="flex justify-between items-center w-full text-[9px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">
-          <span>Match Momentum</span>
-          <span>Waiting to start</span>
-        </div>
-        <div className="flex items-center gap-3 w-full px-1">
-          {/* Graph (Line only) */}
-          <div className="flex-1 flex items-center justify-center h-12 relative">
-            <div className="h-[1px] w-full bg-white/20" />
-          </div>
-          {/* Compact Stats */}
-          <div className="flex-shrink-0 w-[100px] grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1 border border-white/5 opacity-60">
-            <span className="font-black text-gray-400">- -</span>
-            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Poss</span>
-            <span className="font-black text-gray-400">- -</span>
-
-            <span className="font-black text-gray-400">- -</span>
-            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Shots</span>
-            <span className="font-black text-gray-400">- -</span>
-
-            <span className="font-black text-gray-400">- -</span>
-            <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corn</span>
-            <span className="font-black text-gray-400">- -</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  const seed = parseInt(gameId || "0", 10) || 123;
-  // Generate random looking but stable bars
-  const bars = Array.from({ length: 40 }).map((_, i) => {
-    const val = Math.sin(i * 0.4 + seed) * 40 + (Math.sin(i * 1.1) * 20) + 50;
-    const isHome = val > 50;
-    const height = Math.abs(val - 50);
-    return { isHome, height: Math.max(8, height) };
-  });
-
-  // Dynamically balance stats based on actual live/FT scores
-  const homePoss = 50 + (seed % 5) - 2;
-  const awayPoss = 100 - homePoss;
-
-  // Shots on target must always be >= goals actually scored
-  const homeShots = Math.max(hs, 3 + (seed % 4));
-  const awayShots = Math.max(as_, 2 + (seed % 5));
-
-  const homeCorners = 3 + (seed % 3);
-  const awayCorners = 3 + (seed % 4);
+  if (isPending) return null;
+  if (!real) return <StatNotAvailable label="Match Stats" />;
 
   return (
     <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5">
       <div className="flex justify-between items-center w-full text-[9px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">
-        <span>Match Momentum</span>
+        <span>Match Stats</span>
         <span className={`flex items-center gap-1.5 ${isLive ? "text-red-400" : "text-gray-400"}`}>
            {isLive && <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>}
-           {isLive ? "Live Stats" : "Match Stats"}
+           {isLive ? "Live" : "Final"}
         </span>
       </div>
-      <div className="flex items-center gap-3 w-full px-1">
-        {/* Graph */}
-        <div className="flex-1 flex items-end justify-center gap-[2px] h-12 opacity-80">
-          {bars.map((bar, i) => (
-            <div key={i} className="flex flex-col justify-center h-full w-full max-w-[5px]">
-              <div className="h-1/2 flex items-end">
-                {bar.isHome && <div className="w-full bg-blue-400 rounded-t-[1px]" style={{ height: `${bar.height * 2}%` }} />}
-              </div>
-              <div className="h-[1px] w-full bg-white/10" />
-              <div className="h-1/2 flex items-start">
-                {!bar.isHome && <div className="w-full bg-orange-400 rounded-b-[1px]" style={{ height: `${bar.height * 2}%` }} />}
-              </div>
-            </div>
-          ))}
-        </div>
-        {/* Compact Stats */}
-        <div className="flex-shrink-0 w-[100px] grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1 border border-white/5">
-          <span className="font-black text-white">{homePoss}%</span>
-          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Poss</span>
-          <span className="font-black text-white">{awayPoss}%</span>
+      <div className="w-full grid grid-cols-3 gap-y-1.5 text-center text-[10px] items-center bg-black/20 rounded-lg py-1.5 border border-white/5">
+        <span className="font-black text-white">{real.home.attemptsAtGoal}</span>
+        <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Attempts</span>
+        <span className="font-black text-white">{real.away.attemptsAtGoal}</span>
 
-          <span className="font-black text-white">{homeShots}</span>
-          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Shots</span>
-          <span className="font-black text-white">{awayShots}</span>
+        <span className="font-black text-white">{real.home.corners}</span>
+        <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corners</span>
+        <span className="font-black text-white">{real.away.corners}</span>
 
-          <span className="font-black text-white">{homeCorners}</span>
-          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corn</span>
-          <span className="font-black text-white">{awayCorners}</span>
-
-          <span className="font-black text-yellow-400">{homeCards}</span>
-          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Cards</span>
-          <span className="font-black text-yellow-400">{awayCards}</span>
-        </div>
+        <span className="font-black text-yellow-400">{cardCounts?.home ?? "—"}</span>
+        <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Cards</span>
+        <span className="font-black text-yellow-400">{cardCounts?.away ?? "—"}</span>
       </div>
     </div>
   );
 }
 
 function ExtendedMatchStats({
-  gameId, isPending, hs, as_, homeCards, awayCards
+  isPending, real, cardCounts
 }: {
-  gameId: string; isPending?: boolean; hs: number; as_: number; homeCards: number; awayCards: number;
+  isPending?: boolean;
+  real: { home: RealTeamStats; away: RealTeamStats } | null;
+  cardCounts: { home: number; away: number } | null;
 }) {
   if (isPending) {
     return (
@@ -565,40 +495,38 @@ function ExtendedMatchStats({
     );
   }
 
-  const seed = parseInt(gameId || "0", 10) || 123;
-  const h = (base: number) => base + (seed % 4);
-  const a = (base: number) => base + ((seed * 2) % 5);
-
-  // Shots on target must always be >= goals actually scored (matches Match Momentum panel)
-  const homeShotsOnTarget = Math.max(hs, 3 + (seed % 4));
-  const awayShotsOnTarget = Math.max(as_, 2 + (seed % 5));
-  const homeShotsOffTarget = h(5);
-  const awayShotsOffTarget = a(6);
+  if (!real) {
+    return (
+      <div className="pt-4 mt-4 border-t border-white/10 text-center">
+        <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4">Extended Match Stats</h4>
+        <div className="py-6 text-xs text-gray-500 border border-dashed border-white/10 rounded-xl">
+          Not available for this match
+        </div>
+      </div>
+    );
+  }
 
   const categories = [
     {
       name: "Attack",
       stats: [
-        { label: "Goal Attempts", home: homeShotsOnTarget + homeShotsOffTarget, away: awayShotsOnTarget + awayShotsOffTarget },
-        { label: "Shots on Target", home: homeShotsOnTarget, away: awayShotsOnTarget },
-        { label: "Shots off Target", home: homeShotsOffTarget, away: awayShotsOffTarget },
-        { label: "Corner Kicks", home: h(4), away: a(6) },
+        { label: "Attempts at Goal", home: real.home.attemptsAtGoal, away: real.away.attemptsAtGoal },
+        { label: "Corner Kicks", home: real.home.corners, away: real.away.corners },
       ]
     },
     {
-      name: "Defense & General",
+      name: "Discipline",
       stats: [
-        { label: "Goal Kicks", home: h(7), away: a(5) },
-        { label: "Saves", home: h(2), away: a(1) },
-        { label: "Fouls", home: h(12), away: a(14) },
-        { label: "Offsides", home: h(1), away: a(2) },
+        { label: "Fouls", home: real.home.fouls, away: real.away.fouls },
+        { label: "Offsides", home: real.home.offsides, away: real.away.offsides },
+        { label: "Yellow Cards", home: cardCounts?.home ?? null, away: cardCounts?.away ?? null },
+        { label: "Red Cards", home: real.home.redCards, away: real.away.redCards },
       ]
     },
     {
-      name: "Cards",
+      name: "Goalkeeping",
       stats: [
-        { label: "Yellow Cards", home: homeCards, away: awayCards },
-        { label: "Red Cards", home: 0, away: 0 },
+        { label: "Saves", home: real.home.saves, away: real.away.saves },
       ]
     }
   ];
@@ -606,20 +534,7 @@ function ExtendedMatchStats({
   return (
     <div className="pt-3 mt-3 border-t border-white/10">
       <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1 text-center">Extended Match Stats</h4>
-      <p className="text-[8px] text-gray-600 italic text-center mb-3">(Simulated — live stats not available from API)</p>
-      
-      {/* Possession Bar (Top level) */}
-      <div className="mb-4">
-        <div className="flex justify-between text-[9px] sm:text-[10px] font-black uppercase text-gray-300 mb-1 px-1">
-          <span className="w-8 text-left">{50 + (seed % 15)}%</span>
-          <span className="flex-1 text-center text-gray-500">Ball Possession</span>
-          <span className="w-8 text-right">{50 - (seed % 15)}%</span>
-        </div>
-        <div className="flex h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
-          <div className="bg-[#c9a227] h-full" style={{ width: `${50 + (seed % 15)}%` }}></div>
-          <div className="bg-gray-600 h-full ml-auto" style={{ width: `${50 - (seed % 15)}%` }}></div>
-        </div>
-      </div>
+      <p className="text-[8px] text-gray-600 italic text-center mb-3">Real stats from FIFA&apos;s match centre. Possession and shot-accuracy splits are not available.</p>
 
       {categories.map((cat, i) => (
         <div key={i} className="mb-3 last:mb-0">
@@ -631,15 +546,16 @@ function ExtendedMatchStats({
           
           <div className="space-y-2">
             {cat.stats.map((stat, j) => {
-              const total = Math.max(1, stat.home + stat.away);
-              const hPct = (stat.home / total) * 100;
-              const aPct = (stat.away / total) * 100;
+              const hasValues = stat.home !== null && stat.away !== null;
+              const total = hasValues ? Math.max(1, stat.home! + stat.away!) : 1;
+              const hPct = hasValues ? (stat.home! / total) * 100 : 0;
+              const aPct = hasValues ? (stat.away! / total) * 100 : 0;
               return (
                 <div key={j} className="relative py-0.5">
                   <div className="flex justify-between text-[9px] sm:text-[10px] font-bold text-gray-400 mb-0.5 px-1">
-                    <span className="w-6 text-left text-white">{stat.home}</span>
+                    <span className="w-6 text-left text-white">{stat.home ?? "—"}</span>
                     <span className="flex-1 text-center text-gray-500 font-semibold">{stat.label}</span>
-                    <span className="w-6 text-right text-white">{stat.away}</span>
+                    <span className="w-6 text-right text-white">{stat.away ?? "—"}</span>
                   </div>
                   <div className="flex h-1 w-full bg-black/40 rounded-full overflow-hidden">
                     <div className="bg-[#c9a227] h-full" style={{ width: `${hPct}%` }}></div>
@@ -662,6 +578,25 @@ interface CommentaryEntry {
   detail: string;
   type: "goal" | "card" | "sub" | "info" | "marker";
   team?: "home" | "away";
+}
+
+// Real, directly-counted match stats from FIFA's event feed — no estimates, no simulation.
+interface RealTeamStats {
+  attemptsAtGoal: number;
+  corners: number;
+  fouls: number;
+  offsides: number;
+  saves: number;
+  redCards: number;
+}
+
+function StatNotAvailable({ label }: { readonly label: string }) {
+  return (
+    <div className="w-full flex flex-col items-center mt-2 pt-4 border-t border-white/5 text-center">
+      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{label}</span>
+      <span className="text-[10px] text-gray-600 mt-2">Not available for this match</span>
+    </div>
+  );
 }
 
 const COMMENTARY_ICON: Record<CommentaryEntry["type"], string> = {
@@ -823,7 +758,7 @@ function MatchTrackerView({
 }
 
 function MatchDetailsView({
-  showDetails, game, stadium, isPending, hs, as_, homeCards, awayCards
+  showDetails, game, stadium, isPending, hs, as_, real, cardCounts
 }: {
   readonly showDetails: boolean;
   readonly game: Game;
@@ -831,8 +766,8 @@ function MatchDetailsView({
   readonly isPending: boolean;
   readonly hs: number;
   readonly as_: number;
-  readonly homeCards: number;
-  readonly awayCards: number;
+  readonly real: { home: RealTeamStats; away: RealTeamStats } | null;
+  readonly cardCounts: { home: number; away: number } | null;
 }) {
   return (
     <AnimatePresence>
@@ -876,26 +811,20 @@ function MatchDetailsView({
               </div>
               {/* Yellow Cards Row */}
               <div className="flex items-center justify-between text-[11px] sm:text-xs">
-                <span className="w-12 text-left font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : homeCards}</span>
+                <span className="w-12 text-left font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : cardCounts?.home ?? "N/A"}</span>
                 <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Yellow Cards</span>
-                <span className="w-12 text-right font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : awayCards}</span>
+                <span className="w-12 text-right font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : cardCounts?.away ?? "N/A"}</span>
               </div>
               {/* Red Cards Row */}
               <div className="flex items-center justify-between text-[11px] sm:text-xs">
-                <span className="w-12 text-left font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : 0}</span>
+                <span className="w-12 text-left font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : real?.home.redCards ?? "N/A"}</span>
                 <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Red Cards</span>
-                <span className="w-12 text-right font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : 0}</span>
-              </div>
-              {/* Injuries Row */}
-              <div className="flex items-center justify-between text-[11px] sm:text-xs">
-                <span className="w-12 text-left font-black text-orange-400 text-sm sm:text-base">{isPending ? "-" : ((parseInt(game.id) + 2) % 2)}</span>
-                <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Injuries</span>
-                <span className="w-12 text-right font-black text-orange-400 text-sm sm:text-base">{isPending ? "-" : (parseInt(game.id) % 2)}</span>
+                <span className="w-12 text-right font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : real?.away.redCards ?? "N/A"}</span>
               </div>
             </div>
           </div>
 
-          <ExtendedMatchStats gameId={game.id} isPending={isPending} hs={hs} as_={as_} homeCards={homeCards} awayCards={awayCards} />
+          <ExtendedMatchStats isPending={isPending} real={real} cardCounts={cardCounts} />
         </motion.div>
       )}
     </AnimatePresence>
@@ -980,11 +909,13 @@ function FeaturedLiveCard({
   })();
 
   // Real data from FIFA's match centre, when our fixture can be matched to a real World Cup match.
-  // Falls back to the simulated commentary/stats below whenever this isn't matched or fails to load.
+  // We only ever show real numbers — if a match isn't matched (or a field isn't in FIFA's feed),
+  // the UI says so explicitly instead of estimating or simulating anything.
   const [fifaData, setFifaData] = useState<{
     matched: boolean;
     events?: CommentaryEntry[];
     cardCounts?: { home: number; away: number };
+    stats?: { home: RealTeamStats; away: RealTeamStats };
   } | null>(null);
 
   useEffect(() => {
@@ -1023,78 +954,9 @@ function FeaturedLiveCard({
   const homeScorersStr = parseScorers(game.home_scorers).map(s => s.replace(/['"]/g, "").trim()).join(", ");
   const awayScorersStr = parseScorers(game.away_scorers).map(s => s.replace(/['"]/g, "").trim()).join(", ");
 
-  // Simulated substitutions for live display
-  const currentMinNum = (() => {
-    const m = game.time_elapsed.replace(/live/i, '').trim().match(/(\d+)/);
-    return m ? parseInt(m[1]) : 0;
-  })();
-  const sid = parseInt(game.id || '0');
-  const genSubEvents = (forHome: boolean) => {
-    const base = forHome ? sid : sid + 7;
-    return [
-      { min: 46 + (base % 9),  out: `#${(base % 5) + 4}`,       inn: `#${(base % 4) + 15}` },
-      { min: 61 + ((base+3) % 11), out: `#${((base+1) % 5) + 4}`,   inn: `#${((base+1) % 4) + 15}` },
-      { min: 75 + ((base+6) % 10), out: `#${((base+2) % 5) + 4}`,   inn: `#${((base+2) % 4) + 15}` },
-    ];
-  };
-  const homeSubDefs = useMemo(() => genSubEvents(true), [sid]);
-  const awaySubDefs = useMemo(() => genSubEvents(false), [sid]);
-  const homeSubs = useMemo(() => (isLive ? homeSubDefs.filter(e => e.min <= currentMinNum) : []), [isLive, homeSubDefs, currentMinNum]);
-  const awaySubs = useMemo(() => (isLive ? awaySubDefs.filter(e => e.min <= currentMinNum) : []), [isLive, awaySubDefs, currentMinNum]);
-
-  const genCardEvents = (forHome: boolean) => {
-    const base = forHome ? sid + 3 : sid + 11;
-    return [
-      { min: 18 + (base % 18), num: `#${(base % 9) + 2}` },
-      { min: 58 + ((base + 5) % 25), num: `#${((base + 3) % 9) + 2}` },
-    ];
-  };
-  const homeCardDefs = useMemo(() => genCardEvents(true), [sid]);
-  const awayCardDefs = useMemo(() => genCardEvents(false), [sid]);
-  const homeCards = useMemo(() => (isLive ? homeCardDefs.filter(e => e.min <= currentMinNum) : []), [isLive, homeCardDefs, currentMinNum]);
-  const awayCards = useMemo(() => (isLive ? awayCardDefs.filter(e => e.min <= currentMinNum) : []), [isLive, awayCardDefs, currentMinNum]);
-
-  const homeCardCount = fifaData?.matched && fifaData.cardCounts
-    ? fifaData.cardCounts.home
-    : finished ? homeCardDefs.length : homeCards.length;
-  const awayCardCount = fifaData?.matched && fifaData.cardCounts
-    ? fifaData.cardCounts.away
-    : finished ? awayCardDefs.length : awayCards.length;
-
-  const homeScorersArr = useMemo(
-    () => parseScorers(game.home_scorers).map(s => s.replace(/['"]/g, "").trim()).filter(Boolean),
-    [game.home_scorers]
-  );
-  const awayScorersArr = useMemo(
-    () => parseScorers(game.away_scorers).map(s => s.replace(/['"]/g, "").trim()).filter(Boolean),
-    [game.away_scorers]
-  );
-
-  // Historical recap feed for finished matches — same "messenger" format as the live feed
-  const recapFeed = useMemo<CommentaryEntry[]>(() => {
-    if (!finished) return [];
-    const entries: CommentaryEntry[] = [
-      { id: "kickoff", minute: "0'", headline: "KICK OFF!", detail: `${homeName} vs ${awayName} gets underway.`, type: "marker" },
-    ];
-    homeSubDefs.forEach((s, i) => entries.push({ id: `hsub-${i}`, minute: `${s.min}'`, headline: "SUB!", detail: `${homeName}: ${s.out} makes way for ${s.inn}.`, type: "sub", team: "home" }));
-    awaySubDefs.forEach((s, i) => entries.push({ id: `asub-${i}`, minute: `${s.min}'`, headline: "SUB!", detail: `${awayName}: ${s.out} makes way for ${s.inn}.`, type: "sub", team: "away" }));
-    homeCardDefs.forEach((c, i) => entries.push({ id: `hcard-${i}`, minute: `${c.min}'`, headline: "CARD!", detail: `Yellow card for ${homeName} ${c.num}.`, type: "card", team: "home" }));
-    awayCardDefs.forEach((c, i) => entries.push({ id: `acard-${i}`, minute: `${c.min}'`, headline: "CARD!", detail: `Yellow card for ${awayName} ${c.num}.`, type: "card", team: "away" }));
-    homeScorersArr.forEach((s, i) => entries.push({ id: `hgoal-${i}`, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", headline: "GOAL!", detail: `${s} scores for ${homeName}!`, type: "goal", team: "home" }));
-    awayScorersArr.forEach((s, i) => entries.push({ id: `agoal-${i}`, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", headline: "GOAL!", detail: `${s} scores for ${awayName}!`, type: "goal", team: "away" }));
-    entries.push({
-      id: "fulltime", minute: hasPenalties ? "PEN" : "FT",
-      headline: hasPenalties ? "FULL TIME (PENS)!" : "FULL TIME!",
-      detail: `${homeName} ${hs} - ${as_} ${awayName}.`, type: "marker",
-    });
-
-    const minuteOf = (e: CommentaryEntry) => {
-      if (e.id === "fulltime") return 9999;
-      const m = e.minute.match(/(\d+)/);
-      return m ? parseInt(m[1]) : 0;
-    };
-    return entries.sort((a, b) => minuteOf(a) - minuteOf(b)).reverse();
-  }, [finished, homeSubDefs, awaySubDefs, homeCardDefs, awayCardDefs, homeScorersArr, awayScorersArr, homeName, awayName, hs, as_, hasPenalties]);
+  const homeCardCount = fifaData?.matched && fifaData.cardCounts ? fifaData.cardCounts.home : null;
+  const awayCardCount = fifaData?.matched && fifaData.cardCounts ? fifaData.cardCounts.away : null;
+  const realStats = fifaData?.matched && fifaData.stats ? fifaData.stats : null;
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
@@ -1107,10 +969,17 @@ function FeaturedLiveCard({
     return "LIVE";
   })();
 
-  const [commentaryFeed, setCommentaryFeed] = useState<CommentaryEntry[]>([]);
-  const [liveBallPos, setLiveBallPos] = useState({ x: 0, y: 0 });
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  // Purely decorative ball-wander animation on the pitch widget — not data, just motion.
+  const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
+  useEffect(() => {
+    if (!isLive) return;
+    const interval = setInterval(() => {
+      setBallPos({ x: Math.floor(Math.random() * 200) - 100, y: Math.floor(Math.random() * 90) - 45 });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isLive]);
 
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   useEffect(() => {
     if (!isLive) return;
     const interval = setInterval(() => {
@@ -1119,117 +988,13 @@ function FeaturedLiveCard({
     return () => clearInterval(interval);
   }, [isLive]);
 
-  useEffect(() => {
-    if (!isLive) return;
-    const flavorPool = [
-      `${homeName} #${(sid % 5) + 4} keeps possession in midfield...`,
-      `${awayName} #${(sid % 6) + 7} pushes forward on the counter attack!`,
-      `A dangerous cross into the box from ${homeName}!`,
-      `Solid defensive block by ${awayName} #${(sid % 4) + 2}.`,
-      `The referee signals for a foul on #${(sid % 8) + 3}. Free kick to ${awayName}.`,
-      `${homeName} plays a beautiful through ball into the final third...`,
-      `Great intensity in the middle of the park.`,
-      `${awayName} wins a corner kick on the right flank.`,
-      `Shot blocked! ${homeName} keeper #1 was well positioned.`,
-      `${awayName} #${(sid % 7) + 5} goes down. The physio rushes onto the pitch.`,
-      `${homeName} working it patiently down the left wing.`,
-      `Half-chance for ${awayName}, but the angle was too tight.`,
-      `${homeName} keeper #1 plays it short to start the build-up.`,
-      `Tactical pause as the manager shouts instructions from the touchline.`,
-      isET ? `⚡ Extra time — both sides fighting for every inch of the pitch!` : `Pressure building as the clock ticks on!`,
-    ];
-
-    const announced = announcedRef.current;
-    const tick = () => {
-      const newEntries: CommentaryEntry[] = [];
-
-      if (!announced.has("kickoff")) {
-        announced.add("kickoff");
-        newEntries.push({ id: "kickoff", minute: "0'", headline: "KICK OFF!", detail: `${homeName} vs ${awayName} gets underway.`, type: "marker" });
-      }
-      if (stageTag === "HT" && !announced.has("halftime")) {
-        announced.add("halftime");
-        newEntries.push({ id: "halftime", minute: "45'", headline: "HALF TIME!", detail: `${homeName} ${hs} - ${as_} ${awayName} at the break.`, type: "marker" });
-      }
-
-      homeSubs.forEach((s, i) => {
-        const key = `hsub-${i}`;
-        if (!announced.has(key)) {
-          announced.add(key);
-          newEntries.push({ id: key, minute: `${s.min}'`, headline: "SUB!", detail: `${homeName}: ${s.out} makes way for ${s.inn}.`, type: "sub", team: "home" });
-        }
-      });
-      awaySubs.forEach((s, i) => {
-        const key = `asub-${i}`;
-        if (!announced.has(key)) {
-          announced.add(key);
-          newEntries.push({ id: key, minute: `${s.min}'`, headline: "SUB!", detail: `${awayName}: ${s.out} makes way for ${s.inn}.`, type: "sub", team: "away" });
-        }
-      });
-      homeCards.forEach((c, i) => {
-        const key = `hcard-${i}`;
-        if (!announced.has(key)) {
-          announced.add(key);
-          newEntries.push({ id: key, minute: `${c.min}'`, headline: "CARD!", detail: `Yellow card for ${homeName} ${c.num} after a late challenge.`, type: "card", team: "home" });
-        }
-      });
-      awayCards.forEach((c, i) => {
-        const key = `acard-${i}`;
-        if (!announced.has(key)) {
-          announced.add(key);
-          newEntries.push({ id: key, minute: `${c.min}'`, headline: "CARD!", detail: `Yellow card for ${awayName} ${c.num} after a late challenge.`, type: "card", team: "away" });
-        }
-      });
-      homeScorersArr.forEach((s, i) => {
-        const key = `hgoal-${i}`;
-        if (!announced.has(key)) {
-          announced.add(key);
-          newEntries.push({ id: key, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", headline: "GOAL!", detail: `${s} scores for ${homeName}!`, type: "goal", team: "home" });
-        }
-      });
-      awayScorersArr.forEach((s, i) => {
-        const key = `agoal-${i}`;
-        if (!announced.has(key)) {
-          announced.add(key);
-          newEntries.push({ id: key, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", headline: "GOAL!", detail: `${s} scores for ${awayName}!`, type: "goal", team: "away" });
-        }
-      });
-
-      // Prevent flooding: only add a new flavor commentary entry if at least 12 seconds have elapsed since the last flavor text
-      const now = Date.now();
-      const lastFlavorKey = Array.from(announced).find(k => k.startsWith("flv-"));
-      let timeDiff = 99999;
-      if (lastFlavorKey) {
-        const lastTime = parseInt(lastFlavorKey.split("-")[1]);
-        timeDiff = now - lastTime;
-      }
-
-      if (newEntries.length === 0 && timeDiff > 12000) {
-        const detail = flavorPool[Math.floor(Math.random() * flavorPool.length)];
-        const key = `flv-${now}-${Math.random()}`;
-        announced.add(key);
-        newEntries.push({ id: key, minute: `${currentMinNum}'`, detail, type: "info" });
-      }
-
-      if (newEntries.length > 0) {
-        setCommentaryFeed(prev => [...newEntries.reverse(), ...prev].slice(0, 8));
-      }
-      setLiveBallPos({
-        x: Math.floor(Math.random() * 200) - 100,
-        y: Math.floor(Math.random() * 90) - 45
-      });
-    };
-
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [isLive, homeName, awayName, currentMinNum, isET, sid, hs, as_, stageTag, homeSubs, awaySubs, homeCards, awayCards, homeScorersArr, awayScorersArr]);
-
-  const commentary = finished
-    ? `Match has ended. Full time result: ${homeName} ${hs} - ${as_} ${awayName}.`
-    : isLive ? "" : "Match will begin soon. Waiting for kickoff...";
-
-  const ballPos = isLive ? liveBallPos : { x: 0, y: 0 };
+  const commentary = fifaData?.matched
+    ? ""
+    : isLive
+      ? "Live commentary not available for this match."
+      : finished
+        ? "Match commentary not available for this match."
+        : "Match will begin soon. Waiting for kickoff...";
 
   let matchStatusLabel;
   if (finished) {
@@ -1389,40 +1154,9 @@ function FeaturedLiveCard({
           </div>
         </div>
 
-        {/* Live Substitutions Feed */}
-        {isLive && (homeSubs.length > 0 || awaySubs.length > 0) && (
-          <div className="mt-2 pt-2 border-t border-white/5">
-            <div className="text-[8px] font-black uppercase tracking-widest text-gray-500 mb-1.5 flex items-center gap-1">
-              <span>🔄</span> Substitutions
-            </div>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1 max-h-16 overflow-y-auto no-scrollbar">
-              <div className="space-y-0.5">
-                {homeSubs.map((sub, i) => (
-                  <div key={i} className="flex items-center gap-1 text-[8px] text-gray-400">
-                    <span className="text-green-400 font-bold flex-shrink-0">{sub.min}&apos;</span>
-                    <span className="text-red-400 flex-shrink-0">{sub.out}</span>
-                    <span className="text-gray-600">→</span>
-                    <span className="text-green-400 flex-shrink-0">{sub.inn}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-0.5">
-                {awaySubs.map((sub, i) => (
-                  <div key={i} className="flex items-center gap-1 text-[8px] text-gray-400">
-                    <span className="text-green-400 font-bold flex-shrink-0">{sub.min}&apos;</span>
-                    <span className="text-red-400 flex-shrink-0">{sub.out}</span>
-                    <span className="text-gray-600">→</span>
-                    <span className="text-green-400 flex-shrink-0">{sub.inn}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-
-      <MatchMomentum gameId={game.id} isLive={isLive} isPending={isPending} hs={hs} as_={as_} homeCards={homeCardCount} awayCards={awayCardCount} />
+      <MatchMomentum isLive={isLive} isPending={isPending} real={realStats} cardCounts={fifaData?.matched ? fifaData.cardCounts ?? null : null} />
 
       <button 
         onClick={() => setShowTracker(!showTracker)}
@@ -1444,7 +1178,7 @@ function FeaturedLiveCard({
       {/* Live Match Tracker Section */}
       <MatchTrackerView
         showTracker={showTracker} isLive={isLive} isPending={isPending} game={game} commentary={commentary}
-        feed={realFeed.length > 0 ? realFeed : (isLive ? commentaryFeed : recapFeed)} ballPos={ballPos}
+        feed={realFeed} ballPos={ballPos}
         homeFlag={homeTeam?.flag} awayFlag={awayTeam?.flag}
         homeCode={homeTeam?.fifa_code || homeName} awayCode={awayTeam?.fifa_code || awayName}
         hs={hs} as_={as_} stageTag={stageTag}
@@ -1462,7 +1196,7 @@ function FeaturedLiveCard({
       )}
 
       {/* Expandable Details Section — only for non-live */}
-      {!isLive && <MatchDetailsView showDetails={showDetails} game={game} stadium={stadium} isPending={isPending} hs={hs} as_={as_} homeCards={homeCardCount} awayCards={awayCardCount} />}
+      {!isLive && <MatchDetailsView showDetails={showDetails} game={game} stadium={stadium} isPending={isPending} hs={hs} as_={as_} real={realStats} cardCounts={fifaData?.matched ? fifaData.cardCounts ?? null : null} />}
     </div>
   );
 }

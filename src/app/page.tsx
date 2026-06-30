@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Header from "@/components/Header";
 import GroupsTab from "@/components/GroupsTab";
+import versionInfo from "../version.json";
 import BracketTab from "@/components/BracketTab";
 import FixturesTab from "@/components/FixturesTab";
 import ScorersTab from "@/components/ScorersTab";
@@ -249,6 +250,9 @@ export default function HomePage() {
         <p className="text-gray-400 text-[10px] sm:text-xs tracking-widest uppercase font-black mb-1">For the fan, by the fan</p>
         <p className="text-gray-500 text-[10px]">
           By <a href="https://vivekjunghamal.com" target="_blank" rel="noopener noreferrer" className="text-yellow-500/80 hover:text-yellow-400 font-bold transition-colors">VJH</a>
+        </p>
+        <p className="text-gray-600 text-[9px] font-mono mt-1.5 tracking-wider select-none">
+          v{versionInfo.version}
         </p>
       </footer>
 

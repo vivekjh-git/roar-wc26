@@ -26,6 +26,28 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Success "TypeScript OK"
 
+# 1.5 Update Version in src/version.json
+Write-Step "Updating version in src/version.json..."
+$versionFile = Join-Path $PSScriptRoot "src/version.json"
+if (Test-Path $versionFile) {
+    $versionContent = Get-Content $versionFile -Raw | ConvertFrom-Json
+    $versionStr = $versionContent.version
+    $parts = $versionStr.Split('.')
+    if ($parts.Length -eq 3) {
+        $patch = [int]$parts[2] + 1
+        $newVersion = "$($parts[0]).$($parts[1]).$patch"
+        $versionContent.version = $newVersion
+        $versionContent | ConvertTo-Json | Out-File $versionFile -Encoding utf8
+        Write-Success "Version updated: $versionStr -> $newVersion"
+    } else {
+        Write-Fail "Invalid version format: $versionStr"
+        exit 1
+    }
+} else {
+    Write-Fail "version.json not found at $versionFile"
+    exit 1
+}
+
 # 2. Stage all changes
 Write-Step "Staging changes..."
 git add .
