@@ -1105,7 +1105,7 @@ function FeaturedLiveCard({
               <div className="space-y-0.5">
                 {homeSubs.map((sub, i) => (
                   <div key={i} className="flex items-center gap-1 text-[8px] text-gray-400">
-                    <span className="text-green-400 font-bold flex-shrink-0">{sub.min}'</span>
+                    <span className="text-green-400 font-bold flex-shrink-0">{sub.min}&apos;</span>
                     <span className="text-red-400 flex-shrink-0">{sub.out}</span>
                     <span className="text-gray-600">→</span>
                     <span className="text-green-400 flex-shrink-0">{sub.inn}</span>
@@ -1115,7 +1115,7 @@ function FeaturedLiveCard({
               <div className="space-y-0.5">
                 {awaySubs.map((sub, i) => (
                   <div key={i} className="flex items-center gap-1 text-[8px] text-gray-400">
-                    <span className="text-green-400 font-bold flex-shrink-0">{sub.min}'</span>
+                    <span className="text-green-400 font-bold flex-shrink-0">{sub.min}&apos;</span>
                     <span className="text-red-400 flex-shrink-0">{sub.out}</span>
                     <span className="text-gray-600">→</span>
                     <span className="text-green-400 flex-shrink-0">{sub.inn}</span>
