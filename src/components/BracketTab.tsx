@@ -857,25 +857,30 @@ function MatchDetailsView({
           </div>
 
           <div className="pt-4 mt-4 border-t border-white/10">
-            <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3 text-center">Match Stats</h4>
-            <div className="grid grid-cols-3 gap-2 text-center text-[11px] sm:text-xs bg-black/20 rounded-xl p-3 border border-white/5">
-              <div className="flex flex-col gap-2 font-black text-white">
-                <span className="text-green-400">{isPending ? "-" : hs}</span>
-                <span className="text-yellow-500">{isPending ? "-" : (parseInt(game.id) % 3)}</span>
-                <span className="text-red-500">{isPending ? "-" : (parseInt(game.id) % 2 === 0 ? 0 : 1)}</span>
-                <span className="text-orange-400">{isPending ? "-" : ((parseInt(game.id) + 2) % 2)}</span>
+            <div className="flex flex-col gap-3 bg-black/20 rounded-xl p-4 border border-white/5">
+              {/* Goals Row */}
+              <div className="flex items-center justify-between text-[11px] sm:text-xs">
+                <span className="w-12 text-left font-black text-green-400 text-sm sm:text-base">{isPending ? "-" : hs}</span>
+                <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Goals</span>
+                <span className="w-12 text-right font-black text-green-400 text-sm sm:text-base">{isPending ? "-" : as_}</span>
               </div>
-              <div className="flex flex-col gap-2 text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">
-                <span>Goals</span>
-                <span>Yellow Cards</span>
-                <span>Red Cards</span>
-                <span>Injuries</span>
+              {/* Yellow Cards Row */}
+              <div className="flex items-center justify-between text-[11px] sm:text-xs">
+                <span className="w-12 text-left font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : (parseInt(game.id) % 3)}</span>
+                <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Yellow Cards</span>
+                <span className="w-12 text-right font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : ((parseInt(game.id) + 1) % 4)}</span>
               </div>
-              <div className="flex flex-col gap-2 font-black text-white">
-                <span className="text-green-400">{isPending ? "-" : as_}</span>
-                <span className="text-yellow-500">{isPending ? "-" : ((parseInt(game.id) + 1) % 4)}</span>
-                <span className="text-red-500">{isPending ? "-" : (parseInt(game.id) % 3 === 0 ? 1 : 0)}</span>
-                <span className="text-orange-400">{isPending ? "-" : (parseInt(game.id) % 2)}</span>
+              {/* Red Cards Row */}
+              <div className="flex items-center justify-between text-[11px] sm:text-xs">
+                <span className="w-12 text-left font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : (parseInt(game.id) % 2 === 0 ? 0 : 1)}</span>
+                <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Red Cards</span>
+                <span className="w-12 text-right font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : (parseInt(game.id) % 3 === 0 ? 1 : 0)}</span>
+              </div>
+              {/* Injuries Row */}
+              <div className="flex items-center justify-between text-[11px] sm:text-xs">
+                <span className="w-12 text-left font-black text-orange-400 text-sm sm:text-base">{isPending ? "-" : ((parseInt(game.id) + 2) % 2)}</span>
+                <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Injuries</span>
+                <span className="w-12 text-right font-black text-orange-400 text-sm sm:text-base">{isPending ? "-" : (parseInt(game.id) % 2)}</span>
               </div>
             </div>
           </div>
