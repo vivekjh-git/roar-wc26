@@ -306,9 +306,7 @@ function CompactMatchCard({
   game, homeTeam, awayTeam, homeName, awayName, homeFlag, awayFlag,
   hs, as_, homeWin, awayWin, finished, isLive, nptDate, onTeamClick
 }: any) {
-  const chp = parseInt(game.home_penalty_score || '');
-  const cap = parseInt(game.away_penalty_score || '');
-  const cHasPen = !isNaN(chp) && !isNaN(cap);
+  const cHasPen = !isNaN(parseInt(game.home_penalty_score || '')) && !isNaN(parseInt(game.away_penalty_score || ''));
   const isET = isLive && (() => {
     const t = (game.time_elapsed || '').toLowerCase().trim();
     if (t.includes('et') || t.includes('extra')) return true;
@@ -339,23 +337,17 @@ function CompactMatchCard({
             {homeName.length > 12 ? homeName.slice(0, 12) + "…" : homeName}
           </span>
           {(finished || isLive) && (
-            <div className="flex items-center gap-0.5">
-              <span className={`text-[10px] font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>
-              {cHasPen && <span className="text-[8px] text-orange-400 font-bold">({chp})</span>}
-            </div>
+            <span className={`text-[10px] font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>
           )}
         </button>
-        
+
         <button onClick={() => awayTeam && onTeamClick(awayTeam)} className={`flex items-center gap-1.5 w-full text-left ${awayWin ? "opacity-100" : "opacity-70"}`}>
           {awayFlag ? <img src={awayFlag} alt="" className="w-4 h-3 object-cover rounded-sm flex-shrink-0" /> : <div className="w-4 h-3 bg-gray-700 rounded-sm flex-shrink-0" />}
           <span className={`text-[10px] flex-1 truncate ${awayWin ? "font-bold text-white" : "text-gray-300"}`}>
             {awayName.length > 12 ? awayName.slice(0, 12) + "…" : awayName}
           </span>
           {(finished || isLive) && (
-            <div className="flex items-center gap-0.5">
-              <span className={`text-[10px] font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>
-              {cHasPen && <span className="text-[8px] text-orange-400 font-bold">({cap})</span>}
-            </div>
+            <span className={`text-[10px] font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>
           )}
         </button>
       </div>
@@ -374,9 +366,7 @@ function DetailedMatchCard({
   // Format scorers for display
   const homeScorersStr = parseScorers(game.home_scorers).map((s: string) => s.replace(/['"]/g, "").trim()).join(", ");
   const awayScorersStr = parseScorers(game.away_scorers).map((s: string) => s.replace(/['"]/g, "").trim()).join(", ");
-  const dhp = parseInt(game.home_penalty_score || '');
-  const dap = parseInt(game.away_penalty_score || '');
-  const dHasPen = !isNaN(dhp) && !isNaN(dap);
+  const dHasPen = !isNaN(parseInt(game.home_penalty_score || '')) && !isNaN(parseInt(game.away_penalty_score || ''));
   const isET = isLive && (() => {
     const t = (game.time_elapsed || '').toLowerCase().trim();
     if (t.includes('et') || t.includes('extra')) return true;
@@ -424,10 +414,7 @@ function DetailedMatchCard({
           {homeFlag ? <img src={homeFlag} alt="" className="w-6 h-4 object-cover rounded-sm flex-shrink-0" /> : <div className="w-6 h-4 bg-gray-700 rounded-sm flex-shrink-0" />}
           <span className={`text-sm flex-1 ${homeWin ? "font-bold text-white" : "text-gray-300"}`}>{homeName}</span>
           {(finished || isLive) && (
-            <div className="flex items-center gap-1">
-              <span className={`text-lg font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>
-              {dHasPen && <span className="text-[10px] text-orange-400 font-bold">({dhp}P)</span>}
-            </div>
+            <span className={`text-lg font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>
           )}
         </button>
         {homeScorersStr && <div className="text-[9px] text-gray-500 pl-8 -mt-1 leading-tight">{homeScorersStr}</div>}
@@ -444,10 +431,7 @@ function DetailedMatchCard({
           {awayFlag ? <img src={awayFlag} alt="" className="w-6 h-4 object-cover rounded-sm flex-shrink-0" /> : <div className="w-6 h-4 bg-gray-700 rounded-sm flex-shrink-0" />}
           <span className={`text-sm flex-1 ${awayWin ? "font-bold text-white" : "text-gray-300"}`}>{awayName}</span>
           {(finished || isLive) && (
-            <div className="flex items-center gap-1">
-              <span className={`text-lg font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>
-              {dHasPen && <span className="text-[10px] text-orange-400 font-bold">({dap}P)</span>}
-            </div>
+            <span className={`text-lg font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>
           )}
         </button>
         {awayScorersStr && <div className="text-[9px] text-gray-500 pl-8 -mt-1 leading-tight">{awayScorersStr}</div>}
@@ -457,13 +441,15 @@ function DetailedMatchCard({
 }
 
 function MatchMomentum({
-  gameId, isLive, isPending, hs, as_
+  gameId, isLive, isPending, hs, as_, homeCards, awayCards
 }: {
   readonly gameId: string;
   readonly isLive: boolean;
   readonly isPending?: boolean;
   readonly hs: number;
   readonly as_: number;
+  readonly homeCards: number;
+  readonly awayCards: number;
 }) {
   if (isPending) {
     return (
@@ -509,8 +495,9 @@ function MatchMomentum({
   const homePoss = 50 + (seed % 5) - 2;
   const awayPoss = 100 - homePoss;
 
-  const homeShots = hs * 3 + 5 + (seed % 4);
-  const awayShots = as_ * 3 + 4 + (seed % 5);
+  // Shots on target must always be >= goals actually scored
+  const homeShots = Math.max(hs, 3 + (seed % 4));
+  const awayShots = Math.max(as_, 2 + (seed % 5));
 
   const homeCorners = 3 + (seed % 3);
   const awayCorners = 3 + (seed % 4);
@@ -552,13 +539,21 @@ function MatchMomentum({
           <span className="font-black text-white">{homeCorners}</span>
           <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Corn</span>
           <span className="font-black text-white">{awayCorners}</span>
+
+          <span className="font-black text-yellow-400">{homeCards}</span>
+          <span className="text-gray-500 text-[8px] uppercase tracking-tighter">Cards</span>
+          <span className="font-black text-yellow-400">{awayCards}</span>
         </div>
       </div>
     </div>
   );
 }
 
-function ExtendedMatchStats({ gameId, isPending }: { gameId: string, isPending?: boolean }) {
+function ExtendedMatchStats({
+  gameId, isPending, hs, as_, homeCards, awayCards
+}: {
+  gameId: string; isPending?: boolean; hs: number; as_: number; homeCards: number; awayCards: number;
+}) {
   if (isPending) {
     return (
       <div className="pt-4 mt-4 border-t border-white/10 opacity-50 text-center">
@@ -574,13 +569,19 @@ function ExtendedMatchStats({ gameId, isPending }: { gameId: string, isPending?:
   const h = (base: number) => base + (seed % 4);
   const a = (base: number) => base + ((seed * 2) % 5);
 
+  // Shots on target must always be >= goals actually scored (matches Match Momentum panel)
+  const homeShotsOnTarget = Math.max(hs, 3 + (seed % 4));
+  const awayShotsOnTarget = Math.max(as_, 2 + (seed % 5));
+  const homeShotsOffTarget = h(5);
+  const awayShotsOffTarget = a(6);
+
   const categories = [
     {
       name: "Attack",
       stats: [
-        { label: "Goal Attempts", home: h(8), away: a(11) },
-        { label: "Shots on Target", home: h(3), away: a(5) },
-        { label: "Shots off Target", home: h(5), away: a(6) },
+        { label: "Goal Attempts", home: homeShotsOnTarget + homeShotsOffTarget, away: awayShotsOnTarget + awayShotsOffTarget },
+        { label: "Shots on Target", home: homeShotsOnTarget, away: awayShotsOnTarget },
+        { label: "Shots off Target", home: homeShotsOffTarget, away: awayShotsOffTarget },
         { label: "Corner Kicks", home: h(4), away: a(6) },
       ]
     },
@@ -596,8 +597,8 @@ function ExtendedMatchStats({ gameId, isPending }: { gameId: string, isPending?:
     {
       name: "Cards",
       stats: [
-        { label: "Yellow Cards", home: h(1), away: a(2) },
-        { label: "Red Cards", home: 0, away: seed % 7 === 0 ? 1 : 0 },
+        { label: "Yellow Cards", home: homeCards, away: awayCards },
+        { label: "Red Cards", home: 0, away: 0 },
       ]
     }
   ];
@@ -657,16 +658,18 @@ function ExtendedMatchStats({ gameId, isPending }: { gameId: string, isPending?:
 interface CommentaryEntry {
   id: string;
   minute: string;
-  text: string;
-  type: "goal" | "card" | "sub" | "var" | "info";
+  headline?: string;
+  detail: string;
+  type: "goal" | "card" | "sub" | "info" | "marker";
+  team?: "home" | "away";
 }
 
 const COMMENTARY_ICON: Record<CommentaryEntry["type"], string> = {
   goal: "⚽",
   card: "🟨",
-  sub: "🔄",
-  var: "📺",
-  info: "▶",
+  sub: "🔁",
+  info: "🔄",
+  marker: "📣",
 };
 
 function MatchTrackerView({
@@ -767,23 +770,28 @@ function MatchTrackerView({
                 </motion.div>
               ) : (
                 <AnimatePresence initial={false}>
-                  {feed.slice(0, 4).map((entry, i) => (
-                    <motion.div
-                      key={entry.id}
-                      layout
-                      initial={{ y: 14, opacity: 0, scale: 0.96 }}
-                      animate={{ y: 0, opacity: 1 - i * 0.22, scale: 1 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.35, ease: "easeOut" }}
-                      className={`text-[9px] sm:text-[11px] text-white font-semibold bg-black/60 px-2.5 py-1.5 rounded-lg border shadow-lg inline-flex items-center gap-1.5 w-fit max-w-[92%] ${
-                        entry.type === "goal" ? "border-yellow-400/40" : entry.type === "card" ? "border-yellow-300/30" : "border-white/10"
-                      }`}
-                    >
-                      <span className="text-yellow-400 shrink-0">{entry.minute}</span>
-                      <span className="shrink-0">{COMMENTARY_ICON[entry.type]}</span>
-                      <span>{entry.text}</span>
-                    </motion.div>
-                  ))}
+                  {feed.slice(0, 4).map((entry, i) => {
+                    const flag = entry.team === "home" ? homeFlag : entry.team === "away" ? awayFlag : undefined;
+                    return (
+                      <motion.div
+                        key={entry.id}
+                        layout
+                        initial={{ y: 14, opacity: 0, scale: 0.96 }}
+                        animate={{ y: 0, opacity: 1 - i * 0.2, scale: 1 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.35, ease: "easeOut" }}
+                        className="w-full text-[9px] sm:text-[11px] text-white bg-black/55 px-2.5 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5"
+                      >
+                        {flag && <img src={flag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shrink-0" />}
+                        <span className="text-yellow-400/90 font-bold shrink-0 tabular-nums">[{entry.minute}]</span>
+                        <span className="flex-1 truncate">
+                          {entry.headline && <span className="font-black">{entry.headline} </span>}
+                          {entry.detail}
+                        </span>
+                        <span className="shrink-0 text-xs">{COMMENTARY_ICON[entry.type]}</span>
+                      </motion.div>
+                    );
+                  })}
                   {feed.length === 0 && (
                     <motion.div
                       key="placeholder"
@@ -815,7 +823,7 @@ function MatchTrackerView({
 }
 
 function MatchDetailsView({
-  showDetails, game, stadium, isPending, hs, as_
+  showDetails, game, stadium, isPending, hs, as_, homeCards, awayCards
 }: {
   readonly showDetails: boolean;
   readonly game: Game;
@@ -823,6 +831,8 @@ function MatchDetailsView({
   readonly isPending: boolean;
   readonly hs: number;
   readonly as_: number;
+  readonly homeCards: number;
+  readonly awayCards: number;
 }) {
   return (
     <AnimatePresence>
@@ -866,15 +876,15 @@ function MatchDetailsView({
               </div>
               {/* Yellow Cards Row */}
               <div className="flex items-center justify-between text-[11px] sm:text-xs">
-                <span className="w-12 text-left font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : (parseInt(game.id) % 3)}</span>
+                <span className="w-12 text-left font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : homeCards}</span>
                 <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Yellow Cards</span>
-                <span className="w-12 text-right font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : ((parseInt(game.id) + 1) % 4)}</span>
+                <span className="w-12 text-right font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : awayCards}</span>
               </div>
               {/* Red Cards Row */}
               <div className="flex items-center justify-between text-[11px] sm:text-xs">
-                <span className="w-12 text-left font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : (parseInt(game.id) % 2 === 0 ? 0 : 1)}</span>
+                <span className="w-12 text-left font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : 0}</span>
                 <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Red Cards</span>
-                <span className="w-12 text-right font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : (parseInt(game.id) % 3 === 0 ? 1 : 0)}</span>
+                <span className="w-12 text-right font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : 0}</span>
               </div>
               {/* Injuries Row */}
               <div className="flex items-center justify-between text-[11px] sm:text-xs">
@@ -885,7 +895,7 @@ function MatchDetailsView({
             </div>
           </div>
 
-          <ExtendedMatchStats gameId={game.id} isPending={isPending} />
+          <ExtendedMatchStats gameId={game.id} isPending={isPending} hs={hs} as_={as_} homeCards={homeCards} awayCards={awayCards} />
         </motion.div>
       )}
     </AnimatePresence>
@@ -995,20 +1005,27 @@ function FeaturedLiveCard({
       { min: 46 + (base % 9),  out: `#${(base % 5) + 4}`,       inn: `#${(base % 4) + 15}` },
       { min: 61 + ((base+3) % 11), out: `#${((base+1) % 5) + 4}`,   inn: `#${((base+1) % 4) + 15}` },
       { min: 75 + ((base+6) % 10), out: `#${((base+2) % 5) + 4}`,   inn: `#${((base+2) % 4) + 15}` },
-    ].filter(e => e.min <= currentMinNum);
+    ];
   };
-  const homeSubs = useMemo(() => (isLive ? genSubEvents(true) : []), [isLive, sid, currentMinNum]);
-  const awaySubs = useMemo(() => (isLive ? genSubEvents(false) : []), [isLive, sid, currentMinNum]);
+  const homeSubDefs = useMemo(() => genSubEvents(true), [sid]);
+  const awaySubDefs = useMemo(() => genSubEvents(false), [sid]);
+  const homeSubs = useMemo(() => (isLive ? homeSubDefs.filter(e => e.min <= currentMinNum) : []), [isLive, homeSubDefs, currentMinNum]);
+  const awaySubs = useMemo(() => (isLive ? awaySubDefs.filter(e => e.min <= currentMinNum) : []), [isLive, awaySubDefs, currentMinNum]);
 
   const genCardEvents = (forHome: boolean) => {
     const base = forHome ? sid + 3 : sid + 11;
     return [
       { min: 18 + (base % 18), num: `#${(base % 9) + 2}` },
       { min: 58 + ((base + 5) % 25), num: `#${((base + 3) % 9) + 2}` },
-    ].filter(e => e.min <= currentMinNum);
+    ];
   };
-  const homeCards = useMemo(() => (isLive ? genCardEvents(true) : []), [isLive, sid, currentMinNum]);
-  const awayCards = useMemo(() => (isLive ? genCardEvents(false) : []), [isLive, sid, currentMinNum]);
+  const homeCardDefs = useMemo(() => genCardEvents(true), [sid]);
+  const awayCardDefs = useMemo(() => genCardEvents(false), [sid]);
+  const homeCards = useMemo(() => (isLive ? homeCardDefs.filter(e => e.min <= currentMinNum) : []), [isLive, homeCardDefs, currentMinNum]);
+  const awayCards = useMemo(() => (isLive ? awayCardDefs.filter(e => e.min <= currentMinNum) : []), [isLive, awayCardDefs, currentMinNum]);
+
+  const homeCardCount = finished ? homeCardDefs.length : homeCards.length;
+  const awayCardCount = finished ? awayCardDefs.length : awayCards.length;
 
   const homeScorersArr = useMemo(
     () => parseScorers(game.home_scorers).map(s => s.replace(/['"]/g, "").trim()).filter(Boolean),
@@ -1019,7 +1036,42 @@ function FeaturedLiveCard({
     [game.away_scorers]
   );
 
+  // Historical recap feed for finished matches — same "messenger" format as the live feed
+  const recapFeed = useMemo<CommentaryEntry[]>(() => {
+    if (!finished) return [];
+    const entries: CommentaryEntry[] = [
+      { id: "kickoff", minute: "0'", headline: "KICK OFF!", detail: `${homeName} vs ${awayName} gets underway.`, type: "marker" },
+    ];
+    homeSubDefs.forEach((s, i) => entries.push({ id: `hsub-${i}`, minute: `${s.min}'`, headline: "SUB!", detail: `${homeName}: ${s.out} makes way for ${s.inn}.`, type: "sub", team: "home" }));
+    awaySubDefs.forEach((s, i) => entries.push({ id: `asub-${i}`, minute: `${s.min}'`, headline: "SUB!", detail: `${awayName}: ${s.out} makes way for ${s.inn}.`, type: "sub", team: "away" }));
+    homeCardDefs.forEach((c, i) => entries.push({ id: `hcard-${i}`, minute: `${c.min}'`, headline: "CARD!", detail: `Yellow card for ${homeName} ${c.num}.`, type: "card", team: "home" }));
+    awayCardDefs.forEach((c, i) => entries.push({ id: `acard-${i}`, minute: `${c.min}'`, headline: "CARD!", detail: `Yellow card for ${awayName} ${c.num}.`, type: "card", team: "away" }));
+    homeScorersArr.forEach((s, i) => entries.push({ id: `hgoal-${i}`, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", headline: "GOAL!", detail: `${s} scores for ${homeName}!`, type: "goal", team: "home" }));
+    awayScorersArr.forEach((s, i) => entries.push({ id: `agoal-${i}`, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", headline: "GOAL!", detail: `${s} scores for ${awayName}!`, type: "goal", team: "away" }));
+    entries.push({
+      id: "fulltime", minute: hasPenalties ? "PEN" : "FT",
+      headline: hasPenalties ? "FULL TIME (PENS)!" : "FULL TIME!",
+      detail: `${homeName} ${hs} - ${as_} ${awayName}.`, type: "marker",
+    });
+
+    const minuteOf = (e: CommentaryEntry) => {
+      if (e.id === "fulltime") return 9999;
+      const m = e.minute.match(/(\d+)/);
+      return m ? parseInt(m[1]) : 0;
+    };
+    return entries.sort((a, b) => minuteOf(a) - minuteOf(b)).reverse();
+  }, [finished, homeSubDefs, awaySubDefs, homeCardDefs, awayCardDefs, homeScorersArr, awayScorersArr, homeName, awayName, hs, as_, hasPenalties]);
+
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
+
+  const stageTag = (() => {
+    if (!isLive) return "";
+    const t = game.time_elapsed.toLowerCase();
+    if (t.includes("ht") || t.includes("half")) return "HT";
+    if (t.includes("pen") || /\bp\b/.test(t)) return "PEN";
+    if (isET) return "ET";
+    return "LIVE";
+  })();
 
   const [commentaryFeed, setCommentaryFeed] = useState<CommentaryEntry[]>([]);
   const [liveBallPos, setLiveBallPos] = useState({ x: 0, y: 0 });
@@ -1057,46 +1109,55 @@ function FeaturedLiveCard({
     const tick = () => {
       const newEntries: CommentaryEntry[] = [];
 
+      if (!announced.has("kickoff")) {
+        announced.add("kickoff");
+        newEntries.push({ id: "kickoff", minute: "0'", headline: "KICK OFF!", detail: `${homeName} vs ${awayName} gets underway.`, type: "marker" });
+      }
+      if (stageTag === "HT" && !announced.has("halftime")) {
+        announced.add("halftime");
+        newEntries.push({ id: "halftime", minute: "45'", headline: "HALF TIME!", detail: `${homeName} ${hs} - ${as_} ${awayName} at the break.`, type: "marker" });
+      }
+
       homeSubs.forEach((s, i) => {
         const key = `hsub-${i}`;
         if (!announced.has(key)) {
           announced.add(key);
-          newEntries.push({ id: key, minute: `${s.min}'`, type: "sub", text: `${homeName}: ${s.out} makes way for ${s.inn}.` });
+          newEntries.push({ id: key, minute: `${s.min}'`, headline: "SUB!", detail: `${homeName}: ${s.out} makes way for ${s.inn}.`, type: "sub", team: "home" });
         }
       });
       awaySubs.forEach((s, i) => {
         const key = `asub-${i}`;
         if (!announced.has(key)) {
           announced.add(key);
-          newEntries.push({ id: key, minute: `${s.min}'`, type: "sub", text: `${awayName}: ${s.out} makes way for ${s.inn}.` });
+          newEntries.push({ id: key, minute: `${s.min}'`, headline: "SUB!", detail: `${awayName}: ${s.out} makes way for ${s.inn}.`, type: "sub", team: "away" });
         }
       });
       homeCards.forEach((c, i) => {
         const key = `hcard-${i}`;
         if (!announced.has(key)) {
           announced.add(key);
-          newEntries.push({ id: key, minute: `${c.min}'`, type: "card", text: `Yellow card for ${homeName} ${c.num} after a late challenge.` });
+          newEntries.push({ id: key, minute: `${c.min}'`, headline: "CARD!", detail: `Yellow card for ${homeName} ${c.num} after a late challenge.`, type: "card", team: "home" });
         }
       });
       awayCards.forEach((c, i) => {
         const key = `acard-${i}`;
         if (!announced.has(key)) {
           announced.add(key);
-          newEntries.push({ id: key, minute: `${c.min}'`, type: "card", text: `Yellow card for ${awayName} ${c.num} after a late challenge.` });
+          newEntries.push({ id: key, minute: `${c.min}'`, headline: "CARD!", detail: `Yellow card for ${awayName} ${c.num} after a late challenge.`, type: "card", team: "away" });
         }
       });
       homeScorersArr.forEach((s, i) => {
         const key = `hgoal-${i}`;
         if (!announced.has(key)) {
           announced.add(key);
-          newEntries.push({ id: key, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", type: "goal", text: `GOAL! ${s} scores for ${homeName}!` });
+          newEntries.push({ id: key, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", headline: "GOAL!", detail: `${s} scores for ${homeName}!`, type: "goal", team: "home" });
         }
       });
       awayScorersArr.forEach((s, i) => {
         const key = `agoal-${i}`;
         if (!announced.has(key)) {
           announced.add(key);
-          newEntries.push({ id: key, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", type: "goal", text: `GOAL! ${s} scores for ${awayName}!` });
+          newEntries.push({ id: key, minute: s.match(/(\d+)/)?.[0] ? `${s.match(/(\d+)/)?.[0]}'` : "", headline: "GOAL!", detail: `${s} scores for ${awayName}!`, type: "goal", team: "away" });
         }
       });
 
@@ -1110,10 +1171,10 @@ function FeaturedLiveCard({
       }
 
       if (newEntries.length === 0 && timeDiff > 12000) {
-        const text = flavorPool[Math.floor(Math.random() * flavorPool.length)];
+        const detail = flavorPool[Math.floor(Math.random() * flavorPool.length)];
         const key = `flv-${now}-${Math.random()}`;
         announced.add(key);
-        newEntries.push({ id: key, minute: `${currentMinNum}'`, type: "info", text });
+        newEntries.push({ id: key, minute: `${currentMinNum}'`, detail, type: "info" });
       }
 
       if (newEntries.length > 0) {
@@ -1128,22 +1189,13 @@ function FeaturedLiveCard({
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [isLive, homeName, awayName, currentMinNum, isET, sid, homeSubs, awaySubs, homeCards, awayCards, homeScorersArr, awayScorersArr]);
+  }, [isLive, homeName, awayName, currentMinNum, isET, sid, hs, as_, stageTag, homeSubs, awaySubs, homeCards, awayCards, homeScorersArr, awayScorersArr]);
 
   const commentary = finished
     ? `Match has ended. Full time result: ${homeName} ${hs} - ${as_} ${awayName}.`
     : isLive ? "" : "Match will begin soon. Waiting for kickoff...";
 
   const ballPos = isLive ? liveBallPos : { x: 0, y: 0 };
-
-  const stageTag = (() => {
-    if (!isLive) return "";
-    const t = game.time_elapsed.toLowerCase();
-    if (t.includes("ht") || t.includes("half")) return "HT";
-    if (t.includes("pen") || /\bp\b/.test(t)) return "PEN";
-    if (isET) return "ET";
-    return "LIVE";
-  })();
 
   let matchStatusLabel;
   if (finished) {
@@ -1303,17 +1355,6 @@ function FeaturedLiveCard({
           </div>
         </div>
 
-        {/* Penalty Shootout Row */}
-        {hasPenalties && (
-          <div className="mt-2 pt-2 border-t border-orange-500/20 flex items-center justify-center gap-3">
-            <span className={`text-sm sm:text-base font-black ${hp > ap ? 'text-yellow-400' : 'text-gray-400'}`}>{hp}</span>
-            <span className="text-[8px] font-black text-orange-400 uppercase tracking-widest bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full">
-              Penalty Shootout
-            </span>
-            <span className={`text-sm sm:text-base font-black ${ap > hp ? 'text-yellow-400' : 'text-gray-400'}`}>{ap}</span>
-          </div>
-        )}
-
         {/* Live Substitutions Feed */}
         {isLive && (homeSubs.length > 0 || awaySubs.length > 0) && (
           <div className="mt-2 pt-2 border-t border-white/5">
@@ -1347,7 +1388,7 @@ function FeaturedLiveCard({
       </div>
 
 
-      <MatchMomentum gameId={game.id} isLive={isLive} isPending={isPending} hs={hs} as_={as_} />
+      <MatchMomentum gameId={game.id} isLive={isLive} isPending={isPending} hs={hs} as_={as_} homeCards={homeCardCount} awayCards={awayCardCount} />
 
       <button 
         onClick={() => setShowTracker(!showTracker)}
@@ -1369,7 +1410,7 @@ function FeaturedLiveCard({
       {/* Live Match Tracker Section */}
       <MatchTrackerView
         showTracker={showTracker} isLive={isLive} isPending={isPending} game={game} commentary={commentary}
-        feed={commentaryFeed} ballPos={ballPos}
+        feed={isLive ? commentaryFeed : recapFeed} ballPos={ballPos}
         homeFlag={homeTeam?.flag} awayFlag={awayTeam?.flag}
         homeCode={homeTeam?.fifa_code || homeName} awayCode={awayTeam?.fifa_code || awayName}
         hs={hs} as_={as_} stageTag={stageTag}
@@ -1387,7 +1428,7 @@ function FeaturedLiveCard({
       )}
 
       {/* Expandable Details Section — only for non-live */}
-      {!isLive && <MatchDetailsView showDetails={showDetails} game={game} stadium={stadium} isPending={isPending} hs={hs} as_={as_} />}
+      {!isLive && <MatchDetailsView showDetails={showDetails} game={game} stadium={stadium} isPending={isPending} hs={hs} as_={as_} homeCards={homeCardCount} awayCards={awayCardCount} />}
     </div>
   );
 }

@@ -49,10 +49,16 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
     return map[type] || type.toUpperCase();
   };
 
-  // Get unique stages for dropdown
+  // Unique stages sorted chronologically for dropdown selection
+  const STAGE_ORDER = ["group", "r32", "r16", "qf", "sf", "third_place", "final"];
   const stages = useMemo(() => {
-    const unique = new Set(games.map((g) => g.type));
-    return ["all", ...Array.from(unique)];
+    const unique = Array.from(new Set(games.map((g) => g.type)));
+    const sorted = unique.sort((a, b) => {
+      const idxA = STAGE_ORDER.indexOf(a);
+      const idxB = STAGE_ORDER.indexOf(b);
+      return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+    });
+    return ["all", ...sorted];
   }, [games]);
 
   // Filter and search logic
@@ -141,12 +147,17 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
           </div>
 
           {/* Stage Dropdown */}
-          <div className="relative shrink-0 min-w-[160px] z-30">
+          <div className="relative shrink-0 min-w-[170px] z-30">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="w-full flex items-center justify-between bg-black/40 border border-white/5 hover:border-white/10 rounded-xl py-2.5 px-4 text-xs text-white transition-colors cursor-pointer text-left focus:border-[#ff5e00]/50 outline-none"
             >
-              <span>{selectedStage === "all" ? "All Stages" : getStageLabel(selectedStage)}</span>
+              <span className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                {selectedStage === "all" ? "All Stages" : getStageLabel(selectedStage)}
+              </span>
               <svg
                 className={`w-4 h-4 text-gray-500 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
                 fill="none"
@@ -174,7 +185,7 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
                         setSelectedStage("all");
                         setDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2 text-xs transition-colors hover:bg-white/5 hover:text-yellow-400 ${
+                      className={`w-full text-left px-4 py-2.5 text-xs transition-colors hover:bg-white/5 hover:text-yellow-400 ${
                         selectedStage === "all" ? "text-yellow-400 font-bold bg-white/5" : "text-gray-300"
                       }`}
                     >
@@ -189,7 +200,7 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
                             setSelectedStage(stage);
                             setDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-4 py-2 text-xs transition-colors hover:bg-white/5 hover:text-yellow-400 ${
+                          className={`w-full text-left px-4 py-2.5 text-xs transition-colors hover:bg-white/5 hover:text-yellow-400 ${
                             selectedStage === stage ? "text-yellow-400 font-bold bg-white/5" : "text-gray-300"
                           }`}
                         >
@@ -204,20 +215,60 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
         </div>
 
         {/* Status Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {(["all", "live", "upcoming", "finished"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setFilter(t)}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap border ${
-                filter === t
-                  ? "bg-yellow-400 border-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.25)]"
-                  : "bg-white/5 border-white/5 text-gray-400 hover:text-white"
-              }`}
-            >
-              {t === "all" ? "All Fixtures" : t === "live" ? "🔴 Live" : t === "upcoming" ? "⏳ Upcoming" : "🏁 Finished"}
-            </button>
-          ))}
+        <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
+          {(["all", "live", "upcoming", "finished"] as const).map((t) => {
+            const getFilterIcon = (type: typeof t) => {
+              if (type === "all") {
+                return (
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                );
+              }
+              if (type === "live") {
+                return (
+                  <span className="relative flex h-2 w-2 mr-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  </span>
+                );
+              }
+              if (type === "upcoming") {
+                return (
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                );
+              }
+              return (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              );
+            };
+
+            const activeStyles = {
+              all: "bg-[#ff5e00] border-[#ff5e00]/20 text-white shadow-[0_0_20px_rgba(255,94,0,0.3)]",
+              live: "bg-red-500/15 border-red-500/30 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.15)]",
+              upcoming: "bg-blue-500/15 border-blue-500/30 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)]",
+              finished: "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.15)]",
+            };
+
+            return (
+              <button
+                key={t}
+                onClick={() => setFilter(t)}
+                className={`flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap border cursor-pointer ${
+                  filter === t
+                    ? activeStyles[t]
+                    : "bg-white/5 border-white/5 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/10"
+                }`}
+              >
+                {getFilterIcon(t)}
+                <span>{t === "all" ? "All Fixtures" : t === "live" ? "Live" : t === "upcoming" ? "Upcoming" : "Finished"}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
