@@ -362,10 +362,10 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
                     onClick={() => homeTeam && onTeamClick(homeTeam)}
                     className="flex-1 flex items-center gap-2.5 min-w-0 text-left group/btn"
                   >
-                    <div className={`w-8 h-6 rounded overflow-hidden shadow border border-white/10 shrink-0 bg-black/40 flex items-center justify-center transition-transform group-hover/btn:scale-105 ${homeWin ? "ring-1 ring-yellow-400" : ""}`}>
+                    <div className={`w-8 h-6 rounded overflow-hidden shadow border border-white/10 shrink-0 bg-black/40 flex items-center justify-center transition-transform group-hover/btn:scale-105 ${homeWin ? "ring-1 ring-green-400" : ""}`}>
                       {homeTeam?.flag ? <img src={homeTeam.flag} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-800" />}
                     </div>
-                    <span className={`text-xs sm:text-sm font-bold truncate group-hover/btn:text-yellow-400 transition-colors ${homeWin ? "text-white" : "text-gray-300"}`}>
+                    <span className={`text-xs sm:text-sm font-bold truncate group-hover/btn:text-green-400 transition-colors ${homeWin ? "text-white" : "text-gray-300"}`}>
                       {homeName}
                     </span>
                   </button>
@@ -375,9 +375,9 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
                     {finished || isLive ? (
                       <>
                         <span className="flex items-center gap-1.5 text-white">
-                          <span className={homeWin ? "text-yellow-400" : ""}>{hs}</span>
+                          <span className={homeWin ? "text-green-400" : ""}>{hs}</span>
                           <span className="text-gray-600">:</span>
-                          <span className={awayWin ? "text-yellow-400" : ""}>{as_}</span>
+                          <span className={awayWin ? "text-green-400" : ""}>{as_}</span>
                         </span>
                         {fHasPen && (
                           <span className="text-[8px] text-orange-400 font-bold mt-0.5">P: {fhp}–{fap}</span>
@@ -396,10 +396,10 @@ export default function FixturesTab({ games, teams, stadiums, onTeamClick }: Fix
                     onClick={() => awayTeam && onTeamClick(awayTeam)}
                     className="flex-1 flex items-center justify-end gap-2.5 min-w-0 text-right group/btn"
                   >
-                    <span className={`text-xs sm:text-sm font-bold truncate order-first group-hover/btn:text-yellow-400 transition-colors ${awayWin ? "text-white" : "text-gray-300"}`}>
+                    <span className={`text-xs sm:text-sm font-bold truncate order-first group-hover/btn:text-green-400 transition-colors ${awayWin ? "text-white" : "text-gray-300"}`}>
                       {awayName}
                     </span>
-                    <div className={`w-8 h-6 rounded overflow-hidden shadow border border-white/10 shrink-0 bg-black/40 flex items-center justify-center transition-transform group-hover/btn:scale-105 ${awayWin ? "ring-1 ring-yellow-400" : ""}`}>
+                    <div className={`w-8 h-6 rounded overflow-hidden shadow border border-white/10 shrink-0 bg-black/40 flex items-center justify-center transition-transform group-hover/btn:scale-105 ${awayWin ? "ring-1 ring-green-400" : ""}`}>
                       {awayTeam?.flag ? <img src={awayTeam.flag} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-800" />}
                     </div>
                   </button>

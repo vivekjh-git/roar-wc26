@@ -358,7 +358,7 @@ function CompactMatchCard({
             {homeName.length > 12 ? homeName.slice(0, 12) + "…" : homeName}
           </span>
           {(finished || isLive) && (
-            <span className={`text-[10px] font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>
+            <span className={`text-[10px] font-bold ${homeWin ? "text-green-400" : "text-gray-400"}`}>{hs}</span>
           )}
         </button>
 
@@ -368,7 +368,7 @@ function CompactMatchCard({
             {awayName.length > 12 ? awayName.slice(0, 12) + "…" : awayName}
           </span>
           {(finished || isLive) && (
-            <span className={`text-[10px] font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>
+            <span className={`text-[10px] font-bold ${awayWin ? "text-green-400" : "text-gray-400"}`}>{as_}</span>
           )}
         </button>
       </div>
@@ -425,7 +425,7 @@ function DetailedMatchCard({
           {homeFlag ? <img src={homeFlag} alt="" className="w-6 h-4 object-cover rounded-sm flex-shrink-0" /> : <div className="w-6 h-4 bg-gray-700 rounded-sm flex-shrink-0" />}
           <span className={`text-sm flex-1 ${homeWin ? "font-bold text-white" : "text-gray-300"}`}>{homeName}</span>
           {(finished || isLive) && (
-            <span className={`text-lg font-bold ${homeWin ? "text-yellow-400" : "text-gray-400"}`}>{hs}</span>
+            <span className={`text-lg font-bold ${homeWin ? "text-green-400" : "text-gray-400"}`}>{hs}</span>
           )}
         </button>
         {homeScorersStr && <div className="text-[9px] text-gray-500 pl-8 -mt-1 leading-tight">{homeScorersStr}</div>}
@@ -442,7 +442,7 @@ function DetailedMatchCard({
           {awayFlag ? <img src={awayFlag} alt="" className="w-6 h-4 object-cover rounded-sm flex-shrink-0" /> : <div className="w-6 h-4 bg-gray-700 rounded-sm flex-shrink-0" />}
           <span className={`text-sm flex-1 ${awayWin ? "font-bold text-white" : "text-gray-300"}`}>{awayName}</span>
           {(finished || isLive) && (
-            <span className={`text-lg font-bold ${awayWin ? "text-yellow-400" : "text-gray-400"}`}>{as_}</span>
+            <span className={`text-lg font-bold ${awayWin ? "text-green-400" : "text-gray-400"}`}>{as_}</span>
           )}
         </button>
         {awayScorersStr && <div className="text-[9px] text-gray-500 pl-8 -mt-1 leading-tight">{awayScorersStr}</div>}
@@ -2001,7 +2001,7 @@ function FeaturedLiveCard({
       <div className="flex items-center justify-between relative z-10 gap-1.5 sm:gap-4 flex-1">
         {/* Home */}
         <button onClick={() => homeTeam && onTeamClick(homeTeam)} className="flex-1 flex flex-col items-center group min-w-0">
-          <div className={`w-16 h-11 sm:w-24 sm:h-16 rounded overflow-hidden shadow-2xl border border-white/10 mb-2 sm:mb-3 group-hover:scale-105 transition-transform flex items-center justify-center bg-black/40 ${homeWin ? "ring-2 ring-yellow-400" : ""}`}>
+          <div className={`w-16 h-11 sm:w-24 sm:h-16 rounded overflow-hidden shadow-2xl border border-white/10 mb-2 sm:mb-3 group-hover:scale-105 transition-transform flex items-center justify-center bg-black/40 ${homeWin ? "ring-2 ring-green-400" : ""}`}>
             {homeTeam?.flag ? <img src={homeTeam.flag} alt="" className="w-full h-full object-contain p-0.5" /> : <div className="w-full h-full bg-gray-700" />}
           </div>
           <span className={`text-xs sm:text-lg text-center leading-tight truncate w-full px-1 ${homeWin ? "font-black text-white" : "font-bold text-gray-300"}`}>{homeName}</span>
@@ -2061,7 +2061,7 @@ function FeaturedLiveCard({
 
         {/* Away */}
         <button onClick={() => awayTeam && onTeamClick(awayTeam)} className="flex-1 flex flex-col items-center group min-w-0">
-          <div className={`w-16 h-11 sm:w-24 sm:h-16 rounded overflow-hidden shadow-2xl border border-white/10 mb-2 sm:mb-3 group-hover:scale-105 transition-transform flex items-center justify-center bg-black/40 ${awayWin ? "ring-2 ring-yellow-400" : ""}`}>
+          <div className={`w-16 h-11 sm:w-24 sm:h-16 rounded overflow-hidden shadow-2xl border border-white/10 mb-2 sm:mb-3 group-hover:scale-105 transition-transform flex items-center justify-center bg-black/40 ${awayWin ? "ring-2 ring-green-400" : ""}`}>
             {awayTeam?.flag ? <img src={awayTeam.flag} alt="" className="w-full h-full object-contain p-0.5" /> : <div className="w-full h-full bg-gray-700" />}
           </div>
           <span className={`text-xs sm:text-lg text-center leading-tight truncate w-full px-1 ${awayWin ? "font-black text-white" : "font-bold text-gray-300"}`}>{awayName}</span>
