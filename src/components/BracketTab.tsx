@@ -2510,7 +2510,7 @@ function MatchCarouselSection({
 }
 
 export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlayerClick }: BracketTabProps) {
-  const [activeTab, setActiveTab] = useState<'today' | 'tomorrow' | 'upcoming'>('today');
+  const [activeTab, setActiveTab] = useState<'previous' | 'today' | 'tomorrow' | 'upcoming'>('today');
   const [viewType, setViewType] = useState<'tree' | 'fall'>('tree');
   const [startRound, setStartRound] = useState<'r32' | 'r16' | 'qf' | 'sf' | 'final'>('r32');
   const treeContainerRef = useRef<HTMLDivElement>(null);
@@ -2572,6 +2572,13 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
       return new Date(b.local_date).getTime() - new Date(a.local_date).getTime();
     }
   };
+
+  const previousGames = useMemo(() => {
+    return games
+      .filter(g => g.finished === "TRUE" || g.time_elapsed?.toLowerCase() === "finished")
+      .sort((a, b) => new Date(b.local_date).getTime() - new Date(a.local_date).getTime())
+      .slice(0, 3);
+  }, [games]);
 
   const todayGames = useMemo(() => {
     return games.filter(g => isMatchToday(g.local_date, g.stadium_id)).sort(sortGames);
@@ -2658,8 +2665,20 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
       {/* 1. News Marquee */}
       <NewsMarquee bulletins={newsBulletins} />
 
-      {/* 2. Today / Tomorrow / Upcoming tab bar */}
-      <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-sm mx-auto shadow-inner">
+      {/* 2. Previous / Today / Tomorrow / Upcoming tab bar */}
+      <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-md mx-auto shadow-inner">
+        <button
+          onClick={() => setActiveTab('previous')}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 rounded-lg text-center transition-all ${activeTab === 'previous' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-widest mt-1">
+            <span className="text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+            </span>
+            PREV
+          </div>
+          <span className="text-[8px] uppercase tracking-widest opacity-0 select-none">Previous</span>
+        </button>
         <button
           onClick={() => setActiveTab('today')}
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 rounded-lg text-center transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
@@ -2707,6 +2726,20 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
           exit={{ opacity: 0, x: -10 }}
           transition={{ duration: 0.2 }}
         >
+          {activeTab === 'previous' && (
+            <MatchCarouselSection
+              title="Previous Matches"
+              icon="⏮️"
+              iconColor="text-gray-400"
+              emptyMessage="No previous matches"
+              games={previousGames}
+              teamMap={teamMap}
+              stadiumMap={stadiumMap}
+              onTeamClick={onTeamClick}
+              allGames={games}
+              onPlayerClick={onPlayerClick}
+            />
+          )}
           {activeTab === 'today' && (
             <MatchCarouselSection
               title="Today's Matches"

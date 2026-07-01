@@ -6,6 +6,7 @@ import type { Game } from "@/lib/api";
 import CountdownWidget from "./CountdownWidget";
 import { formatTimeNPT } from "@/lib/date-utils";
 import Image from "next/image";
+import versionInfo from "../version.json";
 
 interface HeaderProps {
   activeTab: string;
@@ -63,7 +64,9 @@ export default function Header({ activeTab, onTabChange, onRefresh, loading, gam
           </div>
           <div className="flex flex-col min-w-0">
             <h1 className="text-xs sm:text-sm font-black gold-text leading-tight tracking-wide whitespace-nowrap shrink-0">FIFA WORLD CUP 2026</h1>
-            <p className="text-[8px] sm:text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-0.5 whitespace-nowrap shrink-0">USA · Canada · Mexico</p>
+            <p className="text-[8px] sm:text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-0.5 whitespace-nowrap shrink-0">
+              USA · Canada · Mexico <span className="ml-1 text-gray-600 font-mono tracking-normal normal-case">v{versionInfo.version}</span>
+            </p>
           </div>
         </button>
         
