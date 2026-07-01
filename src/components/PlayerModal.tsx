@@ -169,10 +169,12 @@ export default function PlayerModal({ playerName: rawPlayerName, teamId, games, 
 
             <div className="flex items-center gap-4 relative z-10">
               <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
-                <CachedPlayerImage
-                  playerName={playerName}
-                  className="w-full h-full rounded-full object-cover bg-black/40 border border-yellow-500/30 shadow-[0_0_15px_rgba(255,94,0,0.15)]"
-                />
+                <div className="w-full h-full rounded-full overflow-hidden border border-yellow-500/30 shadow-[0_0_15px_rgba(255,94,0,0.15)] bg-black/40">
+                  <CachedPlayerImage
+                    playerName={playerName}
+                    className="w-full h-full object-cover scale-[2.5] origin-[50%_15%]"
+                  />
+                </div>
                 {playerTeam?.flag && (
                   <img
                     src={playerTeam.flag}
