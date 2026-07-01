@@ -50,14 +50,19 @@ function TeamScorersByCountry({ list, onPlayerClick }: Readonly<{ list: ScorerEn
   const byTeam = new Map<string, ScorerEntry[]>();
   for (const s of list) {
     const key = s.teamId ?? "unknown";
-    if (!byTeam.has(key)) byTeam.set(key, []);
-    byTeam.get(key)!.push(s);
+    const existing = byTeam.get(key);
+    if (existing) {
+      existing.push(s);
+    } else {
+      byTeam.set(key, [s]);
+    }
   }
 
   return (
     <div className="space-y-2">
       {[...byTeam.entries()].map(([teamId, players]) => {
-        const first = players[0]!;
+        const first = players[0];
+        if (!first) return null;
         const teamGoals = players.reduce((sum, p) => sum + p.goals, 0);
         const isOpen = openTeam === teamId;
 
@@ -69,7 +74,7 @@ function TeamScorersByCountry({ list, onPlayerClick }: Readonly<{ list: ScorerEn
               className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-white/5 transition-colors text-left"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              {first.flag && <img src={first.flag} alt={first.teamName} className="w-7 h-5 object-cover rounded flex-shrink-0 shadow-sm" />}
+              {first.flag && <img src={first.flag} alt={first.teamName} className="w-7 h-5 object-cover rounded shrink-0 shadow-sm" />}
               <span className="font-black text-sm text-white flex-1 uppercase tracking-wide">{first.teamName}</span>
               <span className="text-[10px] text-yellow-400 font-extrabold bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full mr-1">
                 {teamGoals} goal{teamGoals !== 1 ? "s" : ""}
@@ -99,7 +104,7 @@ function TeamScorersByCountry({ list, onPlayerClick }: Readonly<{ list: ScorerEn
                         </span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end flex-shrink-0">
+                    <div className="flex flex-col items-end shrink-0">
                       <span className="text-lg font-black text-white leading-none">{scorer.goals}</span>
                       <span className="text-[9px] text-gray-500">goals</span>
                     </div>
@@ -210,17 +215,17 @@ function FlagImage({ src, alt }: Readonly<{ src: string, alt: string }>) {
   if (src) return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} className="w-6 h-4.5 object-cover rounded flex-shrink-0" />
+      <img src={src} alt={alt} className="w-6 h-4.5 object-cover rounded shrink-0" />
     </>
   );
-  return <div className="w-6 h-4.5 bg-gray-700 rounded flex-shrink-0" />;
+  return <div className="w-6 h-4.5 bg-gray-700 rounded shrink-0" />;
 }
 
 import CachedPlayerImage from "./CachedPlayerImage";
 
 function PlayerAvatar({ name, flag, teamName }: { name: string, flag: string, teamName: string }) {
   return (
-    <div className="relative w-8 h-8 flex-shrink-0">
+    <div className="relative w-8 h-8 shrink-0">
       <CachedPlayerImage
         playerName={name}
         flag={flag}
@@ -248,7 +253,7 @@ function GoalScorersList({ list, expanded, variants, onPlayerClick }: Readonly<{
           className={`glass-card rounded-xl p-2.5 border transition-all ${idx === 0 ? "border-yellow-400/30 bg-yellow-400/5" : "border-white/5"}`}
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
+            <div className="w-6 text-center shrink-0"><RankBadge idx={idx} /></div>
             <PlayerAvatar name={scorer.name} flag={scorer.flag} teamName={scorer.teamName} />
             <div className="flex-1 min-w-0">
               <button 
@@ -266,7 +271,7 @@ function GoalScorersList({ list, expanded, variants, onPlayerClick }: Readonly<{
               </button>
               <div className="text-[10px] text-gray-400 truncate">{scorer.teamName}</div>
             </div>
-            <div className="text-right flex-shrink-0">
+            <div className="text-right shrink-0">
               <div className={`text-base font-extrabold leading-none ${idx === 0 ? "text-yellow-400" : "text-white"}`}>{scorer.goals}</div>
               <div className="text-[9px] text-gray-500 mt-0.5">goals</div>
             </div>
@@ -290,7 +295,7 @@ function ContributorsList({ list, expanded, variants, onPlayerClick }: Readonly<
       {displayList.map((item, idx) => (
         <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
+            <div className="w-6 text-center shrink-0"><RankBadge idx={idx} /></div>
             <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
               <button 
@@ -308,7 +313,7 @@ function ContributorsList({ list, expanded, variants, onPlayerClick }: Readonly<
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} • {item.goals}G ({item.penaltyGoals}P)</div>
             </div>
-            <div className="text-right flex-shrink-0 text-cyan-400 text-sm font-extrabold">{item.score} <span className="text-[9px] text-gray-500 font-normal">pts</span></div>
+            <div className="text-right shrink-0 text-cyan-400 text-sm font-extrabold">{item.score} <span className="text-[9px] text-gray-500 font-normal">pts</span></div>
           </div>
         </motion.div>
       ))}
@@ -326,7 +331,7 @@ function GoalsRatioList({ list, expanded, variants, onPlayerClick }: Readonly<{ 
       {displayList.map((item, idx) => (
         <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
+            <div className="w-6 text-center shrink-0"><RankBadge idx={idx} /></div>
             <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
               <button 
@@ -344,7 +349,7 @@ function GoalsRatioList({ list, expanded, variants, onPlayerClick }: Readonly<{ 
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} • {item.goals} goals in {item.games} games</div>
             </div>
-            <div className="text-right flex-shrink-0 text-green-400 text-sm font-extrabold">{item.ratio.toFixed(2)}</div>
+            <div className="text-right shrink-0 text-green-400 text-sm font-extrabold">{item.ratio.toFixed(2)}</div>
           </div>
         </motion.div>
       ))}
@@ -362,13 +367,13 @@ function CleanSheetsList({ list, expanded, variants }: Readonly<{ list: CleanShe
       {displayList.map((item, idx) => (
         <motion.div key={item.teamName} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
+            <div className="w-6 text-center shrink-0"><RankBadge idx={idx} /></div>
             <FlagImage src={item.flag} alt={item.teamName} />
             <div className="flex-1 min-w-0">
               <div className="font-bold text-white text-sm truncate">{item.teamName}</div>
               <div className="text-[10px] text-gray-400 truncate">{item.gamesPlayed} games played</div>
             </div>
-            <div className="text-right flex-shrink-0 text-white text-sm font-extrabold">{item.cleanSheets}</div>
+            <div className="text-right shrink-0 text-white text-sm font-extrabold">{item.cleanSheets}</div>
           </div>
         </motion.div>
       ))}
@@ -386,7 +391,7 @@ function OwnGoalsList({ list, expanded, variants, onPlayerClick }: Readonly<{ li
       {displayList.map((item, idx) => (
         <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-red-500/20 bg-red-500/5">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} medals={["🔴", "🔴", "🔴"]} /></div>
+            <div className="w-6 text-center shrink-0"><RankBadge idx={idx} medals={["🔴", "🔴", "🔴"]} /></div>
             <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
               <button 
@@ -401,7 +406,7 @@ function OwnGoalsList({ list, expanded, variants, onPlayerClick }: Readonly<{ li
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} {item.matchInfos.join(", ")}</div>
             </div>
-            <div className="text-right flex-shrink-0 text-red-400 text-sm font-extrabold">{item.ownGoals}</div>
+            <div className="text-right shrink-0 text-red-400 text-sm font-extrabold">{item.ownGoals}</div>
           </div>
         </motion.div>
       ))}
@@ -419,7 +424,7 @@ function PenaltiesList({ list, expanded, variants, onPlayerClick }: Readonly<{ l
       {displayList.map((item, idx) => (
         <motion.div key={`${item.name}_${item.teamId}`} variants={variants} className="glass-card rounded-xl p-2.5 border border-white/5">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 text-center flex-shrink-0"><RankBadge idx={idx} /></div>
+            <div className="w-6 text-center shrink-0"><RankBadge idx={idx} /></div>
             <PlayerAvatar name={item.name} flag={item.flag} teamName={item.teamName} />
             <div className="flex-1 min-w-0">
               <button 
@@ -437,7 +442,7 @@ function PenaltiesList({ list, expanded, variants, onPlayerClick }: Readonly<{ l
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName}</div>
             </div>
-            <div className="text-right flex-shrink-0 text-white text-sm font-extrabold">{item.penalties}</div>
+            <div className="text-right shrink-0 text-white text-sm font-extrabold">{item.penalties}</div>
           </div>
         </motion.div>
       ))}

@@ -9,7 +9,7 @@ import { formatMatchDateNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater
 import { generateLiveBulletins } from "@/lib/news-utils";
 import { format, addDays } from "date-fns";
 import CachedPlayerImage from "./CachedPlayerImage";
-import { getPlayerMatchRating } from "@/lib/player-ratings";
+import { getPlayerFifaRating } from "@/lib/player-ratings";
 import {
   GoalIcon,
   YellowCardIcon,
@@ -1324,13 +1324,11 @@ function LineupPitch({
   isHome,
   team,
   onPlayerClick,
-  matchId
 }: {
   players: FifaPlayerData[];
   isHome: boolean;
   team: Team;
   onPlayerClick?: (name: string, teamId: string) => void;
-  matchId: string;
 }) {
   // 1. Filter starting players (Status === 1)
   const starters = players.filter(p => p.Status === 1);
@@ -1472,8 +1470,8 @@ function LineupPitch({
         const cleanName = cleanPlayerName(pName);
         // Normalize abbreviated FIFA names to full names for consistent lookups
         const normalizedName = normalizePlayerAlias(cleanName);
-        const rating = getPlayerMatchRating(normalizedName, matchId);
-        const ratingBg = rating >= 7.5 ? "bg-green-500 text-white" : rating >= 6.5 ? "bg-yellow-500 text-black" : "bg-orange-500 text-white";
+        const rating = getPlayerFifaRating(normalizedName);
+        const ratingBg = rating >= 85 ? "bg-green-500 text-white" : rating >= 75 ? "bg-yellow-500 text-black" : "bg-orange-500 text-white";
 
         return (
           <button
@@ -2185,7 +2183,6 @@ function FeaturedLiveCard({
                         isHome={true}
                         team={homeTeam}
                         onPlayerClick={onPlayerClick}
-                        matchId={game.id}
                       />
                       {/* Substitutes */}
                       <div className="bg-black/35 rounded-xl p-2.5 border border-white/5 space-y-1">
@@ -2246,7 +2243,6 @@ function FeaturedLiveCard({
                         isHome={false}
                         team={awayTeam}
                         onPlayerClick={onPlayerClick}
-                        matchId={game.id}
                       />
                       {/* Substitutes */}
                       <div className="bg-black/35 rounded-xl p-2.5 border border-white/5 space-y-1">
