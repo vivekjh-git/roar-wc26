@@ -1909,12 +1909,19 @@ function FeaturedLiveCard({
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   useEffect(() => {
-    setElapsedSeconds(0);
-    if (!isLive || stageTag === "HT") return;
+    const timer = setTimeout(() => {
+      setElapsedSeconds(0);
+    }, 0);
+    if (!isLive || stageTag === "HT") {
+      return () => clearTimeout(timer);
+    }
     const interval = setInterval(() => {
       setElapsedSeconds(s => (s < 59 ? s + 1 : 59));
     }, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, [isLive, stageTag, game.time_elapsed]);
 
   const liveMatchMinute = useMemo(() => {
