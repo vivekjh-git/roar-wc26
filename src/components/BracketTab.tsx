@@ -2086,17 +2086,26 @@ function FeaturedLiveCard({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden relative z-10 w-full mt-3 animate-fade-in"
           >
-            {lineupsLoading ? (
-              <div className="py-12 flex flex-col items-center justify-center text-gray-500 text-[10px] gap-2 font-bold uppercase tracking-widest">
-                <span className="animate-spin text-lg">🔄</span>
-                <span>Loading squad layouts...</span>
-              </div>
-            ) : (!lineups?.home && !lineups?.away) ? (
-              <div className="py-8 text-center text-[10px] font-bold uppercase tracking-wider text-gray-500 border border-dashed border-white/10 rounded-xl">
-                Roster not yet announced
-              </div>
-            ) : (
-              <div className="space-y-4">
+            {(() => {
+              if (lineupsLoading) {
+                return (
+                  <div className="py-12 flex flex-col items-center justify-center text-gray-500 text-[10px] gap-2 font-bold uppercase tracking-widest">
+                    <span className="animate-spin text-lg">🔄</span>
+                    <span>Loading squad layouts...</span>
+                  </div>
+                );
+              }
+              
+              if (!lineups?.home && !lineups?.away) {
+                return (
+                  <div className="py-8 text-center text-[10px] font-bold uppercase tracking-wider text-gray-500 border border-dashed border-white/10 rounded-xl">
+                    Roster not yet announced
+                  </div>
+                );
+              }
+              
+              return (
+                <div className="space-y-4">
                 <div id="lineups-scroll-container" className="flex sm:grid sm:grid-cols-2 gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide w-full pb-2 px-1">
                   {/* Left (Home) Team */}
                   {lineups.home ? (
@@ -2223,7 +2232,8 @@ function FeaturedLiveCard({
                   )}
                 </div>
               </div>
-            )}
+              );
+            })()}
           </motion.div>
         )}
       </AnimatePresence>
