@@ -4,6 +4,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import MatchDetailsModal from "./MatchDetailsModal";
+import HeadToHeadModal from "./HeadToHeadModal";
 import type { Game, Team, Stadium } from "@/lib/api";
 import { parseScorers, normalizePlayerAlias } from "@/lib/api";
 import { formatMatchDateNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate, parseMatchDate, getMatchTimeWindowNPT } from "@/lib/date-utils";
@@ -1265,6 +1266,20 @@ function MatchDetailsView({
   );
 }
 
+// Match clock in seconds from the best available real source: FIFA's own match time first,
+// then worldcup26.ir's minute-only elapsed string, then the latest commentary event's minute.
+function parseMatchBaseSeconds(fifaMatchTime: string | undefined, timeElapsed: string, latestFeedMinute: string | undefined): number {
+  if (fifaMatchTime && fifaMatchTime !== "00:00") {
+    const parts = fifaMatchTime.split(":").map(Number);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+  }
+  const matchMin = timeElapsed.toLowerCase().match(/(\d+)/);
+  if (matchMin) return Number.parseInt(matchMin[1], 10) * 60;
+  if (latestFeedMinute) return Number.parseInt(latestFeedMinute, 10) * 60;
+  return 0;
+}
+
 // Map a feed entry to a rough ball position on the pitch widget.
 // Convention: home team attacks right (positive x), away attacks left (negative x).
 // x range: -100 to +100; y range: -43 to +43 (relative to center of pitch area).
@@ -1662,6 +1677,7 @@ function FeaturedLiveCard({
   const [showDetails, setShowDetails] = useState(false);
   const [showTracker, setShowTracker] = useState(false);
   const [showLineup, setShowLineup] = useState(false);
+  const [showH2H, setShowH2H] = useState(false);
 
   // Reset expanded states when active status changes to false (swiped away)
   const [prevIsActive, setPrevIsActive] = useState(isActive);
@@ -1671,6 +1687,7 @@ function FeaturedLiveCard({
       setShowDetails(false);
       setShowTracker(false);
       setShowLineup(false);
+      setShowH2H(false);
     }
   }
 
@@ -1680,6 +1697,7 @@ function FeaturedLiveCard({
     setShowDetails(false);
     setShowTracker(false);
     setShowLineup(false);
+    setShowH2H(false);
   }
 
   const announcedRef = useRef<Set<string>>(new Set());
@@ -1724,18 +1742,10 @@ function FeaturedLiveCard({
     return num > 90;
   })();
 
-  const stageTag = (() => {
-    if (!isLive) return "";
-    const t = game.time_elapsed.toLowerCase();
-    if (t.includes("ht") || t.includes("half")) return "HT";
-    if (t.includes("pen") || /\bp\b/.test(t)) return "PEN";
-    if (isET) return "ET";
-    return "LIVE";
-  })();
-
   const [fifaData, setFifaData] = useState<{
     matched: boolean;
     matchTime?: string;
+    period?: number | null;
     events?: CommentaryEntry[];
     cardCounts?: { home: number; away: number };
     stats?: { home: RealTeamStats; away: RealTeamStats };
@@ -1746,6 +1756,20 @@ function FeaturedLiveCard({
     homeTeam?: FifaTeamData;
     awayTeam?: FifaTeamData;
   } | null>(null);
+
+  const stageTag = (() => {
+    if (!isLive) return "";
+    if (fifaData?.period) {
+      if (fifaData.period === 4) return "HT";
+      if (fifaData.period === 11) return "PEN";
+      if (fifaData.period === 6 || fifaData.period === 8) return "ET";
+    }
+    const t = game.time_elapsed.toLowerCase();
+    if (t.includes("ht") || t.includes("half")) return "HT";
+    if (t.includes("pen") || /\bp\b/.test(t)) return "PEN";
+    if (isET) return "ET";
+    return "LIVE";
+  })();
 
   // Fetch on mount, immediately again at key match-stage transitions (half time, extra time,
   // full time), and steadily every 15s while the match is live in between. A single fetch
@@ -1854,65 +1878,70 @@ function FeaturedLiveCard({
   const realPossession = fifaData?.matched ? (fifaData.possession ?? null) : null;
   const realAttendance = fifaData?.matched ? (fifaData.attendance ?? null) : null;
 
-  const currentMinute = isLive ? (() => {
-    const m = game.time_elapsed.replace(/live/i, '').trim().match(/(\d+)/);
-    return m ? Number.parseInt(m[1], 10) : null;
-  })() : null;
+  const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
+  const timeWindowNPT = getMatchTimeWindowNPT(game.local_date, game.stadium_id, isLive, finished, hasPenalties);
+
+  // Initialize with the correct time immediately — no waiting for effects
+  const [totalSeconds, setTotalSeconds] = useState(() => parseMatchBaseSeconds(fifaData?.matchTime, game.time_elapsed, realFeed[0]?.minute));
+  const lastPeriodRef = useRef<number | null>(null);
+  const lastMatchTimeRef = useRef<string>("");
+
+  // Sync when the API or mock data provides a new time. A genuine period change (HT -> 2nd
+  // half, 2nd half -> ET, etc.) is the only case where the clock legitimately moves backward
+  // (football restarts each period's display near its nominal start minute) — mid-period, the
+  // match clock only ever counts up, so a poll that drifts behind our local tick (API lag/jitter)
+  // must never snap the display backward.
+  useEffect(() => {
+    const currentPeriod = fifaData?.period ?? null;
+    const currentMatchTimeStr = fifaData?.matchTime ?? game.time_elapsed;
+    const periodChanged = currentPeriod !== lastPeriodRef.current;
+    const matchTimeChanged = currentMatchTimeStr !== lastMatchTimeRef.current;
+    if (!periodChanged && !matchTimeChanged) return;
+    lastPeriodRef.current = currentPeriod;
+    lastMatchTimeRef.current = currentMatchTimeStr;
+    const base = parseMatchBaseSeconds(fifaData?.matchTime, game.time_elapsed, realFeed[0]?.minute);
+    if (base > 0) {
+      setTotalSeconds(current => {
+        if (current === 0 || periodChanged || base > current) return base;
+        return current;
+      });
+    }
+  }, [fifaData?.period, fifaData?.matchTime, game.time_elapsed, realFeed]);
+
+  // Tick the seconds forward locally
+  const isPastHalfTime = stageTag === "HT";
+  const totalSecondsIsZero = totalSeconds === 0;
+  useEffect(() => {
+    if (!isLive || isPastHalfTime || totalSecondsIsZero) return;
+    const interval = setInterval(() => {
+      setTotalSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isLive, isPastHalfTime, totalSecondsIsZero]);
+
+  const timeWithSeconds = useMemo(() => {
+    if (totalSeconds === 0) return null; // Data hasn't loaded yet
+    const minStr = String(Math.floor(totalSeconds / 60));
+    const secStr = String(totalSeconds % 60).padStart(2, "0");
+    return `${minStr}:${secStr}`;
+  }, [totalSeconds]);
+
+  // Current minute for momentum/timeline/substitutions — derived from the same corrected clock
+  // used for the seconds display, so every part of the UI agrees on "what minute is it".
+  const currentMinute = isLive
+    ? (totalSeconds > 0
+        ? Math.floor(totalSeconds / 60)
+        : (() => {
+            const m = game.time_elapsed.replace(/live/i, '').trim().match(/(\d+)/);
+            return m ? Number.parseInt(m[1], 10) : null;
+          })())
+    : null;
 
   // Apply substitutions on the pitch up to this minute: all of them once finished, up to the
   // live clock while playing, none before kickoff.
   let subsThroughMinute = 0;
   if (finished) subsThroughMinute = 999;
   else if (isLive) subsThroughMinute = currentMinute ?? 0;
-
-  const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
-  const timeWindowNPT = getMatchTimeWindowNPT(game.local_date, game.stadium_id, isLive, finished, hasPenalties);
-
-  const [totalSeconds, setTotalSeconds] = useState(0);
-  const [prevMatchTime, setPrevMatchTime] = useState<string | undefined>(undefined);
-  const [prevGameTime, setPrevGameTime] = useState(game.time_elapsed);
-
-  // Sync our clock exactly to the FIFA API down to the second whenever it updates
-  if (fifaData?.matchTime !== prevMatchTime || game.time_elapsed !== prevGameTime) {
-    setPrevMatchTime(fifaData?.matchTime);
-    setPrevGameTime(game.time_elapsed);
-    
-    let base = 0;
-    if (fifaData?.matchTime && fifaData.matchTime !== "00:00") {
-      const parts = fifaData.matchTime.split(":").map(Number);
-      if (parts.length === 3) base = parts[0] * 3600 + parts[1] * 60 + parts[2];
-      else if (parts.length === 2) base = parts[0] * 60 + parts[1];
-    } else {
-      const matchMin = game.time_elapsed.toLowerCase().match(/(\d+)/);
-      if (matchMin) base = parseInt(matchMin[1], 10) * 60;
-      else if (realFeed.length > 0 && realFeed[0].minute) base = parseInt(realFeed[0].minute, 10) * 60;
-    }
-    
-    if (base > 0) {
-      // Only snap forward, or snap if it's completely out of sync (> 5s difference)
-      setTotalSeconds(current => {
-        if (current === 0 || base > current || Math.abs(base - current) > 5) {
-          return base;
-        }
-        return current;
-      });
-    }
-  }
-
-  // Tick the seconds forward locally
-  useEffect(() => {
-    if (!isLive || stageTag === "HT") return;
-    const interval = setInterval(() => {
-      setTotalSeconds(s => s + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isLive, stageTag]);
-
-  const timeWithSeconds = useMemo(() => {
-    const minStr = String(Math.floor(totalSeconds / 60));
-    const secStr = String(totalSeconds % 60).padStart(2, "0");
-    return `${minStr}:${secStr}`;
-  }, [totalSeconds]);
 
   // Ball position: driven by the latest commentary event only (goal, card, sub, etc.).
   const ballPos = useMemo(() => {
@@ -2006,14 +2035,14 @@ function FeaturedLiveCard({
               </div>
             )}
           </div>
-          {isLive ? (
+          {isLive && stageTag !== "HT" && stageTag !== "PEN" ? (
             <div className="flex items-center justify-center gap-1 mt-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-white/5 relative z-10 shrink-0 select-none">
               <span className="relative flex h-2 w-2 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
               <span className="text-[9px] sm:text-[10px] font-black text-white font-mono leading-none tracking-wider ml-0.5">
-                {timeWithSeconds}
+                {timeWithSeconds ?? "--:--"}
               </span>
             </div>
           ) : (
@@ -2040,6 +2069,16 @@ function FeaturedLiveCard({
             {awayTeam?.flag ? <img src={awayTeam.flag} alt="" className="w-full h-full object-contain p-0.5" /> : <div className="w-full h-full bg-gray-700" />}
           </div>
           <span className={`text-xs sm:text-lg text-center leading-tight truncate w-full px-1 ${awayWin ? "font-black text-white" : "font-bold text-gray-300"}`}>{awayName}</span>
+        </button>
+      </div>
+
+      {/* Head to Head — small tappable text, opens past World Cup history for these two teams */}
+      <div className="flex justify-center mt-2 sm:mt-3 relative z-10">
+        <button
+          onClick={() => setShowH2H(true)}
+          className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white bg-black/30 hover:bg-black/50 px-3 py-1 rounded-full border border-white/5 transition-colors"
+        >
+          Head to Head
         </button>
       </div>
 
@@ -2302,6 +2341,16 @@ function FeaturedLiveCard({
       </button>
 
       <MatchDetailsView showDetails={showDetails} game={game} stadium={stadium} isPending={isPending} hs={hs} as_={as_} real={realStats} cardCounts={fifaData?.matched ? fifaData.cardCounts ?? null : null} possession={realPossession} attendance={realAttendance} />
+
+      {showH2H && (
+        <HeadToHeadModal
+          homeName={homeName}
+          awayName={awayName}
+          homeFifa={homeTeam?.fifa_code}
+          awayFifa={awayTeam?.fifa_code}
+          onClose={() => setShowH2H(false)}
+        />
+      )}
     </div>
   );
 }
