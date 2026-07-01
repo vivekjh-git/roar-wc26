@@ -1516,7 +1516,7 @@ function LineupPitch({
             {/* Player Head Container */}
             <div className="relative">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/80 group-hover:border-yellow-400 group-hover:scale-105 transition-all shadow-md overflow-hidden bg-black/40 flex items-center justify-center">
-                <CachedPlayerImage playerName={normalizedName} primarySrc={player.PlayerPicture?.PictureUrl} className="w-full h-full object-cover" />
+                <CachedPlayerImage playerName={normalizedName} primarySrc={player.PlayerPicture?.PictureUrl} className="w-full h-full object-cover object-top scale-[1.35] origin-top" />
               </div>
               {subbedOn.has(player.IdPlayer) && (
                 <span className="absolute -top-1 -right-1 flex items-center gap-0.5 bg-green-600 text-white text-[6px] font-black px-1 py-0.5 rounded-full border border-black/30 shadow-md leading-none z-20">
@@ -2140,7 +2140,7 @@ function FeaturedLiveCard({
                             const name = p.PlayerName?.[0]?.Description || "Player";
                             const sub = fifaData?.homeTeam?.Substitutions?.find((s) => s.PlayerOnName?.[0]?.Description === name || s.PlayerOffName?.[0]?.Description === name);
                             return (
-                              <div key={p.IdPlayer} className="flex items-center justify-between text-gray-400 font-medium border-b border-white/5 pb-0.5 last:border-0 last:pb-0">
+                              <div key={p.IdPlayer} className="flex items-center justify-between text-gray-400 font-medium border-b border-white/5 pb-1 px-1 last:border-0 last:pb-0">
                                 <span>#{p.ShirtNumber} {name}</span>
                                 {sub && (
                                   <span className="text-[8px] bg-white/5 border border-white/10 px-1 rounded flex items-center gap-1">
@@ -2202,7 +2202,7 @@ function FeaturedLiveCard({
                             const name = p.PlayerName?.[0]?.Description || "Player";
                             const sub = fifaData?.awayTeam?.Substitutions?.find((s) => s.PlayerOnName?.[0]?.Description === name || s.PlayerOffName?.[0]?.Description === name);
                             return (
-                              <div key={p.IdPlayer} className="flex items-center justify-between text-gray-400 font-medium border-b border-white/5 pb-0.5 last:border-0 last:pb-0">
+                              <div key={p.IdPlayer} className="flex items-center justify-between text-gray-400 font-medium border-b border-white/5 pb-1 px-1 last:border-0 last:pb-0">
                                 <span>#{p.ShirtNumber} {name}</span>
                                 {sub && (
                                   <span className="text-[8px] bg-white/5 border border-white/10 px-1 rounded flex items-center gap-1">
