@@ -27,7 +27,92 @@ const TABS = [
   { id: "cleansheets", icon: <InfoIcon size={12} className="inline-block text-blue-400" />, label: "Clean Sheets" },
   { id: "owngoals", icon: <RedCardIcon className="inline-block" />, label: "Own Goals" },
   { id: "penalties", icon: <CornerIcon size={12} className="inline-block text-yellow-500" />, label: "Penalty Goals" },
+  { id: "teams", icon: <span>🌍</span>, label: "By Country" },
 ];
+
+function EmptyState({ icon, message }: Readonly<{ icon: string, message: string }>) {
+  return (
+    <div className="text-center py-12 text-gray-500">
+      <div className="text-4xl mb-3">{icon}</div>
+      <p>{message}</p>
+      <p className="text-xs mt-1">Check back once matches begin</p>
+    </div>
+  );
+}
+
+// 7. By Country — scorers grouped by team with collapsible sections
+function TeamScorersByCountry({ list, onPlayerClick }: Readonly<{ list: ScorerEntry[], onPlayerClick?: (name: string, teamId: string) => void }>) {
+  const [openTeam, setOpenTeam] = useState<string | null>(null);
+
+  if (list.length === 0) return <EmptyState icon="🌍" message="No scorer data yet" />;
+
+  // Group scorers by teamId, preserving order of first appearance (teams sorted by total goals desc)
+  const byTeam = new Map<string, ScorerEntry[]>();
+  for (const s of list) {
+    const key = s.teamId ?? "unknown";
+    if (!byTeam.has(key)) byTeam.set(key, []);
+    byTeam.get(key)!.push(s);
+  }
+
+  return (
+    <div className="space-y-2">
+      {[...byTeam.entries()].map(([teamId, players]) => {
+        const first = players[0]!;
+        const teamGoals = players.reduce((sum, p) => sum + p.goals, 0);
+        const isOpen = openTeam === teamId;
+
+        return (
+          <div key={teamId} className="glass-card rounded-xl border border-white/5 overflow-hidden">
+            {/* Team header */}
+            <button
+              onClick={() => setOpenTeam(isOpen ? null : teamId)}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-white/5 transition-colors text-left"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {first.flag && <img src={first.flag} alt={first.teamName} className="w-7 h-5 object-cover rounded flex-shrink-0 shadow-sm" />}
+              <span className="font-black text-sm text-white flex-1 uppercase tracking-wide">{first.teamName}</span>
+              <span className="text-[10px] text-yellow-400 font-extrabold bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full mr-1">
+                {teamGoals} goal{teamGoals !== 1 ? "s" : ""}
+              </span>
+              <span className="text-gray-500 text-[10px] font-bold">{isOpen ? "▲" : "▼"}</span>
+            </button>
+
+            {/* Players list */}
+            {isOpen && (
+              <div className="border-t border-white/5">
+                {players.map((scorer) => (
+                  <button
+                    key={scorer.name}
+                    type="button"
+                    onClick={() => scorer.teamId && onPlayerClick?.(scorer.name, scorer.teamId)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors text-left border-b border-white/5 last:border-0"
+                  >
+                    <PlayerAvatar name={scorer.name} flag={scorer.flag} teamName={scorer.teamName} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-sm text-white truncate">{scorer.name}</div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1.5 py-0.5 rounded font-mono font-bold">
+                          FIFA {getPlayerFifaRating(scorer.name)}
+                        </span>
+                        <span className="text-[9px] bg-emerald-400/10 text-emerald-400 px-1.5 py-0.5 rounded font-mono font-bold">
+                          {getPlayerTournamentRating(scorer.name, scorer.goals).toFixed(1)} avg
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <span className="text-lg font-black text-white leading-none">{scorer.goals}</span>
+                      <span className="text-[9px] text-gray-500">goals</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ScorersTab({ data, onPlayerClick }: ScorersTabProps) {
   const [activeTab, setActiveTab] = useState(TABS[0]!.id);
@@ -62,6 +147,7 @@ export default function ScorersTab({ data, onPlayerClick }: ScorersTabProps) {
       case "cleansheets": return <CleanSheetsList list={liveCleanSheets} expanded={expanded} variants={itemVariants} />;
       case "owngoals": return <OwnGoalsList list={liveOwnGoals} expanded={expanded} variants={itemVariants} onPlayerClick={onPlayerClick} />;
       case "penalties": return <PenaltiesList list={livePenaltyGoals} expanded={expanded} variants={itemVariants} onPlayerClick={onPlayerClick} />;
+      case "teams": return <TeamScorersByCountry list={liveTopScorers} onPlayerClick={onPlayerClick} />;
       default: return null;
     }
   };
@@ -99,14 +185,16 @@ export default function ScorersTab({ data, onPlayerClick }: ScorersTabProps) {
         </motion.div>
       </AnimatePresence>
 
-      <div className="pt-2">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-gray-300 hover:bg-white/10 transition-colors"
-        >
-          {expanded ? "Show less" : "Show full list"}
-        </button>
-      </div>
+      {activeTab !== "teams" && (
+        <div className="pt-2">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="w-full py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-gray-300 hover:bg-white/10 transition-colors"
+          >
+            {expanded ? "Show less" : "Show full list"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -357,12 +445,3 @@ function PenaltiesList({ list, expanded, variants, onPlayerClick }: Readonly<{ l
   );
 }
 
-function EmptyState({ icon, message }: Readonly<{ icon: string, message: string }>) {
-  return (
-    <div className="text-center py-12 text-gray-500">
-      <div className="text-4xl mb-3">{icon}</div>
-      <p>{message}</p>
-      <p className="text-xs mt-1">Check back once matches begin</p>
-    </div>
-  );
-}

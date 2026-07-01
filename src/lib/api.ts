@@ -331,11 +331,27 @@ export const PLAYER_NAME_ALIASES: { [raw: string]: string } = {
   "”R. Jiménez": "Raúl Jiménez",
 };
 
+// Strip diacritics for accent-insensitive comparison
+function stripAccents(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+// Resolve any abbreviated or accent-variant name to the canonical full name.
+// Tries exact match first, then accent-insensitive (handles FIFA API returning "MBAPPE" vs "MBAPPÉ").
+export function normalizePlayerAlias(raw: string): string {
+  if (PLAYER_NAME_ALIASES[raw]) return PLAYER_NAME_ALIASES[raw];
+  const rawLow = stripAccents(raw.toLowerCase());
+  for (const [key, value] of Object.entries(PLAYER_NAME_ALIASES)) {
+    if (stripAccents(key.toLowerCase()) === rawLow) return value;
+  }
+  return raw;
+}
+
 // Helper: extract player name from scorer string
 function extractName(scorerStr: string): string {
   const nameMatch = scorerStr.match(/^(.+?)\s+\d+/);
   const name = nameMatch ? nameMatch[1].trim() : scorerStr.trim();
-  return PLAYER_NAME_ALIASES[name] || name;
+  return normalizePlayerAlias(name);
 }
 
 // Helper: extract minute from scorer string (e.g. "Messi 67'" → 67)

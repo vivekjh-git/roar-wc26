@@ -4,7 +4,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Game, Team, Stadium } from "@/lib/api";
-import { parseScorers, PLAYER_NAME_ALIASES } from "@/lib/api";
+import { parseScorers, normalizePlayerAlias } from "@/lib/api";
 import { formatMatchDateNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate, parseMatchDate } from "@/lib/date-utils";
 import { generateLiveBulletins } from "@/lib/news-utils";
 import { format, addDays } from "date-fns";
@@ -593,10 +593,23 @@ function MatchTimeline({
     window.setTimeout(() => { programmaticScrollRef.current = false; }, 700);
   };
 
+  const activeLiveMinute = useMemo(() => {
+    if (!isLive) return null;
+    if (currentMinute != null) return currentMinute;
+    if (events && events.length > 0) {
+      const latestMin = events[0].minute;
+      if (latestMin) {
+        const parsed = parseInt(latestMin, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    }
+    return null;
+  }, [isLive, currentMinute, events]);
+
   useEffect(() => {
     if (!expanded || !matched || isPending || !canvasWidth) return;
-    if (isLive && currentMinute != null && !userScrolledRef.current) {
-      scrollToMinute(currentMinute);
+    if (isLive && activeLiveMinute != null && !userScrolledRef.current) {
+      scrollToMinute(activeLiveMinute);
     } else if (isFinished && !hasFinishedScrolledRef.current) {
       hasFinishedScrolledRef.current = true;
       const el = scrollRef.current;
@@ -607,18 +620,18 @@ function MatchTimeline({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expanded, matched, isPending, isLive, isFinished, currentMinute, canvasWidth]);
+  }, [expanded, matched, isPending, isLive, isFinished, activeLiveMinute, canvasWidth]);
 
   const handleScroll = () => {
     if (programmaticScrollRef.current) return;
     userScrolledRef.current = true;
-    if (isLive) setShowJumpToLive(true);
+    if (isLive && activeLiveMinute != null) setShowJumpToLive(true);
   };
 
   const jumpToLive = () => {
     userScrolledRef.current = false;
     setShowJumpToLive(false);
-    if (currentMinute != null) scrollToMinute(currentMinute);
+    if (activeLiveMinute != null) scrollToMinute(activeLiveMinute);
   };
 
   const toggleExpanded = () => {
@@ -1458,7 +1471,7 @@ function LineupPitch({
         const pName = player.PlayerName?.[0]?.Description || player.ShortName?.[0]?.Description || "Player";
         const cleanName = cleanPlayerName(pName);
         // Normalize abbreviated FIFA names to full names for consistent lookups
-        const normalizedName = PLAYER_NAME_ALIASES[cleanName] || cleanName;
+        const normalizedName = normalizePlayerAlias(cleanName);
         const rating = getPlayerMatchRating(normalizedName, matchId);
         const ratingBg = rating >= 7.5 ? "bg-green-500 text-white" : rating >= 6.5 ? "bg-yellow-500 text-black" : "bg-orange-500 text-white";
 
@@ -1896,22 +1909,6 @@ function FeaturedLiveCard({
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
-  // Ball position: base from most recent event, with a small drift every 10 s during play.
-  // Stops drifting at half-time so the ball parks at centre circle.
-  const [ballDrift, setBallDrift] = useState({ x: 0, y: 0 });
-  useEffect(() => {
-    if (!isLive || stageTag === "HT") {
-      const timer = setTimeout(() => {
-        setBallDrift({ x: 0, y: 0 });
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-    const interval = setInterval(() => {
-      setBallDrift({ x: Math.round(Math.random() * 30 - 15), y: Math.round(Math.random() * 20 - 10) });
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [isLive, stageTag]);
-
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   useEffect(() => {
     if (!isLive || stageTag === "HT") {
@@ -1946,14 +1943,11 @@ function FeaturedLiveCard({
     return `${minStr}:${secStr}`;
   }, [liveMatchMinute, elapsedSeconds]);
 
+  // Ball position: driven by the latest commentary event only (goal, card, sub, etc.).
   const ballPos = useMemo(() => {
     if (!isLive || stageTag === "HT") return { x: 0, y: 0 };
-    const base = eventToBallPos(realFeed[0]);
-    return {
-      x: Math.max(-100, Math.min(100, base.x + ballDrift.x)),
-      y: Math.max(-43, Math.min(43, base.y + ballDrift.y)),
-    };
-  }, [realFeed, stageTag, ballDrift, isLive]);
+    return eventToBallPos(realFeed[0]);
+  }, [realFeed, stageTag, isLive]);
 
   const commentary = fifaData?.matched
     ? ""

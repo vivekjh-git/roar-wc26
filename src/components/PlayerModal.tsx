@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Team, Game } from "@/lib/api";
-import { parseScorers, PLAYER_NAME_ALIASES } from "@/lib/api";
-import { formatMatchDateNPT, formatTimeNPT } from "@/lib/date-utils";
+import { parseScorers, normalizePlayerAlias } from "@/lib/api";
+import { formatMatchDateNPT } from "@/lib/date-utils";
 import CachedPlayerImage from "./CachedPlayerImage";
 import { getPlayerFifaRating, getPlayerTournamentRating } from "@/lib/player-ratings";
 
@@ -28,7 +28,7 @@ interface MatchScoredInfo {
 
 export default function PlayerModal({ playerName: rawPlayerName, teamId, games, teams, onClose }: PlayerModalProps) {
   // Normalize abbreviated FIFA names (e.g. "K. Mbappé") to full names ("Kylian Mbappé")
-  const playerName = PLAYER_NAME_ALIASES[rawPlayerName] || rawPlayerName;
+  const playerName = normalizePlayerAlias(rawPlayerName);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,13 +72,6 @@ export default function PlayerModal({ playerName: rawPlayerName, teamId, games, 
     for (const s of parsed) {
       if (s.toLowerCase().includes("(og)")) continue;
       
-      // Extract name to match normalized name
-      const nameMatch = s.match(/^(.+?)\s+\d+/);
-      const extractedRawName = nameMatch ? nameMatch[1].trim() : s.trim();
-      
-      // Let's use the exact normalization we added to api.ts or verify against the playerName
-      // Since playerName is already normalized, and parseScorers uses the same extractName/normalization, 
-      // let's do a standard check (e.g. if name matches after normalization)
       const normalizedScorer = extractNameForCompare(s);
       
       if (normalizedScorer.toLowerCase() === playerName.toLowerCase()) {
@@ -117,7 +110,7 @@ export default function PlayerModal({ playerName: rawPlayerName, teamId, games, 
   function extractNameForCompare(scorerStr: string): string {
     const nameMatch = scorerStr.match(/^(.+?)\s+\d+/);
     const name = nameMatch ? nameMatch[1].trim() : scorerStr.trim();
-    return PLAYER_NAME_ALIASES[name] || name;
+    return normalizePlayerAlias(name);
   }
 
   // Key Contributor Score: (goals - penalties) * 3 + penalties * 2
