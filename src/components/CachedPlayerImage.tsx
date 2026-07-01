@@ -64,7 +64,7 @@ export default function CachedPlayerImage({ playerName, flag, teamName, primaryS
         alt={playerName}
         onError={handleError}
         onLoad={handleLoad}
-        className={`${className || ""} ${needsZoom ? "object-top scale-[2.5] origin-[50%_15%]" : ""}`}
+        className={`${className || ""} ${needsZoom ? "object-top scale-[2.8] translate-y-2 origin-top" : ""}`}
         {...props}
       />
       {flag && (
