@@ -2159,10 +2159,24 @@ function FeaturedLiveCard({
                   </div>
                 )}
 
-                <div className="flex sm:grid sm:grid-cols-2 gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide w-full pb-2 px-1">
+                <div id="lineups-scroll-container" className="flex sm:grid sm:grid-cols-2 gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide w-full pb-2 px-1">
                   {/* Left (Home) Team */}
                   {lineups.home ? (
-                    <div className="w-[88vw] sm:w-auto shrink-0 snap-center space-y-2">
+                    <div className="w-[88vw] sm:w-auto shrink-0 snap-center space-y-2 relative">
+                      {lineups.away && (
+                        <button
+                          onClick={() => {
+                            document.getElementById('lineups-scroll-container')?.scrollTo({
+                              left: window.innerWidth * 0.9,
+                              behavior: 'smooth'
+                            });
+                          }}
+                          className="absolute top-1/3 -right-2 -translate-y-1/2 bg-black/75 hover:bg-black/90 active:scale-95 border border-white/15 rounded-l-full py-1.5 pl-2.5 pr-1.5 flex items-center gap-1 z-30 text-[9px] font-black text-white cursor-pointer select-none sm:hidden shadow-[0_0_10px_rgba(0,0,0,0.5)] transition-all"
+                        >
+                          {awayTeam?.flag && <img src={awayTeam.flag} alt="" className="w-4.5 h-3.5 object-cover rounded-[1px]" />}
+                          <span className="text-[10px] text-yellow-400 font-extrabold">➔</span>
+                        </button>
+                      )}
                       <div className="text-center bg-black/20 p-2 rounded-lg border border-white/5">
                         <div className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider flex items-center justify-center gap-1.5">
                           {homeTeam?.flag && <img src={homeTeam.flag} alt="" className="w-4 h-3 object-cover rounded-sm" />}
@@ -2209,7 +2223,21 @@ function FeaturedLiveCard({
 
                   {/* Right (Away) Team */}
                   {lineups.away ? (
-                    <div className="w-[88vw] sm:w-auto shrink-0 snap-center space-y-2">
+                    <div className="w-[88vw] sm:w-auto shrink-0 snap-center space-y-2 relative">
+                      {lineups.home && (
+                        <button
+                          onClick={() => {
+                            document.getElementById('lineups-scroll-container')?.scrollTo({
+                              left: 0,
+                              behavior: 'smooth'
+                            });
+                          }}
+                          className="absolute top-1/3 -left-2 -translate-y-1/2 bg-black/75 hover:bg-black/90 active:scale-95 border border-white/15 rounded-r-full py-1.5 pl-1.5 pr-2.5 flex items-center gap-1 z-30 text-[9px] font-black text-white cursor-pointer select-none sm:hidden shadow-[0_0_10px_rgba(0,0,0,0.5)] transition-all"
+                        >
+                          <span className="text-[10px] text-yellow-400 font-extrabold rotate-180 inline-block">➔</span>
+                          {homeTeam?.flag && <img src={homeTeam.flag} alt="" className="w-4.5 h-3.5 object-cover rounded-[1px]" />}
+                        </button>
+                      )}
                       <div className="text-center bg-black/20 p-2 rounded-lg border border-white/5">
                         <div className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider flex items-center justify-center gap-1.5">
                           {awayTeam?.flag && <img src={awayTeam.flag} alt="" className="w-4 h-3 object-cover rounded-sm" />}
