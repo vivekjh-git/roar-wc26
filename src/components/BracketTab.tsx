@@ -1516,7 +1516,7 @@ function LineupPitch({
             {/* Player Head Container */}
             <div className="relative">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/80 group-hover:border-yellow-400 group-hover:scale-105 transition-all shadow-md overflow-hidden bg-black/40 flex items-center justify-center">
-                <CachedPlayerImage playerName={normalizedName} primarySrc={player.PlayerPicture?.PictureUrl} className="w-full h-full object-cover scale-[2.5] origin-[50%_15%]" />
+                <CachedPlayerImage playerName={normalizedName} primarySrc={player.PlayerPicture?.PictureUrl} className="w-full h-full object-cover" />
               </div>
               {subbedOn.has(player.IdPlayer) && (
                 <span className="absolute -top-1 -right-1 flex items-center gap-0.5 bg-green-600 text-white text-[6px] font-black px-1 py-0.5 rounded-full border border-black/30 shadow-md leading-none z-20">

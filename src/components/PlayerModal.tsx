@@ -172,7 +172,7 @@ export default function PlayerModal({ playerName: rawPlayerName, teamId, games, 
                 <div className="w-full h-full rounded-full overflow-hidden border border-yellow-500/30 shadow-[0_0_15px_rgba(255,94,0,0.15)] bg-black/40">
                   <CachedPlayerImage
                     playerName={playerName}
-                    className="w-full h-full object-cover scale-[2.5] origin-[50%_15%]"
+                    className="w-full h-full object-cover"
                   />
                 </div>
                 {playerTeam?.flag && (

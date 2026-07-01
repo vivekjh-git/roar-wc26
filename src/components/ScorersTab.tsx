@@ -280,7 +280,7 @@ function PlayerAvatar({ name, flag, teamName }: { name: string, flag: string, te
         playerName={name}
         flag={flag}
         teamName={teamName}
-        className="w-full h-full object-cover scale-[2.5] origin-[50%_15%]"
+        className="w-full h-full object-cover"
       />
     </div>
   );

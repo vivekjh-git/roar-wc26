@@ -51,6 +51,12 @@ export default function CachedPlayerImage({ playerName, flag, teamName, primaryS
     }
   };
 
+  const isKnownHeadshot = currentSrc?.includes('futbin.com') || 
+                          currentSrc?.includes('espncdn.com') || 
+                          currentSrc?.includes('fifaindex.com') || 
+                          currentSrc?.includes('dicebear.com');
+  const needsZoom = currentSrc && !isKnownHeadshot;
+
   return (
     <div className="relative w-full h-full flex items-center justify-center">
       <img
@@ -58,7 +64,7 @@ export default function CachedPlayerImage({ playerName, flag, teamName, primaryS
         alt={playerName}
         onError={handleError}
         onLoad={handleLoad}
-        className={className}
+        className={`${className || ""} ${needsZoom ? "object-top scale-[2.5] origin-[50%_15%]" : ""}`}
         {...props}
       />
       {flag && (
