@@ -266,7 +266,7 @@ export function hasRealFifaRating(name: string): boolean {
 export function stringHashCode(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    hash = (str.codePointAt(i) ?? 0) + ((hash << 5) - hash);
   }
   return Math.abs(hash);
 }
@@ -275,11 +275,12 @@ export function stringHashCode(str: string): number {
 // Never generates a fake hash-based number.
 export function getPlayerFifaRating(name: string): number | null {
   const cleaned = name.trim();
-  if (FIFA_RATINGS_LOOKUP[cleaned] !== undefined) return FIFA_RATINGS_LOOKUP[cleaned]!;
+  if (FIFA_RATINGS_LOOKUP[cleaned] !== undefined) return FIFA_RATINGS_LOOKUP[cleaned];
   const key = Object.keys(FIFA_RATINGS_LOOKUP).find(
     k => k.toLowerCase() === cleaned.toLowerCase()
   );
-  return key !== undefined ? FIFA_RATINGS_LOOKUP[key]! : null;
+  if (key === undefined) return null;
+  return FIFA_RATINGS_LOOKUP[key];
 }
 
 // Tournament rating — hash-based, kept for internal use only.
@@ -290,5 +291,5 @@ export function getPlayerTournamentRating(name: string, totalGoals = 0, _matches
   if (totalGoals > 0) {
     baseRating += Math.min(2.5, totalGoals * 0.5);
   }
-  return parseFloat(Math.max(6, Math.min(9.8, baseRating)).toFixed(2));
+  return Number.parseFloat(Math.max(6, Math.min(9.8, baseRating)).toFixed(2));
 }

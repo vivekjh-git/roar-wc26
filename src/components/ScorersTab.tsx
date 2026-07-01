@@ -12,7 +12,7 @@ import type {
   CleanSheetEntry, OwnGoalEntry, PenaltyGoalEntry 
 } from "@/lib/api";
 import { getPlayerImageUrl } from "@/lib/player-images";
-import { getPlayerFifaRating, getPlayerTournamentRating } from "@/lib/player-ratings";
+import { getPlayerFifaRating } from "@/lib/player-ratings";
 import { GoalIcon, AttemptIcon, InfoIcon, RedCardIcon, CornerIcon } from "./FlatIcons";
 
 interface ScorersTabProps {

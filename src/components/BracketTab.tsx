@@ -3,6 +3,7 @@
 
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import MatchDetailsModal from "./MatchDetailsModal";
 import type { Game, Team, Stadium } from "@/lib/api";
 import { parseScorers, normalizePlayerAlias } from "@/lib/api";
 import { formatMatchDateNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate, parseMatchDate, getMatchTimeWindowNPT } from "@/lib/date-utils";
@@ -139,32 +140,33 @@ function TeamRow({
     : teamName;
 
   return (
-    <button
-      onClick={() => team && onTeamClick(team)}
-      className={`flex items-center justify-between w-full text-left transition-opacity ${isFinished && !isWinner ? 'opacity-50' : 'opacity-100 hover:opacity-85'}`}
-    >
-      <div className="flex items-center gap-1 min-w-0">
+    <div className={`flex items-center justify-between w-full text-left transition-opacity ${isFinished && !isWinner ? 'opacity-50' : 'opacity-100 hover:opacity-85'}`}>
+      <button 
+        type="button"
+        onClick={(e) => { e.stopPropagation(); team && onTeamClick(team); }}
+        className="flex items-center gap-1 min-w-0 flex-1 hover:bg-white/5 rounded-sm px-0.5 -ml-0.5 transition-colors"
+      >
         {teamFlag ? (
           <img src={teamFlag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shadow-sm flex-shrink-0" />
         ) : (
-          <div className="w-3.5 h-2.5 bg-gray-800 rounded-[1px] flex-shrink-0 flex items-center justify-center text-[5px] text-gray-600 font-bold">?</div>
+          <div className="w-3.5 h-2.5 bg-gray-800 rounded-[1px] flex-shrink-0 flex items-center justify-center text-[6px] text-gray-600 font-bold">?</div>
         )}
-        <span className={`text-[8px] font-black uppercase tracking-wider truncate flex items-center gap-1 ${isWinner ? 'text-yellow-400 font-black' : 'text-gray-300'}`}>
+        <span className={`text-[9px] font-black uppercase tracking-wider truncate flex items-center gap-1 ${isWinner ? 'text-green-400 font-black' : 'text-gray-300'}`}>
           <span>{cleanName}</span>
           {isWinner && (
-            <img src="/tiger.png" className="w-2.5 h-2.5 rounded-full object-cover border border-yellow-400/50 shadow flex-shrink-0" alt="Winner" />
+            <img src="/tiger.png" className="w-2.5 h-2.5 rounded-full object-cover border border-green-400/50 shadow flex-shrink-0" alt="Winner" />
           )}
         </span>
-      </div>
+      </button>
       {(isFinished || isLive) ? (
         <div className="flex items-center gap-0.5 flex-shrink-0">
-          <span className={`text-[8px] font-black px-1 rounded ${isWinner ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-400'}`}>{score}</span>
+          <span className={`text-[9px] font-black px-1 rounded ${isWinner ? 'text-green-400 bg-green-400/10' : 'text-gray-400'}`}>{score}</span>
           {penaltyScore !== undefined && (
-            <span className="text-[6px] text-orange-400 font-bold leading-none">(P{penaltyScore})</span>
+            <span className="text-[7px] text-orange-400 font-bold leading-none">(P{penaltyScore})</span>
           )}
         </div>
       ) : null}
-    </button>
+    </div>
   );
 }
 
@@ -173,12 +175,14 @@ function BracketNode({
   teamMap,
   gameMap,
   onTeamClick,
+  onMatchClick,
   label,
 }: Readonly<{
   gameId: string;
   teamMap: { [key: string]: Team };
   gameMap: { [key: string]: Game };
   onTeamClick: (team: Team) => void;
+  onMatchClick?: (game: Game) => void;
   label?: string;
 }>) {
   const game = gameMap[gameId];
@@ -210,8 +214,12 @@ function BracketNode({
 
   return (
     <div className="relative group">
-      <div className={`w-[116px] bg-[#0c101d]/90 border rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:border-yellow-400/40 hover:shadow-yellow-400/5 ${isLive ? (isET ? 'border-orange-500/50 shadow-[0_0_8px_rgba(249,115,22,0.15)] bg-orange-500/5' : 'border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.15)] bg-red-500/5') : 'border-white/10 bg-black/40'}`}>
-        <div className="bg-black/50 px-1.5 py-0.5 flex justify-between items-center text-[7px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
+      <button 
+        type="button" 
+        onClick={() => onMatchClick?.(game)} 
+        className={`w-[116px] text-left bg-[#0c101d]/90 border rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:border-yellow-400/40 hover:shadow-yellow-400/5 ${isLive ? (isET ? 'border-orange-500/50 shadow-[0_0_8px_rgba(249,115,22,0.15)] bg-orange-500/5' : 'border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.15)] bg-red-500/5') : 'border-white/10 bg-black/40'}`}
+      >
+        <div className="bg-black/50 px-1.5 py-0.5 flex justify-between items-center text-[8px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
           <span>M{game.id}</span>
           {isLive ? (
             <span className={`font-bold animate-pulse flex items-center gap-0.5 ${isET ? 'text-orange-400' : 'text-red-400'}`}>
@@ -219,7 +227,7 @@ function BracketNode({
               {isET ? 'ET' : 'LIVE'}
             </span>
           ) : bHasPen && finished ? (
-            <span className="text-orange-400 font-bold text-[6px]">AET</span>
+            <span className="text-orange-400 font-bold text-[7px]">AET</span>
           ) : (
             <span className="truncate max-w-[50px]">{label}</span>
           )}
@@ -229,11 +237,11 @@ function BracketNode({
           <TeamRow team={awayTeam} teamName={awayName} teamFlag={awayTeam?.flag} score={as_} penaltyScore={bHasPen ? bap : undefined} isWinner={awayWin} isFinished={finished} isLive={isLive} onTeamClick={onTeamClick} />
         </div>
         {!finished && (
-           <div className={`bg-black/30 px-1 py-0.5 text-[7px] font-bold uppercase tracking-widest text-center border-t border-white/5 ${isLive ? (isET ? 'text-orange-400' : 'text-red-400') : 'text-gray-500'}`}>
+           <div className={`bg-black/30 px-1 py-0.5 text-[8px] font-bold uppercase tracking-widest text-center border-t border-white/5 ${isLive ? (isET ? 'text-orange-400' : 'text-red-400') : 'text-gray-500'}`}>
             {isLive ? game.time_elapsed.replace(/live/i, '').trim() : dateTime}
           </div>
         )}
-      </div>
+      </button>
     </div>
   );
 }
@@ -1220,11 +1228,13 @@ function MatchDetailsView({
                 <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Red Cards</span>
                 <span className="w-12 text-right font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : (real?.away.redCards ?? "N/A")}</span>
               </div>
-              <div className="flex items-center justify-between border-t border-white/5 pt-2">
-                <span className="w-12 text-left font-black text-gray-300 text-sm sm:text-base">{isPending ? "-" : possession?.Home ? `${possession.Home}%` : "50%"}</span>
-                <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Possession</span>
-                <span className="w-12 text-right font-black text-gray-300 text-sm sm:text-base">{isPending ? "-" : possession?.Away ? `${possession.Away}%` : "50%"}</span>
-              </div>
+              {possession?.Home != null && possession?.Away != null && (
+                <div className="flex items-center justify-between border-t border-white/5 pt-2">
+                  <span className="w-12 text-left font-black text-gray-300 text-sm sm:text-base">{`${possession.Home}%`}</span>
+                  <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Possession</span>
+                  <span className="w-12 text-right font-black text-gray-300 text-sm sm:text-base">{`${possession.Away}%`}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1305,6 +1315,7 @@ interface FifaPlayerData {
   Status: number;
   Position?: number;
   IdPlayer: string;
+  PlayerPicture?: { PictureUrl?: string };
 }
 
 interface FifaTeamData {
@@ -1312,9 +1323,11 @@ interface FifaTeamData {
   Tactics?: string;
   Coaches?: Array<{ Role: number; Name: Array<{ Description: string }> }>;
   Substitutions?: Array<{
+    IdPlayerOff?: string;
+    IdPlayerOn?: string;
     PlayerOnName?: Array<{ Description: string }>;
     PlayerOffName?: Array<{ Description: string }>;
-    Minute?: number;
+    Minute?: string;
   }>;
 }
 
@@ -1323,20 +1336,43 @@ function LineupPitch({
   isHome,
   team,
   onPlayerClick,
+  substitutions,
+  subsThroughMinute,
 }: {
   players: FifaPlayerData[];
   isHome: boolean;
   team: Team;
   onPlayerClick?: (name: string, teamId: string) => void;
+  substitutions?: FifaTeamData["Substitutions"];
+  subsThroughMinute?: number;
 }) {
-  // 1. Filter starting players (Status === 1)
-  const starters = players.filter(p => p.Status === 1);
-  
-  // 2. Group starters by position: 0=GK, 1=DEF, 2=MID, 3/4=FWD
-  const gks = starters.filter(p => p.Position === 0);
-  const defs = starters.filter(p => p.Position === 1);
-  const mids = starters.filter(p => p.Position === 2);
-  const fwds = starters.filter(p => p.Position === 3 || p.Position === 4);
+  const parseSubMinute = (m?: string) => {
+    const match = m ? /\d+/.exec(m) : null;
+    return match ? Number.parseInt(match[0], 10) : 0;
+  };
+
+  // Effective on-field XI: start from the named XI (Status===1), then apply each substitution
+  // whose minute has already passed — swapping the outgoing player for the incoming one in the
+  // same formation slot. subbedOn records who came on (and when) for the on-pitch badge.
+  const effective = players.filter(p => p.Status === 1).map(p => ({ ...p }));
+  const subbedOn = new Map<string, string>();
+  const applyThrough = subsThroughMinute ?? 0;
+  const orderedSubs = [...(substitutions ?? [])].sort((a, b) => parseSubMinute(a.Minute) - parseSubMinute(b.Minute));
+  for (const sub of orderedSubs) {
+    if (!sub.IdPlayerOff || !sub.IdPlayerOn || parseSubMinute(sub.Minute) > applyThrough) continue;
+    const slot = effective.findIndex(p => p.IdPlayer === sub.IdPlayerOff);
+    const onPlayer = players.find(p => p.IdPlayer === sub.IdPlayerOn);
+    if (slot === -1 || !onPlayer) continue;
+    // Preserve the outgoing player's position so the formation slot stays intact.
+    effective[slot] = { ...onPlayer, Position: effective[slot].Position };
+    subbedOn.set(onPlayer.IdPlayer, sub.Minute ?? "");
+  }
+
+  // Group the effective XI by position: 0=GK, 1=DEF, 2=MID, 3/4=FWD
+  const gks = effective.filter(p => p.Position === 0);
+  const defs = effective.filter(p => p.Position === 1);
+  const mids = effective.filter(p => p.Position === 2);
+  const fwds = effective.filter(p => p.Position === 3 || p.Position === 4);
   
   const layoutPlayers: Array<{ player: FifaPlayerData; x: number; y: number }> = [];
   
@@ -1421,7 +1457,7 @@ function LineupPitch({
   });
 
   const mappedIds = new Set(layoutPlayers.map(lp => lp.player.IdPlayer));
-  const unmappedStarters = starters.filter(p => !mappedIds.has(p.IdPlayer));
+  const unmappedStarters = effective.filter(p => !mappedIds.has(p.IdPlayer));
   if (unmappedStarters.length > 0) {
     unmappedStarters.forEach((p, i) => {
       layoutPlayers.push({ player: p, x: 20 + (60 / Math.max(1, unmappedStarters.length - 1)) * i, y: 35 });
@@ -1480,10 +1516,15 @@ function LineupPitch({
             {/* Player Head Container */}
             <div className="relative">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/80 group-hover:border-yellow-400 group-hover:scale-105 transition-all shadow-md overflow-hidden bg-black/40 flex items-center justify-center">
-                <CachedPlayerImage playerName={normalizedName} className="w-full h-full object-cover" />
+                <CachedPlayerImage playerName={normalizedName} primarySrc={player.PlayerPicture?.PictureUrl} className="w-full h-full object-cover" />
               </div>
+              {subbedOn.has(player.IdPlayer) && (
+                <span className="absolute -top-1 -right-1 flex items-center gap-0.5 bg-green-600 text-white text-[6px] font-black px-1 py-0.5 rounded-full border border-black/30 shadow-md leading-none z-20">
+                  ▲{subbedOn.get(player.IdPlayer)}
+                </span>
+              )}
             </div>
-            
+
             {/* Player Label */}
             <div className="mt-1 bg-black/75 px-1.5 py-0.5 rounded text-[7px] font-bold text-gray-200 border border-white/5 truncate max-w-[55px] sm:max-w-[70px] text-center shadow">
               <span className="text-yellow-400 font-mono mr-0.5">{player.ShirtNumber}</span> {cleanName}
@@ -1604,10 +1645,6 @@ function FeaturedLiveCard({
   const [showDetails, setShowDetails] = useState(false);
   const [showTracker, setShowTracker] = useState(false);
   const [showLineup, setShowLineup] = useState(false);
-  const [fallbackLineups, setFallbackLineups] = useState<{
-    home: { players: FifaPlayerData[]; tactics: string; coach: string; isPrevious: boolean } | null;
-    away: { players: FifaPlayerData[]; tactics: string; coach: string; isPrevious: boolean } | null;
-  } | null>(null);
 
   // Reset expanded states when active status changes to false (swiped away)
   const [prevIsActive, setPrevIsActive] = useState(isActive);
@@ -1626,7 +1663,6 @@ function FeaturedLiveCard({
     setShowDetails(false);
     setShowTracker(false);
     setShowLineup(false);
-    setFallbackLineups(null);
   }
 
   const announcedRef = useRef<Set<string>>(new Set());
@@ -1754,118 +1790,22 @@ function FeaturedLiveCard({
           players: fifaData.homeTeam.Players,
           tactics: fifaData.homeTeam.Tactics || "4-3-3",
           coach: getCoachName(fifaData.homeTeam, homeTeam.fifa_code),
-          isPrevious: false
+          substitutions: fifaData.homeTeam.Substitutions,
         },
         away: {
           players: fifaData.awayTeam.Players,
           tactics: fifaData.awayTeam.Tactics || "4-3-3",
           coach: getCoachName(fifaData.awayTeam, awayTeam.fifa_code),
-          isPrevious: false
+          substitutions: fifaData.awayTeam.Substitutions,
         }
       };
     }
     return null;
   }, [fifaData, homeTeam, awayTeam]);
 
-  // 2. Load fallback lineups from previous finished matches if live data is not yet available
-  useEffect(() => {
-    if (!homeTeam || !awayTeam) return;
-    if (liveLineups) return; // Already have live data
-
-    function getCoachName(team: FifaTeamData | null | undefined, fallbackFifaCode?: string): string {
-      if (team?.Coaches && team.Coaches.length > 0) {
-        const headCoach = team.Coaches.find((c) => c.Role === 0);
-        const nameObj = headCoach?.Name?.[0] || team.Coaches[0]?.Name?.[0];
-        if (nameObj?.Description) return nameObj.Description;
-      }
-      if (fallbackFifaCode && COACH_LOOKUP[fallbackFifaCode]) {
-        return COACH_LOOKUP[fallbackFifaCode];
-      }
-      return "Not available";
-    }
-
-    const homePrevGames = allGames.filter(g =>
-      g.finished === "TRUE" &&
-      g.id !== game.id &&
-      (g.home_team_id === game.home_team_id || g.away_team_id === game.home_team_id)
-    ).sort((a, b) => parseInt(b.id) - parseInt(a.id));
-
-    const awayPrevGames = allGames.filter(g =>
-      g.finished === "TRUE" &&
-      g.id !== game.id &&
-      (g.home_team_id === game.away_team_id || g.away_team_id === game.away_team_id)
-    ).sort((a, b) => parseInt(b.id) - parseInt(a.id));
-
-    let homeLineup: { players: FifaPlayerData[]; tactics: string; coach: string; isPrevious: boolean } | null = null;
-    let awayLineup: { players: FifaPlayerData[]; tactics: string; coach: string; isPrevious: boolean } | null = null;
-    const promises: Promise<void>[] = [];
-
-    if (homePrevGames.length > 0) {
-      const hG = homePrevGames[0];
-      const prevHomeTeam = teamMap[hG.home_team_id];
-      const prevAwayTeam = teamMap[hG.away_team_id];
-      if (prevHomeTeam?.fifa_code && prevAwayTeam?.fifa_code) {
-        promises.push(
-          fetch(`/api/wc/fifa-match?home=${prevHomeTeam.fifa_code}&away=${prevAwayTeam.fifa_code}`)
-            .then(res => res.json())
-            .then(data => {
-              if (data?.matched) {
-                const isPrevHome = hG.home_team_id === game.home_team_id;
-                const teamData = isPrevHome ? data.homeTeam : data.awayTeam;
-                if (teamData?.Players && teamData.Players.length > 0) {
-                  homeLineup = {
-                    players: teamData.Players,
-                    tactics: teamData.Tactics || "4-3-3",
-                    coach: getCoachName(teamData, homeTeam.fifa_code),
-                    isPrevious: true
-                  };
-                }
-              }
-            })
-            .catch(err => console.error("Error fetching home prev lineup:", err))
-        );
-      }
-    }
-
-    if (awayPrevGames.length > 0) {
-      const aG = awayPrevGames[0];
-      const prevHomeTeam = teamMap[aG.home_team_id];
-      const prevAwayTeam = teamMap[aG.away_team_id];
-      if (prevHomeTeam?.fifa_code && prevAwayTeam?.fifa_code) {
-        promises.push(
-          fetch(`/api/wc/fifa-match?home=${prevHomeTeam.fifa_code}&away=${prevAwayTeam.fifa_code}`)
-            .then(res => res.json())
-            .then(data => {
-              if (data?.matched) {
-                const isPrevAway = aG.away_team_id === game.away_team_id;
-                const teamData = isPrevAway ? data.awayTeam : data.homeTeam;
-                if (teamData?.Players && teamData.Players.length > 0) {
-                  awayLineup = {
-                    players: teamData.Players,
-                    tactics: teamData.Tactics || "4-3-3",
-                    coach: getCoachName(teamData, awayTeam.fifa_code),
-                    isPrevious: true
-                  };
-                }
-              }
-            })
-            .catch(err => console.error("Error fetching away prev lineup:", err))
-        );
-      }
-    }
-
-    Promise.all(promises).then(() => {
-      setFallbackLineups({
-        home: homeLineup,
-        away: awayLineup
-      });
-    });
-  }, [liveLineups, game.id, homeTeam?.fifa_code, awayTeam?.fifa_code, allGames, teamMap]);
-
-  // Combine live and fallback lineups
-  const lineups = liveLineups || fallbackLineups;
-  // If we don't have live lineups AND haven't loaded fallbackLineups yet, it's loading
-  const lineupsLoading = !liveLineups && !fallbackLineups;
+  const lineups = liveLineups;
+  // Loading only during the very first fetch; once fifaData is present but unmatched, we hide.
+  const lineupsLoading = !liveLineups && fifaData === null;
 
   const realFeed = useMemo<CommentaryEntry[]>(
     () => (fifaData?.matched && fifaData.events ? [...fifaData.events].reverse() : []),
@@ -1900,6 +1840,12 @@ function FeaturedLiveCard({
     const m = game.time_elapsed.replace(/live/i, '').trim().match(/(\d+)/);
     return m ? Number.parseInt(m[1], 10) : null;
   })() : null;
+
+  // Apply substitutions on the pitch up to this minute: all of them once finished, up to the
+  // live clock while playing, none before kickoff.
+  let subsThroughMinute = 0;
+  if (finished) subsThroughMinute = 999;
+  else if (isLive) subsThroughMinute = currentMinute ?? 0;
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
   const timeWindowNPT = getMatchTimeWindowNPT(game.local_date, game.stadium_id, isLive, finished, hasPenalties);
@@ -2119,7 +2065,9 @@ function FeaturedLiveCard({
         homeCode={homeTeam?.fifa_code || homeName} awayCode={awayTeam?.fifa_code || awayName}
       />
 
-      {/* Expandable Lineup Accordion */}
+      {/* Expandable Lineup Accordion — only shown when a real FIFA lineup exists (or is loading) */}
+      {(lineupsLoading || lineups?.home) && (
+      <>
       <div className="flex justify-center mt-3 pt-3 border-t border-white/5 relative z-10">
         <button
           onClick={() => setShowLineup(!showLineup)}
@@ -2149,12 +2097,6 @@ function FeaturedLiveCard({
               </div>
             ) : (
               <div className="space-y-4">
-                {(lineups.home?.isPrevious || lineups.away?.isPrevious) && (
-                  <div className="text-center text-[8px] sm:text-[9px] text-yellow-400 font-extrabold uppercase tracking-widest bg-yellow-400/10 border border-yellow-400/20 px-3 py-1.5 rounded-lg">
-                    ⚠️ Lineup not yet confirmed — showing previously played
-                  </div>
-                )}
-
                 <div id="lineups-scroll-container" className="flex sm:grid sm:grid-cols-2 gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide w-full pb-2 px-1">
                   {/* Left (Home) Team */}
                   {lineups.home ? (
@@ -2187,6 +2129,8 @@ function FeaturedLiveCard({
                         isHome={true}
                         team={homeTeam}
                         onPlayerClick={onPlayerClick}
+                        substitutions={lineups.home.substitutions}
+                        subsThroughMinute={subsThroughMinute}
                       />
                       {/* Substitutes */}
                       <div className="bg-black/35 rounded-xl p-2.5 border border-white/5 space-y-1">
@@ -2247,6 +2191,8 @@ function FeaturedLiveCard({
                         isHome={false}
                         team={awayTeam}
                         onPlayerClick={onPlayerClick}
+                        substitutions={lineups.away.substitutions}
+                        subsThroughMinute={subsThroughMinute}
                       />
                       {/* Substitutes */}
                       <div className="bg-black/35 rounded-xl p-2.5 border border-white/5 space-y-1">
@@ -2281,8 +2227,10 @@ function FeaturedLiveCard({
           </motion.div>
         )}
       </AnimatePresence>
+      </>
+      )}
 
-      <button 
+      <button
         onClick={() => setShowTracker(!showTracker)}
         className={`mt-4 w-full relative z-10 rounded-xl py-3 flex items-center justify-center gap-2.5 transition-all text-[10px] sm:text-xs font-black uppercase tracking-widest ${
           isLive 
@@ -2517,10 +2465,11 @@ function MatchCarouselSection({
 
 export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlayerClick }: BracketTabProps) {
   const [activeTab, setActiveTab] = useState<'previous' | 'today' | 'tomorrow' | 'upcoming'>('today');
+  const [selectedMatch, setSelectedMatch] = useState<Game | null>(null);
   const [viewType, setViewType] = useState<'tree' | 'fall'>('tree');
   const [startRound, setStartRound] = useState<'r32' | 'r16' | 'qf' | 'sf' | 'final'>('r32');
   const treeContainerRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState<'left' | 'center' | 'right'>('center');
+  const [activeSection, setActiveSection] = useState<'left' | 'center' | 'right'>('left');
 
   const scrollToBracketSection = (section: 'left' | 'center' | 'right') => {
     const el = treeContainerRef.current;
@@ -2846,6 +2795,13 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
         </div>
       </div>
 
+      {/* Logo + title */}
+      <div className="flex flex-col items-center justify-center mb-4 text-center">
+        <img src="/fifaworldcup_logo.svg" className="w-16 h-auto object-contain mb-2 select-none filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]" alt="FIFA World Cup 2026 Logo" />
+        <h2 className="text-xl font-black tracking-tight text-white uppercase gold-text">2026 Knockout Bracket</h2>
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">NPT — Nepal Standard Time</p>
+      </div>
+
       {/* 5. TREE / FALL toggle + round filter — below stats banner */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
         {/* View toggle */}
@@ -2918,12 +2874,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
             transition={{ duration: 0.25 }}
             className="w-full"
           >
-            {/* Logo + title */}
-            <div className="flex flex-col items-center justify-center mb-4 text-center">
-              <img src="/fifaworldcup_logo.svg" className="w-16 h-auto object-contain mb-2 select-none filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]" alt="FIFA World Cup 2026 Logo" />
-              <h2 className="text-xl font-black tracking-tight text-white uppercase gold-text">2026 Knockout Bracket</h2>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">NPT — Nepal Standard Time</p>
-            </div>
+            {/* Logo + title moved above */}
 
             {/* Navigation Switcher */}
             <div className="flex justify-center mb-4 px-2">
@@ -2974,14 +2925,14 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
                 {startRound === 'r32' && (
                   <>
                     <div className="flex flex-col justify-around h-full animate-fade-in">
-                      <BracketNode gameId="74" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="77" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="73" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="75" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="83" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="84" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="81" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="82" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="74" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="77" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="73" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="75" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="83" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="84" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="81" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="82" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
                     </div>
                     <ConnectorColR32ToR16 side="left" />
                   </>
@@ -2989,10 +2940,10 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
                 {(startRound === 'r32' || startRound === 'r16') && (
                   <>
                     <div className="flex flex-col justify-around h-full animate-fade-in">
-                      <BracketNode gameId="89" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                      <BracketNode gameId="90" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                      <BracketNode gameId="93" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                      <BracketNode gameId="94" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="89" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="90" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="93" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="94" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
                     </div>
                     <ConnectorColR16ToQF side="left" />
                   </>
@@ -3000,8 +2951,8 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
                 {(startRound === 'r32' || startRound === 'r16' || startRound === 'qf') && (
                   <>
                     <div className="flex flex-col justify-around h-full animate-fade-in">
-                      <BracketNode gameId="97" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
-                      <BracketNode gameId="98" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="97" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="98" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
                     </div>
                     <ConnectorColQFToSF side="left" />
                   </>
@@ -3009,7 +2960,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
                 {startRound !== 'final' && (
                   <>
                     <div className="flex flex-col justify-around h-full animate-fade-in">
-                      <BracketNode gameId="101" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="SF" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="101" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="SF" />
                     </div>
                     <ConnectorColSFToFinal side="left" />
                   </>
@@ -3019,7 +2970,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
                 <div className="flex flex-col items-center justify-center gap-6 h-full w-[180px] relative animate-fade-in">
                   <div className="text-center space-y-2">
                     <div className="text-[9px] font-black uppercase tracking-[0.2em] text-yellow-400">The Final</div>
-                    <BracketNode gameId="104" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="🏆 Final" />
+                    <BracketNode onMatchClick={setSelectedMatch} gameId="104" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="🏆 Final" />
                   </div>
                   <div className="relative flex flex-col items-center">
                     <div className="absolute inset-0 bg-[#ff5e00]/15 blur-2xl rounded-full -z-10 animate-pulse" />
@@ -3031,7 +2982,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
                   </div>
                   <div className="text-center space-y-2">
                     <div className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">3rd Place</div>
-                    <BracketNode gameId="103" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="3rd" />
+                    <BracketNode onMatchClick={setSelectedMatch} gameId="103" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="3rd" />
                   </div>
                 </div>
 
@@ -3039,7 +2990,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
                   <>
                     <ConnectorColSFToFinal side="right" />
                     <div className="flex flex-col justify-around h-full animate-fade-in">
-                      <BracketNode gameId="102" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="SF" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="102" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="SF" />
                     </div>
                   </>
                 )}
@@ -3047,8 +2998,8 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
                   <>
                     <ConnectorColQFToSF side="right" />
                     <div className="flex flex-col justify-around h-full animate-fade-in">
-                      <BracketNode gameId="99" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
-                      <BracketNode gameId="100" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="99" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="100" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="QF" />
                     </div>
                   </>
                 )}
@@ -3056,10 +3007,10 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
                   <>
                     <ConnectorColR16ToQF side="right" />
                     <div className="flex flex-col justify-around h-full animate-fade-in">
-                      <BracketNode gameId="91" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                      <BracketNode gameId="92" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                      <BracketNode gameId="95" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
-                      <BracketNode gameId="96" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="91" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="92" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="95" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="96" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R16" />
                     </div>
                   </>
                 )}
@@ -3067,14 +3018,14 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
                   <>
                     <ConnectorColR32ToR16 side="right" />
                     <div className="flex flex-col justify-around h-full animate-fade-in">
-                      <BracketNode gameId="76" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="78" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="79" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="80" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="86" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="88" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="85" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
-                      <BracketNode gameId="87" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="76" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="78" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="79" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="80" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="86" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="88" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="85" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
+                      <BracketNode onMatchClick={setSelectedMatch} gameId="87" teamMap={teamMap} gameMap={gameMap} onTeamClick={onTeamClick} label="R32" />
                     </div>
                   </>
                 )}
@@ -3142,6 +3093,15 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
           </motion.div>
         )}
       </AnimatePresence>
+
+      {selectedMatch && (
+        <MatchDetailsModal
+          game={selectedMatch}
+          teamMap={teamMap}
+          stadiumMap={stadiumMap}
+          onClose={() => setSelectedMatch(null)}
+        />
+      )}
     </div>
   );
 }
