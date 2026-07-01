@@ -92,22 +92,33 @@ export default function MatchDetailsModal({ game, teamMap, stadiumMap, onClose }
             </div>
 
             {/* Match Info */}
-            <div className="bg-white/5 rounded-xl p-3 space-y-2 border border-white/5 text-sm">
-              <div className="flex justify-between items-center">
+            <div className="bg-white/5 rounded-xl p-3 space-y-2.5 border border-white/5 text-[11px] sm:text-xs">
+              <div className="flex justify-between items-center gap-2">
                 <span className="text-gray-400">Match Number</span>
-                <span className="text-white font-bold">M{game.id}</span>
+                <span className="text-white font-bold text-right">M{game.id}</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center gap-2">
                 <span className="text-gray-400">Kickoff (NPT)</span>
-                <span className="text-white font-bold">{dateTime}</span>
+                <span className="text-white font-bold text-right">{dateTime}</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center gap-2">
                 <span className="text-gray-400">Stadium</span>
-                <span className="text-white font-bold text-right truncate max-w-[180px]">{stadium?.name_en || game.stadium_id}</span>
+                <span className="text-white font-bold text-right truncate max-w-[140px] sm:max-w-[180px]">{stadium?.name_en || game.stadium_id}</span>
               </div>
             </div>
 
-            {/* Note: In-depth stats removed temporarily until group data is passed down */}
+            {/* Previous Encounters */}
+            <div className="bg-black/30 rounded-xl p-3 border border-white/5 text-center shadow-inner">
+              <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2 border-b border-white/5 pb-1.5">Previous Encounters</div>
+              <div className="flex justify-between items-center mb-2 px-8">
+                <div className="text-base font-black text-white">0</div>
+                <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Wins</div>
+                <div className="text-base font-black text-white">0</div>
+              </div>
+              <p className="text-[10px] text-gray-400 leading-relaxed italic">
+                First meeting between {homeName} and {awayName} in this tournament. Both sides will be eager to establish dominance.
+              </p>
+            </div>
           </div>
         </motion.div>
       </motion.div>

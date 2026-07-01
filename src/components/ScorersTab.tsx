@@ -275,12 +275,12 @@ import CachedPlayerImage from "./CachedPlayerImage";
 
 function PlayerAvatar({ name, flag, teamName }: { name: string, flag: string, teamName: string }) {
   return (
-    <div className="relative w-8 h-8 shrink-0">
+    <div className="relative w-8 h-8 shrink-0 rounded-full overflow-hidden border border-white/10 bg-black/40">
       <CachedPlayerImage
         playerName={name}
         flag={flag}
         teamName={teamName}
-        className="w-full h-full rounded-full object-cover bg-black/40 border border-white/10"
+        className="w-full h-full object-cover object-top scale-[1.35] origin-top"
       />
     </div>
   );

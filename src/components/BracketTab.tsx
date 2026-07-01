@@ -2621,54 +2621,54 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
       <NewsMarquee bulletins={newsBulletins} />
 
       {/* 2. Previous / Today / Tomorrow / Upcoming tab bar */}
-      <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-md mx-auto shadow-inner">
+      <div className="flex p-1 bg-black/40 rounded-xl border border-white/10 max-w-[320px] mx-auto shadow-inner">
         <button
           onClick={() => setActiveTab('previous')}
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 rounded-lg text-center transition-all ${activeTab === 'previous' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-widest mt-1">
+          <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-widest mt-0.5">
             <span className="text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
             </span>
             PREV
           </div>
-          <span className="text-[8px] uppercase tracking-widest opacity-0 select-none">Previous</span>
+          <span className="text-[7px] uppercase tracking-widest opacity-0 select-none">Previous</span>
         </button>
         <button
           onClick={() => setActiveTab('today')}
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 rounded-lg text-center transition-all ${activeTab === 'today' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-widest">
+          <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
             <span className={activeTab === 'today' ? 'text-red-500 animate-pulse' : 'text-gray-500'}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
             </span>
             {todayStr}
           </div>
-          <span className="text-[8px] uppercase tracking-widest opacity-70">Today</span>
+          <span className="text-[7px] uppercase tracking-widest opacity-70">Today</span>
         </button>
         <button
           onClick={() => setActiveTab('tomorrow')}
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 rounded-lg text-center transition-all ${activeTab === 'tomorrow' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-widest">
+          <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
             <span className="text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
             </span>
             {tomorrowStr}
           </div>
-          <span className="text-[8px] uppercase tracking-widest opacity-70">Tomorrow</span>
+          <span className="text-[7px] uppercase tracking-widest opacity-70">Tomorrow</span>
         </button>
         <button
           onClick={() => setActiveTab('upcoming')}
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1 rounded-lg text-center transition-all ${activeTab === 'upcoming' ? 'bg-white/10 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-black uppercase tracking-widest mt-1">
+          <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-widest mt-0.5">
             <span className="text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </span>
             UPC
           </div>
-          <span className="text-[8px] uppercase tracking-widest opacity-0 select-none">Upcoming</span>
+          <span className="text-[7px] uppercase tracking-widest opacity-0 select-none">Upcoming</span>
         </button>
       </div>
 
