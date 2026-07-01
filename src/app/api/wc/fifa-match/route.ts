@@ -140,13 +140,13 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     matched: true,
+    attendance: live.Attendance ?? null,
+    possession: live.BallPossession ?? null,
     tactics: { home: live.HomeTeam.Tactics ?? null, away: live.AwayTeam.Tactics ?? null },
     cardCounts: {
       home: live.HomeTeam.Bookings?.length ?? 0,
       away: live.AwayTeam.Bookings?.length ?? 0,
     },
-    // Real, directly-counted stats. Possession and on/off-target shot splits are not available
-    // from FIFA's public feed for this match, so they are intentionally omitted (not estimated).
     stats: {
       home: {
         attemptsAtGoal: attempts.home, corners: corners.home, fouls: fouls.home,
@@ -161,7 +161,8 @@ export async function GET(req: NextRequest) {
     },
     momentum: buildMomentum(evs, homeTeamId),
     timeline: buildTimeline(evs, homeTeamId),
-    possession: live.BallPossession,
     events,
+    homeTeam: live.HomeTeam,
+    awayTeam: live.AwayTeam,
   });
 }

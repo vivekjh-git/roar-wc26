@@ -12,6 +12,7 @@ import type {
   CleanSheetEntry, OwnGoalEntry, PenaltyGoalEntry 
 } from "@/lib/api";
 import { getPlayerImageUrl } from "@/lib/player-images";
+import { getPlayerFifaRating, getPlayerTournamentRating } from "@/lib/player-ratings";
 
 interface ScorersTabProps {
   data: AllData;
@@ -167,6 +168,12 @@ function GoalScorersList({ list, expanded, variants, onPlayerClick }: Readonly<{
                 className={`font-bold truncate text-sm hover:underline cursor-pointer transition-colors inline-block text-left max-w-full ${idx === 0 ? "text-yellow-400" : "text-white hover:text-yellow-400"}`}
               >
                 {scorer.name}
+                <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1 rounded ml-1.5 font-mono font-bold">
+                  {getPlayerFifaRating(scorer.name)}
+                </span>
+                <span className="text-[9px] bg-emerald-400/10 text-emerald-400 px-1 rounded ml-1 font-mono font-bold">
+                  {getPlayerTournamentRating(scorer.name, scorer.goals).toFixed(1)}
+                </span>
               </button>
               <div className="text-[10px] text-gray-400 truncate">{scorer.teamName}</div>
             </div>
@@ -203,6 +210,12 @@ function ContributorsList({ list, expanded, variants, onPlayerClick }: Readonly<
                 className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
+                <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1 rounded ml-1.5 font-mono font-bold">
+                  {getPlayerFifaRating(item.name)}
+                </span>
+                <span className="text-[9px] bg-emerald-400/10 text-emerald-400 px-1 rounded ml-1 font-mono font-bold">
+                  {getPlayerTournamentRating(item.name, item.goals).toFixed(1)}
+                </span>
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} • {item.goals}G ({item.penaltyGoals}P)</div>
             </div>
@@ -233,6 +246,12 @@ function GoalsRatioList({ list, expanded, variants, onPlayerClick }: Readonly<{ 
                 className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
+                <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1 rounded ml-1.5 font-mono font-bold">
+                  {getPlayerFifaRating(item.name)}
+                </span>
+                <span className="text-[9px] bg-emerald-400/10 text-emerald-400 px-1 rounded ml-1 font-mono font-bold">
+                  {getPlayerTournamentRating(item.name, item.goals, item.games).toFixed(1)}
+                </span>
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} • {item.goals} goals in {item.games} games</div>
             </div>
@@ -287,6 +306,9 @@ function OwnGoalsList({ list, expanded, variants, onPlayerClick }: Readonly<{ li
                 className="font-bold text-red-400 text-sm hover:underline cursor-pointer transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
+                <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1 rounded ml-1.5 font-mono font-bold">
+                  {getPlayerFifaRating(item.name)}
+                </span>
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} {item.matchInfos.join(", ")}</div>
             </div>
@@ -317,6 +339,12 @@ function PenaltiesList({ list, expanded, variants, onPlayerClick }: Readonly<{ l
                 className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
+                <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1 rounded ml-1.5 font-mono font-bold">
+                  {getPlayerFifaRating(item.name)}
+                </span>
+                <span className="text-[9px] bg-emerald-400/10 text-emerald-400 px-1 rounded ml-1 font-mono font-bold">
+                  {getPlayerTournamentRating(item.name, item.penalties).toFixed(1)}
+                </span>
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName}</div>
             </div>

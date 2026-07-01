@@ -226,6 +226,7 @@ export default function HomePage() {
                   teams={data.teams}
                   stadiums={data.stadiums}
                   onTeamClick={handleTeamClick}
+                  onPlayerClick={(name, teamId) => setSelectedPlayer({ name, teamId })}
                 />
               )}
               {activeTab === "fixtures" && (

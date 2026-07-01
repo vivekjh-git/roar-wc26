@@ -6,6 +6,7 @@ import type { Team, Game } from "@/lib/api";
 import { parseScorers } from "@/lib/api";
 import { formatMatchDateNPT, formatTimeNPT } from "@/lib/date-utils";
 import CachedPlayerImage from "./CachedPlayerImage";
+import { getPlayerFifaRating, getPlayerTournamentRating } from "@/lib/player-ratings";
 
 
 interface PlayerModalProps {
@@ -261,6 +262,28 @@ export default function PlayerModal({ playerName, teamId, games, teams, onClose 
                 <div className="text-lg sm:text-xl font-extrabold text-green-400">{goalsRatio}</div>
                 <div className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
                   Goals / Game
+                </div>
+              </div>
+            </div>
+
+            {/* Ratings Overview Cards */}
+            <div className="grid grid-cols-2 gap-3 mt-3 relative z-10">
+              <div className="bg-[#131b30]/65 border border-yellow-500/20 rounded-xl p-3 flex items-center justify-between shadow-sm">
+                <div className="text-left">
+                  <div className="text-[8px] text-yellow-400 font-extrabold uppercase tracking-wider">FIFA Rating</div>
+                  <div className="text-xl font-black text-white mt-0.5">{getPlayerFifaRating(playerName)}</div>
+                </div>
+                <div className="w-8 h-8 rounded-full border-2 border-yellow-500/30 flex items-center justify-center text-[9px] font-black text-yellow-400 bg-yellow-500/5 select-none shadow-[0_0_8px_rgba(234,179,8,0.2)] shrink-0">
+                  FIFA
+                </div>
+              </div>
+              <div className="bg-[#131b30]/65 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-between shadow-sm">
+                <div className="text-left">
+                  <div className="text-[8px] text-emerald-400 font-extrabold uppercase tracking-wider">Tournament Avg</div>
+                  <div className="text-xl font-black text-white mt-0.5">{getPlayerTournamentRating(playerName, totalGoals, matchesCount)}</div>
+                </div>
+                <div className="w-8 h-8 rounded-full border-2 border-emerald-500/30 flex items-center justify-center text-[9px] font-black text-emerald-400 bg-emerald-500/5 select-none shadow-[0_0_8px_rgba(16,185,129,0.2)] shrink-0">
+                  ★ Tour
                 </div>
               </div>
             </div>

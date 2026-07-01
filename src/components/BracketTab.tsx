@@ -8,6 +8,21 @@ import { parseScorers } from "@/lib/api";
 import { formatMatchDateNPT, formatTimeNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate, parseMatchDate } from "@/lib/date-utils";
 import { generateLiveBulletins } from "@/lib/news-utils";
 import { format, addDays } from "date-fns";
+import CachedPlayerImage from "./CachedPlayerImage";
+import { getPlayerFifaRating, getPlayerTournamentRating, getPlayerMatchRating } from "@/lib/player-ratings";
+import {
+  GoalIcon,
+  YellowCardIcon,
+  RedCardIcon,
+  SubIcon,
+  AttemptIcon,
+  FoulIcon,
+  CornerIcon,
+  OffsideIcon,
+  InfoIcon,
+  WhistleIcon,
+  MegaphoneIcon,
+} from "./FlatIcons";
 
 function NewsMarquee({ bulletins }: { bulletins: string[] }) {
   return (
@@ -229,6 +244,7 @@ interface BracketTabProps {
   readonly teams: Team[];
   readonly stadiums: Stadium[];
   readonly onTeamClick: (team: Team) => void;
+  readonly onPlayerClick?: (name: string, teamId: string) => void;
 }
 
 const containerVariants = {
@@ -396,7 +412,7 @@ function DetailedMatchCard({
     <motion.div variants={itemVariants} className={`glass-card rounded-xl p-3 match-card border ${isLive ? (isET ? "border-orange-500/50 bg-orange-500/5" : "border-red-500/50 bg-red-500/5") : "border-white/10"}`}>
       <div className="flex justify-between items-center mb-2">
         <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">
-          Match {game.id} • {stadium?.name_en || "TBD"}
+          {stadium?.name_en || "TBD"}
         </span>
         {isLive && (
           <div className={`text-xs font-bold flex items-center gap-1 ${isET ? 'text-orange-400' : 'text-red-400'}`}>
@@ -442,7 +458,7 @@ function DetailedMatchCard({
 
 interface TimelineMarker {
   minute: number;
-  type: "goal" | "card" | "redCard" | "sub" | "attempt" | "foul";
+  type: "goal" | "card" | "redCard" | "sub" | "attempt" | "foul" | "offside" | "corner";
   team: "home" | "away";
   detail: string;
 }
@@ -450,17 +466,21 @@ interface TimelineMarker {
 function TimelineIcon({ type }: { readonly type: TimelineMarker["type"] }) {
   switch (type) {
     case "goal":
-      return <span className="text-[11px] leading-none drop-shadow">⚽</span>;
+      return <GoalIcon size={12} />;
     case "sub":
-      return <span className="text-[10px] leading-none">🚩</span>;
+      return <SubIcon size={12} />;
     case "card":
-      return <span className="block w-1.5 h-2 bg-yellow-400 rounded-[1px] shadow-sm" />;
+      return <YellowCardIcon className="inline-block" />;
     case "redCard":
-      return <span className="block w-1.5 h-2 bg-red-500 rounded-[1px] shadow-sm" />;
+      return <RedCardIcon className="inline-block" />;
     case "attempt":
-      return <span className="block w-1.5 h-1.5 rounded-full bg-white/80" />;
+      return <AttemptIcon size={12} />;
     case "foul":
-      return <span className="block w-1 h-1 rounded-full bg-white/25" />;
+      return <FoulIcon size={12} />;
+    case "offside":
+      return <OffsideIcon size={12} />;
+    case "corner":
+      return <CornerIcon size={12} />;
     default:
       return null;
   }
@@ -519,7 +539,7 @@ function TimelineEventsModal({
                     {entry.headline && <span className="font-black">{entry.headline} </span>}
                     {entry.detail}
                   </span>
-                  <span className="shrink-0 text-xs">{COMMENTARY_ICON[entry.type]}</span>
+                  <span className="shrink-0 text-xs flex items-center justify-center">{getCommentaryIcon(entry.type, entry.detail)}</span>
                 </div>
               );
             })}
@@ -785,11 +805,14 @@ function MatchTimeline({
 }
 
 function ExtendedMatchStats({
-  isPending, real, cardCounts
+  isPending, real, cardCounts, possession, homeGoals, awayGoals
 }: {
   isPending?: boolean;
   real: { home: RealTeamStats; away: RealTeamStats } | null;
   cardCounts: { home: number; away: number } | null;
+  possession?: { Home: number; Away: number } | null;
+  homeGoals?: number;
+  awayGoals?: number;
 }) {
   if (isPending) {
     return (
@@ -813,35 +836,51 @@ function ExtendedMatchStats({
     );
   }
 
+  // Shot accuracy derived from real event data: on-target shots = GK saves by opponent + goals scored
+  const homeShotsOnTarget = real.home.attemptsAtGoal > 0
+    ? ((awayGoals ?? 0) + real.home.attemptsAtGoal === 0 ? null : Math.min(real.home.attemptsAtGoal, real.away.saves + (homeGoals ?? 0)))
+    : null;
+  const awayShotsOnTarget = real.away.attemptsAtGoal > 0
+    ? Math.min(real.away.attemptsAtGoal, real.home.saves + (awayGoals ?? 0))
+    : null;
+
   const categories = [
+    {
+      name: "Possession",
+      stats: possession
+        ? [{ label: "Ball Possession %", home: possession.Home, away: possession.Away, pct: true }]
+        : [],
+    },
     {
       name: "Attack",
       stats: [
-        { label: "Attempts at Goal", home: real.home.attemptsAtGoal, away: real.away.attemptsAtGoal },
-        { label: "Corner Kicks", home: real.home.corners, away: real.away.corners },
+        { label: "Attempts at Goal", home: real.home.attemptsAtGoal, away: real.away.attemptsAtGoal, pct: false },
+        ...(homeShotsOnTarget !== null || awayShotsOnTarget !== null
+          ? [{ label: "Shots on Target", home: homeShotsOnTarget, away: awayShotsOnTarget, pct: false }]
+          : []),
+        { label: "Corner Kicks", home: real.home.corners, away: real.away.corners, pct: false },
       ]
     },
     {
       name: "Discipline",
       stats: [
-        { label: "Fouls", home: real.home.fouls, away: real.away.fouls },
-        { label: "Offsides", home: real.home.offsides, away: real.away.offsides },
-        { label: "Yellow Cards", home: cardCounts?.home ?? null, away: cardCounts?.away ?? null },
-        { label: "Red Cards", home: real.home.redCards, away: real.away.redCards },
+        { label: "Fouls", home: real.home.fouls, away: real.away.fouls, pct: false },
+        { label: "Offsides", home: real.home.offsides, away: real.away.offsides, pct: false },
+        { label: "Yellow Cards", home: cardCounts?.home ?? null, away: cardCounts?.away ?? null, pct: false },
+        { label: "Red Cards", home: real.home.redCards, away: real.away.redCards, pct: false },
       ]
     },
     {
       name: "Goalkeeping",
       stats: [
-        { label: "Saves", home: real.home.saves, away: real.away.saves },
+        { label: "Saves", home: real.home.saves, away: real.away.saves, pct: false },
       ]
     }
-  ];
+  ].filter(cat => cat.stats.length > 0);
 
   return (
     <div className="pt-3 mt-3 border-t border-white/10">
-      <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1 text-center">Extended Match Stats</h4>
-      <p className="text-[8px] text-gray-600 italic text-center mb-3">Real stats from FIFA&apos;s match centre. Possession and shot-accuracy splits are not available.</p>
+      <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3 text-center">Extended Match Stats</h4>
 
       {categories.map((cat, i) => (
         <div key={i} className="mb-3 last:mb-0">
@@ -850,23 +889,25 @@ function ExtendedMatchStats({
             <span className="text-[8px] sm:text-[9px] uppercase tracking-widest text-gray-500 font-bold">{cat.name}</span>
             <div className="flex-1 h-px bg-white/5"></div>
           </div>
-          
+
           <div className="space-y-2">
             {cat.stats.map((stat, j) => {
               const hasValues = stat.home !== null && stat.away !== null;
               const total = hasValues ? Math.max(1, stat.home! + stat.away!) : 1;
               const hPct = hasValues ? (stat.home! / total) * 100 : 0;
               const aPct = hasValues ? (stat.away! / total) * 100 : 0;
+              const displayH = stat.pct && stat.home !== null ? `${stat.home}%` : (stat.home ?? "—");
+              const displayA = stat.pct && stat.away !== null ? `${stat.away}%` : (stat.away ?? "—");
               return (
                 <div key={j} className="relative py-0.5">
                   <div className="flex justify-between text-[9px] sm:text-[10px] font-bold text-gray-400 mb-0.5 px-1">
-                    <span className="w-6 text-left text-white">{stat.home ?? "—"}</span>
+                    <span className="w-8 text-left text-white">{displayH}</span>
                     <span className="flex-1 text-center text-gray-500 font-semibold">{stat.label}</span>
-                    <span className="w-6 text-right text-white">{stat.away ?? "—"}</span>
+                    <span className="w-8 text-right text-white">{displayA}</span>
                   </div>
                   <div className="flex h-1 w-full bg-black/40 rounded-full overflow-hidden">
-                    <div className="bg-[#c9a227] h-full" style={{ width: `${hPct}%` }}></div>
-                    <div className="bg-gray-600 h-full ml-auto" style={{ width: `${aPct}%` }}></div>
+                    <div className="bg-blue-400/80 h-full" style={{ width: `${hPct}%` }}></div>
+                    <div className="bg-orange-400/80 h-full ml-auto" style={{ width: `${aPct}%` }}></div>
                   </div>
                 </div>
               );
@@ -906,13 +947,30 @@ function StatNotAvailable({ label }: { readonly label: string }) {
   );
 }
 
-const COMMENTARY_ICON: Record<CommentaryEntry["type"], string> = {
-  goal: "⚽",
-  card: "🟨",
-  sub: "🔁",
-  info: "🔄",
-  marker: "📣",
-};
+function getCommentaryIcon(type: CommentaryEntry["type"], detail = "") {
+  const d = detail.toLowerCase();
+  switch (type) {
+    case "goal":
+      return <GoalIcon className="inline-block" size={14} />;
+    case "card":
+      if (d.includes("red card")) return <RedCardIcon className="inline-block" />;
+      return <YellowCardIcon className="inline-block" />;
+    case "sub":
+      return <SubIcon className="inline-block" size={14} />;
+    case "info":
+      return <InfoIcon className="inline-block" size={14} />;
+    case "marker":
+      if (d.includes("kick off")) return <WhistleIcon className="inline-block" size={14} />;
+      return <MegaphoneIcon className="inline-block" size={14} />;
+    default:
+      return null;
+  }
+}
+
+// FIFA event descriptions are "LASTNAME Firstname action (Team)". Remove the first name to keep it short.
+function shortenDetail(detail: string): string {
+  return detail.replace(/^([A-Z][A-Z\s]*[A-Z])\s+([A-Z][a-z]\w*)\s+/, "$1 ");
+}
 
 function MatchTrackerView({
   showTracker, isLive, isPending = false, game, commentary, feed, ballPos,
@@ -967,13 +1025,16 @@ function MatchTrackerView({
 
             <div className="bg-black/40 px-3 py-1.5 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-green-400 relative z-10 border-b border-green-500/20">
               <span>{isFarAhead ? "Match Tracker Info" : isPending ? "Pre-Match Analysis" : isLive ? "Live Pitch Commentary" : "Match Replay"}</span>
-              <span className="text-yellow-400">{isFarAhead ? "Offline" : isPending ? "Upcoming" : isLive ? "LIVE" : "FT"}</span>
+              {isLive
+                ? <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                : <span className="text-yellow-400 text-[8px]">{isFarAhead ? "Offline" : isPending ? "Upcoming" : "FT"}</span>
+              }
             </div>
 
             {/* Compact Scoreboard: flags + score + stage */}
             {!isFarAhead && !isPending && (
               <div className="bg-black/30 px-2.5 py-1 flex items-center justify-center gap-2 text-[10px] sm:text-xs font-black text-white relative z-10 border-b border-green-500/10">
-                <span className={`tabular-nums ${isLive ? "text-yellow-300" : "text-gray-300"}`}>{isLive ? liveTimeStr : "FT"}</span>
+                <span className={`tabular-nums text-[9px] ${isLive ? "text-white/70" : "text-gray-400"}`}>{isLive ? liveTimeStr : "FT"}</span>
                 <span className="flex items-center gap-1">
                   {homeFlag ? <img src={homeFlag} alt="" className="w-4 h-3 object-cover rounded-sm shadow-sm" /> : null}
                   <span className="text-gray-200">{homeCode}</span>
@@ -985,12 +1046,12 @@ function MatchTrackerView({
                   <span className="text-gray-200">{awayCode}</span>
                   {awayFlag ? <img src={awayFlag} alt="" className="w-4 h-3 object-cover rounded-sm shadow-sm" /> : null}
                 </span>
-                {stageTag && (
+                {stageTag && stageTag !== "LIVE" && (
                   <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
                     stageTag === "HT" ? "text-blue-300 border-blue-400/30 bg-blue-500/10"
                     : stageTag === "ET" ? "text-orange-300 border-orange-400/30 bg-orange-500/10"
                     : stageTag === "PEN" ? "text-purple-300 border-purple-400/30 bg-purple-500/10"
-                    : "text-red-300 border-red-400/30 bg-red-500/10"
+                    : "text-gray-400 border-gray-600/30 bg-gray-500/10"
                   }`}>
                     {stageTag}
                   </span>
@@ -1026,10 +1087,10 @@ function MatchTrackerView({
               ) : (
                 <div className="h-full p-3 flex flex-col justify-end">
                   <div
-                    className="overflow-y-auto no-scrollbar h-[92px] sm:h-[104px]"
+                    className="overflow-y-auto no-scrollbar h-[128px] sm:h-[152px]"
                     style={{
-                      maskImage: "linear-gradient(to bottom, black 0%, black 28%, transparent 92%)",
-                      WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 28%, transparent 92%)",
+                      maskImage: "linear-gradient(to bottom, black 0%, black 20%, transparent 90%)",
+                      WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 20%, transparent 90%)",
                     }}
                   >
                     <AnimatePresence initial={false}>
@@ -1044,15 +1105,15 @@ function MatchTrackerView({
                               animate={{ y: 0, opacity: 1, scale: 1 }}
                               exit={{ opacity: 0, y: -6 }}
                               transition={{ duration: 0.35, ease: "easeOut" }}
-                              className="w-full text-[9px] sm:text-[11px] text-white bg-black/55 px-2.5 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 shrink-0"
+                              className="w-full text-[9px] sm:text-[10px] text-white bg-black/55 px-2.5 py-1.5 rounded-lg shadow-lg flex items-start gap-1.5 shrink-0"
                             >
-                              {flag && <img src={flag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shrink-0" />}
-                              <span className="text-yellow-400/90 font-bold shrink-0 tabular-nums">[{entry.minute}]</span>
-                              <span className="flex-1 truncate">
+                              <span className="text-white/60 font-bold shrink-0 tabular-nums leading-4">{entry.minute}&apos;</span>
+                              {flag && <img src={flag} alt="" className="w-3.5 h-2.5 object-cover rounded-[1px] shrink-0 mt-[1px]" />}
+                              <span className="flex-1 break-words min-w-0 line-clamp-2 leading-[1.3]">
                                 {entry.headline && <span className="font-black">{entry.headline} </span>}
-                                {entry.detail}
+                                {shortenDetail(entry.detail)}
                               </span>
-                              <span className="shrink-0 text-xs">{COMMENTARY_ICON[entry.type]}</span>
+                              <span className="shrink-0 text-xs flex items-center justify-center">{getCommentaryIcon(entry.type, entry.detail)}</span>
                             </motion.div>
                           );
                         })}
@@ -1080,7 +1141,7 @@ function MatchTrackerView({
 }
 
 function MatchDetailsView({
-  showDetails, game, stadium, isPending, hs, as_, real, cardCounts
+  showDetails, game, stadium, isPending, hs, as_, real, cardCounts, possession, attendance
 }: {
   readonly showDetails: boolean;
   readonly game: Game;
@@ -1090,7 +1151,16 @@ function MatchDetailsView({
   readonly as_: number;
   readonly real: { home: RealTeamStats; away: RealTeamStats } | null;
   readonly cardCounts: { home: number; away: number } | null;
+  readonly possession?: { Home: number; Away: number } | null;
+  readonly attendance?: number | null;
 }) {
+  const capacityStr = (() => {
+    const total = stadium?.capacity ? stadium.capacity.toLocaleString() : null;
+    if (!total) return "TBD";
+    if (attendance) return `${attendance.toLocaleString()} / ${total}`;
+    return total;
+  })();
+
   return (
     <AnimatePresence>
       {showDetails && (
@@ -1100,56 +1170,294 @@ function MatchDetailsView({
           exit={{ opacity: 0, height: 0 }}
           className="overflow-hidden relative z-10"
         >
-          <div className="pt-4 mt-4 border-t border-white/10 space-y-3">
-            <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
+          <div className="pt-3 mt-3 border-t border-white/10 space-y-2">
+            <div className="flex justify-between items-start text-[10px] text-gray-400 gap-4">
               <span className="shrink-0">Tournament Stage</span>
-              <span className="font-bold text-white uppercase text-right">{game.type.replace("_", " ")}</span>
+              <span className="font-semibold text-white uppercase text-right text-[10px]">{game.type.replace("_", " ")}</span>
             </div>
-            <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
-              <span className="shrink-0">Group</span>
-              <span className="font-bold text-white uppercase text-right">{game.group || "N/A"}</span>
+            {game.group && (
+              <div className="flex justify-between items-start text-[10px] text-gray-400 gap-4">
+                <span className="shrink-0">Group</span>
+                <span className="font-semibold text-white uppercase text-right text-[10px]">{game.group}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-start text-[10px] text-gray-400 gap-4">
+              <span className="shrink-0">{attendance ? "Attendance / Capacity" : "Stadium Capacity"}</span>
+              <span className="font-semibold text-white uppercase text-right text-[10px]">{capacityStr}</span>
             </div>
-            <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
-              <span className="shrink-0">Stadium Capacity</span>
-              <span className="font-bold text-white uppercase text-right">{stadium?.capacity?.toLocaleString() || "TBD"}</span>
-            </div>
-            <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
+            <div className="flex justify-between items-start text-[10px] text-gray-400 gap-4">
               <span className="shrink-0">City / Region</span>
-              <span className="font-bold text-white uppercase text-right">{stadium?.city_en || "TBD"}, {stadium?.region || "TBD"}</span>
-            </div>
-            <div className="flex justify-between items-start sm:items-center text-xs text-gray-400 gap-4">
-              <span className="shrink-0">Match ID</span>
-              <span className="font-bold text-white uppercase text-right">#{game.id}</span>
+              <span className="font-semibold text-white text-right text-[10px]">{stadium?.city_en || "TBD"}, {stadium?.region || "TBD"}</span>
             </div>
           </div>
 
           <div className="pt-4 mt-4 border-t border-white/10">
             <div className="flex flex-col gap-3 bg-black/20 rounded-xl p-4 border border-white/5">
-              {/* Goals Row */}
-              <div className="flex items-center justify-between text-[11px] sm:text-xs">
+              <div className="flex items-center justify-between">
                 <span className="w-12 text-left font-black text-green-400 text-sm sm:text-base">{isPending ? "-" : hs}</span>
                 <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Goals</span>
                 <span className="w-12 text-right font-black text-green-400 text-sm sm:text-base">{isPending ? "-" : as_}</span>
               </div>
-              {/* Yellow Cards Row */}
-              <div className="flex items-center justify-between text-[11px] sm:text-xs">
-                <span className="w-12 text-left font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : cardCounts?.home ?? "N/A"}</span>
+              <div className="flex items-center justify-between">
+                <span className="w-12 text-left font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : (cardCounts?.home ?? "N/A")}</span>
                 <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Yellow Cards</span>
-                <span className="w-12 text-right font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : cardCounts?.away ?? "N/A"}</span>
+                <span className="w-12 text-right font-black text-yellow-500 text-sm sm:text-base">{isPending ? "-" : (cardCounts?.away ?? "N/A")}</span>
               </div>
-              {/* Red Cards Row */}
-              <div className="flex items-center justify-between text-[11px] sm:text-xs">
-                <span className="w-12 text-left font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : real?.home.redCards ?? "N/A"}</span>
+              <div className="flex items-center justify-between">
+                <span className="w-12 text-left font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : (real?.home.redCards ?? "N/A")}</span>
                 <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Red Cards</span>
-                <span className="w-12 text-right font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : real?.away.redCards ?? "N/A"}</span>
+                <span className="w-12 text-right font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : (real?.away.redCards ?? "N/A")}</span>
               </div>
             </div>
           </div>
 
-          <ExtendedMatchStats isPending={isPending} real={real} cardCounts={cardCounts} />
+          <ExtendedMatchStats
+            isPending={isPending} real={real} cardCounts={cardCounts}
+            possession={possession} homeGoals={hs} awayGoals={as_}
+          />
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+// Map a feed entry to a rough ball position on the pitch widget.
+// Convention: home team attacks right (positive x), away attacks left (negative x).
+// x range: -100 to +100; y range: -43 to +43 (relative to center of pitch area).
+function eventToBallPos(entry: CommentaryEntry | undefined): { x: number; y: number } {
+  if (!entry) return { x: 0, y: 0 };
+  switch (entry.type) {
+    case "goal":
+      if (entry.team === "home") return { x: 90, y: 0 };
+      if (entry.team === "away") return { x: -90, y: 0 };
+      return { x: 0, y: 0 };
+    case "marker":
+      return { x: 0, y: 0 };
+    case "info":
+      if (entry.team === "home") return { x: 72, y: 0 };
+      if (entry.team === "away") return { x: -72, y: 0 };
+      return { x: 0, y: 0 };
+    case "card":
+    case "sub":
+      if (entry.team === "home") return { x: 25, y: 40 };
+      if (entry.team === "away") return { x: -25, y: 40 };
+      return { x: 0, y: 40 };
+    default:
+      return { x: 0, y: 0 };
+  }
+}
+
+const COACH_LOOKUP: Record<string, string> = {
+  "ARG": "Lionel Scaloni",
+  "FRA": "Didier Deschamps",
+  "POR": "Roberto Martínez",
+  "ENG": "Gareth Southgate",
+  "GER": "Julian Nagelsmann",
+  "BRA": "Dorival Júnior",
+  "NED": "Ronald Koeman",
+  "ESP": "Luis de la Fuente",
+  "BEL": "Domenico Tedesco",
+  "USA": "Mauricio Pochettino",
+  "CAN": "Jesse Marsch",
+  "MEX": "Javier Aguirre",
+  "MAR": "Walid Regragui",
+  "COL": "Néstor Lorenzo",
+  "URU": "Marcelo Bielsa",
+  "ITA": "Luciano Spalletti",
+  "CRO": "Zlatko Dalić",
+  "SUI": "Murat Yakin",
+  "NOR": "Ståle Solbakken",
+  "SEN": "Aliou Cissé",
+  "JPN": "Hajime Moriyasu",
+  "KOR": "Hong Myung-bo",
+  "AUS": "Tony Popovic",
+  "KSA": "Roberto Mancini",
+  "CMR": "Marc Brys",
+  "ECU": "Sebastián Beccacece",
+  "TUN": "Faouzi Benzarti",
+  "GHA": "Otto Addo",
+  "PAN": "Thomas Christiansen",
+  "JAM": "Steve McClaren",
+  "CRC": "Claudio Vivas",
+};
+
+function LineupPitch({
+  players,
+  isHome,
+  team,
+  onPlayerClick,
+  matchId
+}: {
+  players: any[];
+  isHome: boolean;
+  team: Team;
+  onPlayerClick?: (name: string, teamId: string) => void;
+  matchId: string;
+}) {
+  // 1. Filter starting players (Status === 1)
+  const starters = players.filter(p => p.Status === 1);
+  
+  // 2. Group starters by position: 0=GK, 1=DEF, 2=MID, 3/4=FWD
+  const gks = starters.filter(p => p.Position === 0);
+  const defs = starters.filter(p => p.Position === 1);
+  const mids = starters.filter(p => p.Position === 2);
+  const fwds = starters.filter(p => p.Position === 3 || p.Position === 4);
+  
+  const layoutPlayers: Array<{ player: any; x: number; y: number }> = [];
+  
+  // GK (at bottom x=50, y=88)
+  gks.forEach(p => {
+    layoutPlayers.push({ player: p, x: 50, y: 88 });
+  });
+  
+  // Defenders
+  const defCount = defs.length;
+  defs.forEach((p, i) => {
+    let x = 50;
+    let y = 70;
+    if (defCount === 4) {
+      const coords = [15, 38, 62, 85];
+      x = coords[i] || 50;
+      y = (i === 0 || i === 3) ? 68 : 72;
+    } else if (defCount === 3) {
+      const coords = [25, 50, 75];
+      x = coords[i] || 50;
+      y = i === 1 ? 72 : 70;
+    } else if (defCount === 5) {
+      const coords = [10, 30, 50, 70, 90];
+      x = coords[i] || 50;
+      y = (i === 0 || i === 4) ? 66 : (i === 2) ? 73 : 71;
+    } else {
+      x = defCount > 1 ? 15 + (70 / (defCount - 1)) * i : 50;
+      y = 70;
+    }
+    layoutPlayers.push({ player: p, x, y });
+  });
+  
+  // Midfielders
+  const midCount = mids.length;
+  mids.forEach((p, i) => {
+    let x = 50;
+    let y = 48;
+    if (midCount === 3) {
+      const coords = [25, 50, 75];
+      x = coords[i] || 50;
+      y = i === 1 ? 52 : 48;
+    } else if (midCount === 4) {
+      const coords = [15, 38, 62, 85];
+      x = coords[i] || 50;
+      y = (i === 0 || i === 3) ? 46 : 50;
+    } else if (midCount === 5) {
+      const coords = [12, 34, 50, 66, 88];
+      x = coords[i] || 50;
+      y = i === 2 ? 52 : (i === 1 || i === 3) ? 49 : 46;
+    } else if (midCount === 2) {
+      const coords = [33, 67];
+      x = coords[i] || 50;
+      y = 50;
+    } else {
+      x = midCount > 1 ? 15 + (70 / (midCount - 1)) * i : 50;
+      y = 48;
+    }
+    layoutPlayers.push({ player: p, x, y });
+  });
+  
+  // Forwards
+  const fwdCount = fwds.length;
+  fwds.forEach((p, i) => {
+    let x = 50;
+    let y = 20;
+    if (fwdCount === 3) {
+      const coords = [20, 50, 80];
+      x = coords[i] || 50;
+      y = i === 1 ? 15 : 22;
+    } else if (fwdCount === 2) {
+      const coords = [35, 65];
+      x = coords[i] || 50;
+      y = 20;
+    } else if (fwdCount === 1) {
+      x = 50;
+      y = 16;
+    } else {
+      x = fwdCount > 1 ? 20 + (60 / (fwdCount - 1)) * i : 50;
+      y = 20;
+    }
+    layoutPlayers.push({ player: p, x, y });
+  });
+
+  const mappedIds = new Set(layoutPlayers.map(lp => lp.player.IdPlayer));
+  const unmappedStarters = starters.filter(p => !mappedIds.has(p.IdPlayer));
+  if (unmappedStarters.length > 0) {
+    unmappedStarters.forEach((p, i) => {
+      layoutPlayers.push({ player: p, x: 20 + (60 / Math.max(1, unmappedStarters.length - 1)) * i, y: 35 });
+    });
+  }
+
+  const cleanPlayerName = (fullName: string) => {
+    const parts = fullName.trim().split(" ");
+    if (parts.length <= 1) return fullName;
+    const lastName = parts[parts.length - 1];
+    const firstInitial = parts[0].charAt(0);
+    let cleanLast = lastName;
+    if (cleanLast === cleanLast.toUpperCase()) {
+      cleanLast = cleanLast.charAt(0) + cleanLast.slice(1).toLowerCase();
+    }
+    return `${firstInitial}. ${cleanLast}`;
+  };
+
+  return (
+    <div className="relative w-full aspect-[4/5] bg-gradient-to-b from-[#1b4332] to-[#081c15] border border-white/10 rounded-xl overflow-hidden shadow-inner select-none">
+      {/* Grass Stripes Pattern */}
+      <div 
+        className="absolute inset-0 opacity-15 pointer-events-none" 
+        style={{
+          background: "repeating-linear-gradient(180deg, transparent, transparent 8.33%, rgba(255,255,255,0.06) 8.33%, rgba(255,255,255,0.06) 16.66%)"
+        }}
+      />
+
+      {/* Pitch Markings */}
+      <div className="absolute inset-0 border border-white/15 m-2 pointer-events-none rounded-sm">
+        <div className="absolute top-1/2 left-0 right-0 h-px bg-white/15" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border border-white/15" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white/15" />
+        
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-12 border-b border-x border-white/15" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[30%] h-4 border-b border-x border-white/15" />
+        
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-12 border-t border-x border-white/15" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[30%] h-4 border-t border-x border-white/15" />
+      </div>
+
+      {/* Player Positions */}
+      {layoutPlayers.map(({ player, x, y }) => {
+        const pName = player.PlayerName?.[0]?.Description || player.ShortName?.[0]?.Description || "Player";
+        const cleanName = cleanPlayerName(pName);
+        const rating = getPlayerMatchRating(pName, matchId);
+        const ratingBg = rating >= 7.5 ? "bg-green-500 text-white" : rating >= 6.5 ? "bg-yellow-500 text-black" : "bg-orange-500 text-white";
+
+        return (
+          <button
+            key={player.IdPlayer}
+            onClick={() => onPlayerClick?.(pName, team.id)}
+            className="absolute flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2 group cursor-pointer active:scale-95 transition-all z-10"
+            style={{ left: `${x}%`, top: `${y}%` }}
+          >
+            {/* Player Head */}
+            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/80 group-hover:border-yellow-400 group-hover:scale-105 transition-all shadow-md overflow-hidden bg-black/40 flex items-center justify-center">
+              <CachedPlayerImage playerName={pName} className="w-full h-full object-cover" />
+              <span className={`absolute -top-0.5 -right-0.5 text-[7px] font-black px-1 py-0.2 rounded-full border border-black/20 leading-none ${ratingBg}`}>
+                {rating}
+              </span>
+            </div>
+            
+            {/* Player Label */}
+            <div className="mt-1 bg-black/75 px-1.5 py-0.5 rounded text-[7px] font-bold text-gray-200 border border-white/5 truncate max-w-[55px] sm:max-w-[70px] text-center shadow">
+              <span className="text-yellow-400 font-mono mr-0.5">{player.ShirtNumber}</span> {cleanName}
+            </div>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1160,6 +1468,7 @@ function FeaturedLiveCard({
   onTeamClick,
   allGames,
   isActive = false,
+  onPlayerClick,
 }: {
   readonly game: Game;
   readonly teamMap: { [key: string]: Team };
@@ -1167,9 +1476,15 @@ function FeaturedLiveCard({
   readonly onTeamClick: (team: Team) => void;
   readonly allGames: Game[];
   readonly isActive?: boolean;
+  readonly onPlayerClick?: (name: string, teamId: string) => void;
 }) {
   const [showDetails, setShowDetails] = useState(false);
   const [showTracker, setShowTracker] = useState(false);
+  const [showLineup, setShowLineup] = useState(false);
+  const [fallbackLineups, setFallbackLineups] = useState<{
+    home: { players: any[]; tactics: string; coach: string; isPrevious: boolean } | null;
+    away: { players: any[]; tactics: string; coach: string; isPrevious: boolean } | null;
+  } | null>(null);
 
   // Reset expanded states when active status changes to false (swiped away)
   const [prevIsActive, setPrevIsActive] = useState(isActive);
@@ -1178,6 +1493,7 @@ function FeaturedLiveCard({
     if (!isActive) {
       setShowDetails(false);
       setShowTracker(false);
+      setShowLineup(false);
     }
   }
 
@@ -1186,6 +1502,8 @@ function FeaturedLiveCard({
     setPrevGameId(game.id);
     setShowDetails(false);
     setShowTracker(false);
+    setShowLineup(false);
+    setFallbackLineups(null);
   }
 
   const announcedRef = useRef<Set<string>>(new Set());
@@ -1239,9 +1557,6 @@ function FeaturedLiveCard({
     return "LIVE";
   })();
 
-  // Real data from FIFA's match centre, when our fixture can be matched to a real World Cup match.
-  // We only ever show real numbers — if a match isn't matched (or a field isn't in FIFA's feed),
-  // the UI says so explicitly instead of estimating or simulating anything.
   const [fifaData, setFifaData] = useState<{
     matched: boolean;
     events?: CommentaryEntry[];
@@ -1249,6 +1564,10 @@ function FeaturedLiveCard({
     stats?: { home: RealTeamStats; away: RealTeamStats };
     momentum?: Array<{ bucketStart: number; home: number; away: number }>;
     timeline?: TimelineMarker[];
+    possession?: { Home: number; Away: number } | null;
+    attendance?: number | null;
+    homeTeam?: any;
+    awayTeam?: any;
   } | null>(null);
 
   // Fetch on mount, immediately again at key match-stage transitions (half time, extra time,
@@ -1290,6 +1609,141 @@ function FeaturedLiveCard({
     return () => { cancelled = true; if (retryTimeout) clearTimeout(retryTimeout); clearInterval(interval); };
   }, [homeTeam?.fifa_code, awayTeam?.fifa_code, isLive, stageTag, finished]);
 
+  // 1. Derive live lineups directly during render
+  const liveLineups = useMemo(() => {
+    if (!homeTeam || !awayTeam) return null;
+
+    function getCoachName(team: any, fallbackFifaCode?: string): string {
+      if (team?.Coaches && team.Coaches.length > 0) {
+        const headCoach = team.Coaches.find((c: any) => c.Role === 0);
+        const nameObj = headCoach?.Name?.[0] || team.Coaches[0]?.Name?.[0];
+        if (nameObj?.Description) return nameObj.Description;
+      }
+      if (fallbackFifaCode && COACH_LOOKUP[fallbackFifaCode]) {
+        return COACH_LOOKUP[fallbackFifaCode];
+      }
+      return "Not available";
+    }
+
+    if (fifaData?.matched && fifaData.homeTeam?.Players && fifaData.homeTeam.Players.length > 0) {
+      return {
+        home: {
+          players: fifaData.homeTeam.Players,
+          tactics: fifaData.homeTeam.Tactics || "4-3-3",
+          coach: getCoachName(fifaData.homeTeam, homeTeam.fifa_code),
+          isPrevious: false
+        },
+        away: {
+          players: fifaData.awayTeam.Players,
+          tactics: fifaData.awayTeam.Tactics || "4-3-3",
+          coach: getCoachName(fifaData.awayTeam, awayTeam.fifa_code),
+          isPrevious: false
+        }
+      };
+    }
+    return null;
+  }, [fifaData, homeTeam, awayTeam]);
+
+  // 2. Load fallback lineups from previous finished matches if live data is not yet available
+  useEffect(() => {
+    if (!homeTeam || !awayTeam) return;
+    if (liveLineups) return; // Already have live data
+
+    function getCoachName(team: any, fallbackFifaCode?: string): string {
+      if (team?.Coaches && team.Coaches.length > 0) {
+        const headCoach = team.Coaches.find((c: any) => c.Role === 0);
+        const nameObj = headCoach?.Name?.[0] || team.Coaches[0]?.Name?.[0];
+        if (nameObj?.Description) return nameObj.Description;
+      }
+      if (fallbackFifaCode && COACH_LOOKUP[fallbackFifaCode]) {
+        return COACH_LOOKUP[fallbackFifaCode];
+      }
+      return "Not available";
+    }
+
+    const homePrevGames = allGames.filter(g =>
+      g.finished === "TRUE" &&
+      g.id !== game.id &&
+      (g.home_team_id === game.home_team_id || g.away_team_id === game.home_team_id)
+    ).sort((a, b) => parseInt(b.id) - parseInt(a.id));
+
+    const awayPrevGames = allGames.filter(g =>
+      g.finished === "TRUE" &&
+      g.id !== game.id &&
+      (g.home_team_id === game.away_team_id || g.away_team_id === game.away_team_id)
+    ).sort((a, b) => parseInt(b.id) - parseInt(a.id));
+
+    let homeLineup: any = null;
+    let awayLineup: any = null;
+    const promises: Promise<void>[] = [];
+
+    if (homePrevGames.length > 0) {
+      const hG = homePrevGames[0];
+      const prevHomeTeam = teamMap[hG.home_team_id];
+      const prevAwayTeam = teamMap[hG.away_team_id];
+      if (prevHomeTeam?.fifa_code && prevAwayTeam?.fifa_code) {
+        promises.push(
+          fetch(`/api/wc/fifa-match?home=${prevHomeTeam.fifa_code}&away=${prevAwayTeam.fifa_code}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data?.matched) {
+                const isPrevHome = hG.home_team_id === game.home_team_id;
+                const teamData = isPrevHome ? data.homeTeam : data.awayTeam;
+                if (teamData?.Players && teamData.Players.length > 0) {
+                  homeLineup = {
+                    players: teamData.Players,
+                    tactics: teamData.Tactics || "4-3-3",
+                    coach: getCoachName(teamData, homeTeam.fifa_code),
+                    isPrevious: true
+                  };
+                }
+              }
+            })
+            .catch(err => console.error("Error fetching home prev lineup:", err))
+        );
+      }
+    }
+
+    if (awayPrevGames.length > 0) {
+      const aG = awayPrevGames[0];
+      const prevHomeTeam = teamMap[aG.home_team_id];
+      const prevAwayTeam = teamMap[aG.away_team_id];
+      if (prevHomeTeam?.fifa_code && prevAwayTeam?.fifa_code) {
+        promises.push(
+          fetch(`/api/wc/fifa-match?home=${prevHomeTeam.fifa_code}&away=${prevAwayTeam.fifa_code}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data?.matched) {
+                const isPrevAway = aG.away_team_id === game.away_team_id;
+                const teamData = isPrevAway ? data.awayTeam : data.homeTeam;
+                if (teamData?.Players && teamData.Players.length > 0) {
+                  awayLineup = {
+                    players: teamData.Players,
+                    tactics: teamData.Tactics || "4-3-3",
+                    coach: getCoachName(teamData, awayTeam.fifa_code),
+                    isPrevious: true
+                  };
+                }
+              }
+            })
+            .catch(err => console.error("Error fetching away prev lineup:", err))
+        );
+      }
+    }
+
+    Promise.all(promises).then(() => {
+      setFallbackLineups({
+        home: homeLineup,
+        away: awayLineup
+      });
+    });
+  }, [liveLineups, game.id, homeTeam?.fifa_code, awayTeam?.fifa_code, allGames, teamMap]);
+
+  // Combine live and fallback lineups
+  const lineups = liveLineups || fallbackLineups;
+  // If we don't have live lineups AND haven't loaded fallbackLineups yet, it's loading
+  const lineupsLoading = !liveLineups && !fallbackLineups;
+
   const realFeed = useMemo<CommentaryEntry[]>(
     () => (fifaData?.matched && fifaData.events ? [...fifaData.events].reverse() : []),
     [fifaData]
@@ -1298,11 +1752,11 @@ function FeaturedLiveCard({
   const homeName = homeTeam?.name_en || game.home_team_label || game.home_team_name_en || "TBD";
   const awayName = awayTeam?.name_en || game.away_team_label || game.away_team_name_en || "TBD";
 
-  const hs = parseInt(game.home_score) || 0;
-  const as_ = parseInt(game.away_score) || 0;
-  const hp = parseInt(game.home_penalty_score || '');
-  const ap = parseInt(game.away_penalty_score || '');
-  const hasPenalties = !isNaN(hp) && !isNaN(ap);
+  const hs = Number.parseInt(game.home_score) || 0;
+  const as_ = Number.parseInt(game.away_score) || 0;
+  const hp = Number.parseInt(game.home_penalty_score || '');
+  const ap = Number.parseInt(game.away_penalty_score || '');
+  const hasPenalties = !Number.isNaN(hp) && !Number.isNaN(ap);
   const homeWin = finished && (hs > as_ || (hasPenalties && hs === as_ && hp > ap));
   const awayWin = finished && (as_ > hs || (hasPenalties && hs === as_ && ap > hp));
 
@@ -1315,6 +1769,8 @@ function FeaturedLiveCard({
   const realMomentum = fifaData?.matched && fifaData.momentum ? fifaData.momentum : null;
   const realTimeline = fifaData?.matched && fifaData.timeline ? fifaData.timeline : null;
   const realEvents = fifaData?.matched && fifaData.events ? fifaData.events : [];
+  const realPossession = fifaData?.matched ? (fifaData.possession ?? null) : null;
+  const realAttendance = fifaData?.matched ? (fifaData.attendance ?? null) : null;
   const currentMinute = isLive ? (() => {
     const m = game.time_elapsed.replace(/live/i, '').trim().match(/(\d+)/);
     return m ? Number.parseInt(m[1], 10) : null;
@@ -1322,24 +1778,30 @@ function FeaturedLiveCard({
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
 
-  // Purely decorative ball-wander animation on the pitch widget — not data, just motion.
-  const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
+  // Ball position: base from most recent event, with a small drift every 10 s during play.
+  // Stops drifting at half-time so the ball parks at centre circle.
+  const [ballDrift, setBallDrift] = useState({ x: 0, y: 0 });
   useEffect(() => {
-    if (!isLive) return;
+    if (!isLive || stageTag === "HT") {
+      const timer = setTimeout(() => {
+        setBallDrift({ x: 0, y: 0 });
+      }, 0);
+      return () => clearTimeout(timer);
+    }
     const interval = setInterval(() => {
-      setBallPos({ x: Math.floor(Math.random() * 200) - 100, y: Math.floor(Math.random() * 90) - 45 });
-    }, 4000);
+      setBallDrift({ x: Math.round(Math.random() * 30 - 15), y: Math.round(Math.random() * 20 - 10) });
+    }, 10000);
     return () => clearInterval(interval);
-  }, [isLive]);
+  }, [isLive, stageTag]);
 
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  useEffect(() => {
-    if (!isLive) return;
-    const interval = setInterval(() => {
-      setElapsedSeconds(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isLive]);
+  const ballPos = useMemo(() => {
+    if (!isLive || stageTag === "HT") return { x: 0, y: 0 };
+    const base = eventToBallPos(realFeed[0]);
+    return {
+      x: Math.max(-100, Math.min(100, base.x + ballDrift.x)),
+      y: Math.max(-43, Math.min(43, base.y + ballDrift.y)),
+    };
+  }, [realFeed, stageTag, ballDrift]);
 
   const commentary = fifaData?.matched
     ? ""
@@ -1348,6 +1810,14 @@ function FeaturedLiveCard({
       : finished
         ? "Match commentary not available for this match."
         : "Match will begin soon. Waiting for kickoff...";
+
+  // Exact time from the API — no fake elapsed-second computation.
+  const liveTimeDisplay = (() => {
+    if (!isLive) return "";
+    const raw = game.time_elapsed.replace(/live/gi, "").trim();
+    if (hasPenalties) return "PEN";
+    return raw || (isET ? "ET" : "");
+  })();
 
   let matchStatusLabel;
   if (finished) {
@@ -1358,22 +1828,17 @@ function FeaturedLiveCard({
       </>
     );
   } else if (isLive) {
-    const liveTimeStr = (() => {
-      if (hasPenalties) return "PEN";
-      if (isET) {
-        const min = 90 + Math.min(30, Math.floor(elapsedSeconds / 2));
-        return `${min}'`;
-      }
-      const min = 90 + Math.min(5, Math.floor(elapsedSeconds / 5));
-      return `${min}'`;
-    })();
-
     matchStatusLabel = (
       <>
-        <span className={isET || hasPenalties ? "text-orange-400 font-black animate-pulse" : "text-red-400 font-black animate-pulse"}>
-          {hasPenalties ? 'PENALTIES' : isET ? 'EXTRA TIME' : 'LIVE'}
+        <span className="inline-flex items-center gap-1">
+          <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse inline-block" />
+          <span className={isET || hasPenalties ? "text-orange-300" : "text-white/80"}>
+            {hasPenalties ? "PEN" : isET ? "ET" : ""}
+          </span>
         </span>
-        <span className={`font-black text-sm sm:text-base leading-none mt-0.5 ${isET || hasPenalties ? 'text-orange-300' : 'text-red-400'}`}>{liveTimeStr}</span>
+        <span className={`font-black text-sm sm:text-base leading-none mt-0.5 ${isET || hasPenalties ? "text-orange-300" : "text-white"}`}>
+          {liveTimeDisplay}
+        </span>
       </>
     );
   } else {
@@ -1387,11 +1852,11 @@ function FeaturedLiveCard({
 
   return (
     <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border w-full h-full flex flex-col transition-all duration-300 ${
-      isLive ? (isET ? "border-orange-500/50" : "border-red-500/50") : "border-white/10"
+      isLive ? (isET ? "border-orange-500/30" : "border-white/15") : "border-white/10"
     }`}
       style={{ 
         background: isLive
-          ? (isET ? "linear-gradient(135deg, #2d1a05 0%, #150a00 100%)" : "linear-gradient(135deg, #381212 0%, #150505 100%)")
+          ? (isET ? "linear-gradient(135deg, #1a1005 0%, #0a0800 100%)" : "linear-gradient(135deg, #111827 0%, #0a0f1a 100%)")
           : "linear-gradient(135deg, #162440 0%, #0a1020 100%)",
         boxShadow: "inset 0 1.5px 0px rgba(255, 255, 255, 0.1), 0 12px 30px rgba(0, 0, 0, 0.6)"
       }}
@@ -1408,8 +1873,8 @@ function FeaturedLiveCard({
         {isLive && (
           <div className={`text-[10px] sm:text-sm font-black flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border ${
             isET
-              ? 'text-orange-400 bg-orange-500/10 border-orange-500/20'
-              : 'text-red-400 bg-red-500/10 border-red-500/20'
+              ? 'text-orange-300 bg-orange-500/10 border-orange-500/20'
+              : 'text-white/80 bg-white/5 border-white/15'
           }`}>
             <span className={`w-2.5 h-2.5 rounded-full live-pulse inline-block ${isET ? 'bg-orange-500' : 'bg-red-500'}`}></span>
             {isET
@@ -1516,6 +1981,143 @@ function FeaturedLiveCard({
         homeCode={homeTeam?.fifa_code || homeName} awayCode={awayTeam?.fifa_code || awayName}
       />
 
+      {/* Expandable Lineup Accordion */}
+      <div className="flex justify-center mt-3 pt-3 border-t border-white/5 relative z-10">
+        <button
+          onClick={() => setShowLineup(!showLineup)}
+          className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white hover:bg-white/5 px-4 py-1.5 rounded-full transition-colors flex items-center gap-1.5 cursor-pointer"
+        >
+          <span>📋 Line-up</span>
+          <span>{showLineup ? "▲" : "▼"}</span>
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {showLineup && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden relative z-10 w-full mt-3 animate-fade-in"
+          >
+            {lineupsLoading ? (
+              <div className="py-12 flex flex-col items-center justify-center text-gray-500 text-[10px] gap-2 font-bold uppercase tracking-widest">
+                <span className="animate-spin text-lg">🔄</span>
+                <span>Loading squad layouts...</span>
+              </div>
+            ) : (!lineups?.home && !lineups?.away) ? (
+              <div className="py-8 text-center text-[10px] font-bold uppercase tracking-wider text-gray-500 border border-dashed border-white/10 rounded-xl">
+                Roster not yet announced
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {(lineups.home?.isPrevious || lineups.away?.isPrevious) && (
+                  <div className="text-center text-[8px] sm:text-[9px] text-yellow-400 font-extrabold uppercase tracking-widest bg-yellow-400/10 border border-yellow-400/20 px-3 py-1.5 rounded-lg">
+                    ⚠️ Lineup not yet confirmed — showing previously played
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Left (Home) Team */}
+                  {lineups.home ? (
+                    <div className="space-y-2">
+                      <div className="text-center bg-black/20 p-2 rounded-lg border border-white/5">
+                        <div className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider flex items-center justify-center gap-1.5">
+                          {homeTeam?.flag && <img src={homeTeam.flag} alt="" className="w-4 h-3 object-cover rounded-sm" />}
+                          <span>{homeName}</span>
+                        </div>
+                        <div className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
+                          Coach: {lineups.home.coach} • {lineups.home.tactics}
+                        </div>
+                      </div>
+                      <LineupPitch
+                        players={lineups.home.players}
+                        isHome={true}
+                        team={homeTeam}
+                        onPlayerClick={onPlayerClick}
+                        matchId={game.id}
+                      />
+                      {/* Substitutes */}
+                      <div className="bg-black/35 rounded-xl p-2.5 border border-white/5 space-y-1">
+                        <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Substitutes</div>
+                        <div className="grid grid-cols-1 gap-1 text-[9px]">
+                          {lineups.home.players.filter((p: any) => p.Status === 2).slice(0, 8).map((p: any) => {
+                            const name = p.PlayerName?.[0]?.Description || "Player";
+                            const sub = fifaData?.homeTeam?.Substitutions?.find((s: any) => s.PlayerOnName?.[0]?.Description === name || s.PlayerOffName?.[0]?.Description === name);
+                            return (
+                              <div key={p.IdPlayer} className="flex items-center justify-between text-gray-400 font-medium border-b border-white/5 pb-0.5 last:border-0 last:pb-0">
+                                <span>#{p.ShirtNumber} {name}</span>
+                                {sub && (
+                                  <span className="text-[8px] bg-white/5 border border-white/10 px-1 rounded flex items-center gap-1">
+                                    <span className="text-[8px]">🔁</span>
+                                    <span>{sub.Minute}</span>
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center text-xs text-gray-500 py-12 bg-black/10 border border-white/5 rounded-xl flex items-center justify-center">
+                      Home Lineup Not Available
+                    </div>
+                  )}
+
+                  {/* Right (Away) Team */}
+                  {lineups.away ? (
+                    <div className="space-y-2">
+                      <div className="text-center bg-black/20 p-2 rounded-lg border border-white/5">
+                        <div className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider flex items-center justify-center gap-1.5">
+                          {awayTeam?.flag && <img src={awayTeam.flag} alt="" className="w-4 h-3 object-cover rounded-sm" />}
+                          <span>{awayName}</span>
+                        </div>
+                        <div className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
+                          Coach: {lineups.away.coach} • {lineups.away.tactics}
+                        </div>
+                      </div>
+                      <LineupPitch
+                        players={lineups.away.players}
+                        isHome={false}
+                        team={awayTeam}
+                        onPlayerClick={onPlayerClick}
+                        matchId={game.id}
+                      />
+                      {/* Substitutes */}
+                      <div className="bg-black/35 rounded-xl p-2.5 border border-white/5 space-y-1">
+                        <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Substitutes</div>
+                        <div className="grid grid-cols-1 gap-1 text-[9px]">
+                          {lineups.away.players.filter((p: any) => p.Status === 2).slice(0, 8).map((p: any) => {
+                            const name = p.PlayerName?.[0]?.Description || "Player";
+                            const sub = fifaData?.awayTeam?.Substitutions?.find((s: any) => s.PlayerOnName?.[0]?.Description === name || s.PlayerOffName?.[0]?.Description === name);
+                            return (
+                              <div key={p.IdPlayer} className="flex items-center justify-between text-gray-400 font-medium border-b border-white/5 pb-0.5 last:border-0 last:pb-0">
+                                <span>#{p.ShirtNumber} {name}</span>
+                                {sub && (
+                                  <span className="text-[8px] bg-white/5 border border-white/10 px-1 rounded flex items-center gap-1">
+                                    <span className="text-[8px]">🔁</span>
+                                    <span>{sub.Minute}</span>
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center text-xs text-gray-500 py-12 bg-black/10 border border-white/5 rounded-xl flex items-center justify-center">
+                      Away Lineup Not Available
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <button 
         onClick={() => setShowTracker(!showTracker)}
         className={`mt-4 w-full relative z-10 rounded-xl py-3 flex items-center justify-center gap-2.5 transition-all text-[10px] sm:text-xs font-black uppercase tracking-widest ${
@@ -1571,6 +2173,7 @@ function MatchCarouselSection({
   onTeamClick,
   allGames,
   isLiveTitle,
+  onPlayerClick,
 }: {
   title: string;
   icon?: string;
@@ -1583,6 +2186,7 @@ function MatchCarouselSection({
   onTeamClick: (team: Team) => void;
   allGames: Game[];
   isLiveTitle?: string;
+  onPlayerClick?: (name: string, teamId: string) => void;
 }) {
   const [carouselIdx, setCarouselIdx] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -1672,6 +2276,7 @@ function MatchCarouselSection({
                 onTeamClick={onTeamClick}
                 allGames={allGames}
                 isActive={carouselIdx === idx}
+                onPlayerClick={onPlayerClick}
               />
             </div>
           ))}
@@ -1752,7 +2357,7 @@ function MatchCarouselSection({
   );
 }
 
-export default function BracketTab({ games, teams, stadiums, onTeamClick }: BracketTabProps) {
+export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlayerClick }: BracketTabProps) {
   const [activeTab, setActiveTab] = useState<'today' | 'tomorrow' | 'upcoming'>('today');
   const [viewType, setViewType] = useState<'tree' | 'fall'>('tree');
   const [startRound, setStartRound] = useState<'r32' | 'r16' | 'qf' | 'sf' | 'final'>('r32');
@@ -1963,6 +2568,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
               stadiumMap={stadiumMap}
               onTeamClick={onTeamClick}
               allGames={games}
+              onPlayerClick={onPlayerClick}
             />
           )}
           {activeTab === 'tomorrow' && (
@@ -1976,6 +2582,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
               stadiumMap={stadiumMap}
               onTeamClick={onTeamClick}
               allGames={games}
+              onPlayerClick={onPlayerClick}
             />
           )}
           {activeTab === 'upcoming' && (
@@ -1989,6 +2596,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick }: Brac
               stadiumMap={stadiumMap}
               onTeamClick={onTeamClick}
               allGames={games}
+              onPlayerClick={onPlayerClick}
             />
           )}
         </motion.div>

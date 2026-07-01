@@ -111,6 +111,7 @@ export interface FifaLiveMatch {
   HomeTeam: FifaTeamLive;
   AwayTeam: FifaTeamLive;
   BallPossession: { Home: number; Away: number } | null;
+  Attendance?: number;
 }
 
 export function fetchFifaLiveMatch(ref: FifaMatchRef): Promise<FifaLiveMatch | null> {
