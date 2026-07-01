@@ -1909,11 +1909,8 @@ function FeaturedLiveCard({
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   useEffect(() => {
-    if (!isLive || stageTag === "HT") {
-      setElapsedSeconds(0);
-      return;
-    }
     setElapsedSeconds(0);
+    if (!isLive || stageTag === "HT") return;
     const interval = setInterval(() => {
       setElapsedSeconds(s => (s < 59 ? s + 1 : 59));
     }, 1000);

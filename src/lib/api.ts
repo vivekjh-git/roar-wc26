@@ -326,9 +326,11 @@ export const PLAYER_NAME_ALIASES: { [raw: string]: string } = {
   // DR Congo
   "Y. Wissa": "Yoane Wissa",
   // Mexico
-  "“J. Quiñones": "Julián Quiñones",
+  "J. Quiñones": "Julián Quiñones",
   "Jvlian Kviinvnz": "Julián Quiñones",
-  "”R. Jiménez": "Raúl Jiménez",
+  "R. Jiménez": "Raúl Jiménez",
+  "Santiago Giménez": "Santiago Giménez",
+  "Edson Álvarez": "Edson Álvarez",
 };
 
 // Strip diacritics for accent-insensitive comparison
