@@ -1905,6 +1905,40 @@ function FeaturedLiveCard({
     return () => clearInterval(interval);
   }, [isLive, stageTag]);
 
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  useEffect(() => {
+    if (!isLive || stageTag === "HT") {
+      setElapsedSeconds(0);
+      return;
+    }
+    setElapsedSeconds(0);
+    const interval = setInterval(() => {
+      setElapsedSeconds(s => (s < 59 ? s + 1 : 59));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isLive, stageTag, game.time_elapsed]);
+
+  const liveMatchMinute = useMemo(() => {
+    if (!isLive) return 0;
+    const matchMin = game.time_elapsed.toLowerCase().match(/(\d+)/);
+    if (matchMin) {
+      return parseInt(matchMin[1], 10);
+    }
+    if (realFeed.length > 0) {
+      const latestMin = realFeed[0].minute;
+      if (latestMin) {
+        return parseInt(latestMin, 10);
+      }
+    }
+    return 0;
+  }, [isLive, game.time_elapsed, realFeed]);
+
+  const timeWithSeconds = useMemo(() => {
+    const minStr = String(liveMatchMinute);
+    const secStr = String(elapsedSeconds).padStart(2, "0");
+    return `${minStr}:${secStr}`;
+  }, [liveMatchMinute, elapsedSeconds]);
+
   const ballPos = useMemo(() => {
     if (!isLive || stageTag === "HT") return { x: 0, y: 0 };
     const base = eventToBallPos(realFeed[0]);
@@ -1955,8 +1989,10 @@ function FeaturedLiveCard({
               ? 'text-orange-300 bg-orange-500/10 border-orange-500/20'
               : 'text-white/80 bg-white/5 border-white/15'
           }`}>
-            <span className={`w-2 h-2 rounded-full live-pulse inline-block ${isET ? 'bg-orange-500' : 'bg-red-500'}`}></span>
-            {game.time_elapsed.replace(/live/gi, '').trim()}{isET ? ' ET' : ''}
+            {stateInfo.icon}
+            <span className="ml-1 uppercase tracking-widest text-[9px] sm:text-[10px]">
+              {stateInfo.label}
+            </span>
           </div>
         )}
       </div>
@@ -1992,20 +2028,32 @@ function FeaturedLiveCard({
               </div>
             )}
           </div>
-          <div className="flex items-center justify-center gap-1 mt-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-white/5 relative z-10 shrink-0 select-none">
-            {stateInfo.icon}
-            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-white ml-0.5 leading-none">
-              {stateInfo.label}
-            </span>
-            {stateInfo.timeStr && (
-              <>
-                <span className="text-gray-600 font-bold text-[8px] sm:text-[9px] leading-none select-none">•</span>
-                <span className="text-[8px] sm:text-[9px] font-bold text-yellow-400 font-mono leading-none">
-                  {stateInfo.timeStr}
-                </span>
-              </>
-            )}
-          </div>
+          {isLive ? (
+            <div className="flex items-center justify-center gap-1 mt-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-white/5 relative z-10 shrink-0 select-none">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+              <span className="text-[9px] sm:text-[10px] font-black text-white font-mono leading-none tracking-wider ml-0.5">
+                {timeWithSeconds}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-1 mt-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-white/5 relative z-10 shrink-0 select-none">
+              {stateInfo.icon}
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-white ml-0.5 leading-none">
+                {stateInfo.label}
+              </span>
+              {stateInfo.timeStr && (
+                <>
+                  <span className="text-gray-600 font-bold text-[8px] sm:text-[9px] leading-none select-none">•</span>
+                  <span className="text-[8px] sm:text-[9px] font-bold text-yellow-400 font-mono leading-none">
+                    {stateInfo.timeStr}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Away */}

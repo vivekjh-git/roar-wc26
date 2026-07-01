@@ -192,26 +192,15 @@ export function getPlayerFifaRating(name: string): number {
   return 70 + (hash % 15);
 }
 
-// Get dynamic tournament rating
-export function getPlayerTournamentRating(name: string, totalGoals = 0, matchesPlayed = 0): number {
+// Get dynamic tournament rating — deterministic on name + goals only so every
+// call site (leaderboard, player card) shows the same number for the same player.
+export function getPlayerTournamentRating(name: string, totalGoals = 0, _matchesPlayed = 0): number {
   const hash = stringHashCode(name);
-  
-  // Base rating around 6.6
   let baseRating = 6.4 + ((hash % 100) / 200); // 6.4 to 6.9
-
-  // Add weight for goals scored
   if (totalGoals > 0) {
     baseRating += Math.min(2.5, totalGoals * 0.5);
   }
-
-  // Clean sheet adjustment or minor boost for played matches
-  if (matchesPlayed > 0) {
-    baseRating += Math.min(0.5, matchesPlayed * 0.1);
-  }
-
-  // Clamp between 6.0 and 9.8
-  const finalRating = Math.max(6.0, Math.min(9.8, baseRating));
-  return parseFloat(finalRating.toFixed(2));
+  return parseFloat(Math.max(6, Math.min(9.8, baseRating)).toFixed(2));
 }
 
 // Get dynamic match rating (deterministic based on name + matchId)

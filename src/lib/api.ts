@@ -277,7 +277,7 @@ export function parseScorers(raw: string | null | undefined): string[] {
   return parts;
 }
 
-const PLAYER_NAME_ALIASES: { [raw: string]: string } = {
+export const PLAYER_NAME_ALIASES: { [raw: string]: string } = {
   // France
   "K. Mbappé": "Kylian Mbappé",
   "Kylian Mbappé": "Kylian Mbappé",
