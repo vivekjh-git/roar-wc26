@@ -70,8 +70,12 @@ function fetchFifaCalendar(): Promise<FifaCalendarMatch[] | null> {
 export async function findFifaMatch(homeFifaCode: string, awayFifaCode: string): Promise<FifaMatchRef | null> {
   const calendar = await fetchFifaCalendar();
   if (!calendar) return null;
+  // Match in either orientation — worldcup26.ir and FIFA may label home/away differently
+  // (especially in knockouts). The route re-orients the response to the caller's home team.
   const match = calendar.find(
-    m => m.Home?.IdCountry === homeFifaCode && m.Away?.IdCountry === awayFifaCode
+    m =>
+      (m.Home?.IdCountry === homeFifaCode && m.Away?.IdCountry === awayFifaCode) ||
+      (m.Home?.IdCountry === awayFifaCode && m.Away?.IdCountry === homeFifaCode)
   );
   if (!match) return null;
   return { idStage: match.IdStage, idMatch: match.IdMatch };

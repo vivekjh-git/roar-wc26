@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Team, Game, Group, Stadium } from "@/lib/api";
-import { parseScorers } from "@/lib/api";
+import { parseScorers, normalizePlayerAlias } from "@/lib/api";
 import { formatMatchDateNPT, formatTimeNPT } from "@/lib/date-utils";
 
 interface TeamModalProps {
@@ -118,9 +118,10 @@ export default function TeamModal({ team, games, groups, stadiums, teamMap, onCl
     const raw = isHome ? g.home_scorers : g.away_scorers;
     const parsed = parseScorers(raw);
     for (const s of parsed) {
-      if (s.includes("(og)")) continue;
+      if (s.toLowerCase().includes("(og)")) continue;
       const nameMatch = s.match(/^(.+?)\s+\d+/);
-      const name = nameMatch ? nameMatch[1].trim() : s.trim();
+      const rawName = nameMatch ? nameMatch[1].trim() : s.trim();
+      const name = normalizePlayerAlias(rawName);
       if (name) scorerCounts[name] = (scorerCounts[name] || 0) + 1;
     }
   }

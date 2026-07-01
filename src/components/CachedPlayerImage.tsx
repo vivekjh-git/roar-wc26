@@ -7,26 +7,31 @@ interface CachedPlayerImageProps extends React.ImgHTMLAttributes<HTMLImageElemen
   playerName: string;
   flag?: string;
   teamName?: string;
+  /** A known real image URL (e.g. FIFA's own player photo) tried before name-based guesses. */
+  primarySrc?: string;
 }
 
-export default function CachedPlayerImage({ playerName, flag, teamName, className, ...props }: CachedPlayerImageProps) {
-  const sources = getPlayerImageSources(playerName);
-  const [currentSrc, setCurrentSrc] = useState<string>(() => {
-    if (typeof window !== "undefined") {
+export default function CachedPlayerImage({ playerName, flag, teamName, primarySrc, className, ...props }: Readonly<CachedPlayerImageProps>) {
+  const sources = primarySrc
+    ? [primarySrc, ...getPlayerImageSources(playerName)]
+    : getPlayerImageSources(playerName);
+
+  // A known real photo (FIFA's own) is authoritative — use it over any cached name-based guess.
+  const getInitialSrc = () => {
+    if (primarySrc) return primarySrc;
+    if (globalThis.window !== undefined) {
       return localStorage.getItem(`player_headshot_${playerName}`) || sources[0];
     }
     return sources[0];
-  });
+  };
+
+  const [currentSrc, setCurrentSrc] = useState<string>(getInitialSrc);
   const [sourceIndex, setSourceIndex] = useState<number>(0);
   const [prevPlayerName, setPrevPlayerName] = useState(playerName);
 
   if (playerName !== prevPlayerName) {
     setPrevPlayerName(playerName);
-    let initialSrc = sources[0];
-    if (typeof window !== "undefined") {
-      initialSrc = localStorage.getItem(`player_headshot_${playerName}`) || sources[0];
-    }
-    setCurrentSrc(initialSrc);
+    setCurrentSrc(getInitialSrc());
     setSourceIndex(0);
   }
 

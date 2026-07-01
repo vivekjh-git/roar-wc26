@@ -5,8 +5,8 @@
   --color-yellow-400: #ff5e00;
   --color-yellow-500: #ff9f0a;
   --color-yellow-600: #cc4c00;
-  --color-green-400: #ff5e00;
-  --color-green-500: #ffb300;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
   --color-pink-500: #ff5e00;
   --color-pink-600: #cc4c00;
 }
@@ -16,7 +16,7 @@
   --wc-dark: #030308;
   --wc-blue: #0b0b18;
   --wc-red: #ff3366;
-  --wc-green: #ffb300;
+  --wc-green: #22c55e;
 }
 
 * {

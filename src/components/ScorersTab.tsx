@@ -40,6 +40,18 @@ function EmptyState({ icon, message }: Readonly<{ icon: string, message: string 
   );
 }
 
+// Real EA FC rating badge — renders nothing when we don't have a verified rating for the player
+// (no invented numbers). `prefix` lets the By-Country card show "FIFA 91" vs a bare "91" inline.
+function FifaRatingBadge({ name, prefix = "", className = "px-1 ml-1.5" }: Readonly<{ name: string, prefix?: string, className?: string }>) {
+  const rating = getPlayerFifaRating(name);
+  if (rating == null) return null;
+  return (
+    <span className={`text-[9px] bg-yellow-400/10 text-yellow-400 rounded font-mono font-bold ${className}`}>
+      {prefix}{rating}
+    </span>
+  );
+}
+
 // 7. By Country — scorers grouped by team with collapsible sections
 function TeamScorersByCountry({ list, onPlayerClick }: Readonly<{ list: ScorerEntry[], onPlayerClick?: (name: string, teamId: string) => void }>) {
   const [openTeam, setOpenTeam] = useState<string | null>(null);
@@ -96,12 +108,7 @@ function TeamScorersByCountry({ list, onPlayerClick }: Readonly<{ list: ScorerEn
                     <div className="flex-1 min-w-0">
                       <div className="font-bold text-sm text-white truncate">{scorer.name}</div>
                       <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1.5 py-0.5 rounded font-mono font-bold">
-                          FIFA {getPlayerFifaRating(scorer.name)}
-                        </span>
-                        <span className="text-[9px] bg-emerald-400/10 text-emerald-400 px-1.5 py-0.5 rounded font-mono font-bold">
-                          {getPlayerTournamentRating(scorer.name, scorer.goals).toFixed(1)} avg
-                        </span>
+                        <FifaRatingBadge name={scorer.name} prefix="FIFA " className="px-1.5 py-0.5" />
                       </div>
                     </div>
                     <div className="flex flex-col items-end shrink-0">
@@ -305,12 +312,7 @@ function GoalScorersList({ list, expanded, variants, onPlayerClick }: Readonly<{
                 className={`font-bold truncate text-sm hover:underline cursor-pointer transition-colors inline-block text-left max-w-full ${idx === 0 ? "text-yellow-400" : "text-white hover:text-yellow-400"}`}
               >
                 {scorer.name}
-                <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1 rounded ml-1.5 font-mono font-bold">
-                  {getPlayerFifaRating(scorer.name)}
-                </span>
-                <span className="text-[9px] bg-emerald-400/10 text-emerald-400 px-1 rounded ml-1 font-mono font-bold">
-                  {getPlayerTournamentRating(scorer.name, scorer.goals).toFixed(1)}
-                </span>
+                <FifaRatingBadge name={scorer.name} />
               </button>
               <div className="text-[10px] text-gray-400 truncate">{scorer.teamName}</div>
             </div>
@@ -347,12 +349,7 @@ function ContributorsList({ list, expanded, variants, onPlayerClick }: Readonly<
                 className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
-                <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1 rounded ml-1.5 font-mono font-bold">
-                  {getPlayerFifaRating(item.name)}
-                </span>
-                <span className="text-[9px] bg-emerald-400/10 text-emerald-400 px-1 rounded ml-1 font-mono font-bold">
-                  {getPlayerTournamentRating(item.name, item.goals).toFixed(1)}
-                </span>
+                <FifaRatingBadge name={item.name} />
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} • {item.goals}G ({item.penaltyGoals}P)</div>
             </div>
@@ -383,12 +380,7 @@ function GoalsRatioList({ list, expanded, variants, onPlayerClick }: Readonly<{ 
                 className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
-                <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1 rounded ml-1.5 font-mono font-bold">
-                  {getPlayerFifaRating(item.name)}
-                </span>
-                <span className="text-[9px] bg-emerald-400/10 text-emerald-400 px-1 rounded ml-1 font-mono font-bold">
-                  {getPlayerTournamentRating(item.name, item.goals, item.games).toFixed(1)}
-                </span>
+                <FifaRatingBadge name={item.name} />
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} • {item.goals} goals in {item.games} games</div>
             </div>
@@ -443,9 +435,7 @@ function OwnGoalsList({ list, expanded, variants, onPlayerClick }: Readonly<{ li
                 className="font-bold text-red-400 text-sm hover:underline cursor-pointer transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
-                <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1 rounded ml-1.5 font-mono font-bold">
-                  {getPlayerFifaRating(item.name)}
-                </span>
+                <FifaRatingBadge name={item.name} />
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName} {item.matchInfos.join(", ")}</div>
             </div>
@@ -476,12 +466,7 @@ function PenaltiesList({ list, expanded, variants, onPlayerClick }: Readonly<{ l
                 className="font-bold text-white text-sm hover:underline cursor-pointer hover:text-yellow-400 transition-colors truncate inline-block text-left max-w-full"
               >
                 {item.name}
-                <span className="text-[9px] bg-yellow-400/10 text-yellow-400 px-1 rounded ml-1.5 font-mono font-bold">
-                  {getPlayerFifaRating(item.name)}
-                </span>
-                <span className="text-[9px] bg-emerald-400/10 text-emerald-400 px-1 rounded ml-1 font-mono font-bold">
-                  {getPlayerTournamentRating(item.name, item.penalties).toFixed(1)}
-                </span>
+                <FifaRatingBadge name={item.name} />
               </button>
               <div className="text-[10px] text-gray-400 truncate">{item.teamName}</div>
             </div>

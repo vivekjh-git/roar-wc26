@@ -124,7 +124,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ matched: false });
   }
 
-  const homeTeamId = live.HomeTeam.IdTeam;
+  // Orient FIFA's home/away to the CALLER's home team — findFifaMatch may match either
+  // orientation, so we pivot everything on whichever FIFA side is our requested home country.
+  const fifaHomeIsOurHome = live.HomeTeam.IdCountry === home;
+  const ourHome = fifaHomeIsOurHome ? live.HomeTeam : live.AwayTeam;
+  const ourAway = fifaHomeIsOurHome ? live.AwayTeam : live.HomeTeam;
+  const homeTeamId = ourHome.IdTeam;
+
   const events = (timeline ?? [])
     .map((e, i) => toEntry(e, homeTeamId, i))
     .filter((e): e is NonNullable<typeof e> => e !== null);
@@ -138,31 +144,39 @@ export async function GET(req: NextRequest) {
 
   const redCardCount = (bookings: { Card?: number }[]) => bookings.filter(b => (b.Card ?? 1) !== 1).length;
 
+  // FIFA's BallPossession is relative to FIFA's home side — swap if our home is FIFA's away.
+  let possession: { Home: number; Away: number } | null = null;
+  if (live.BallPossession) {
+    possession = fifaHomeIsOurHome
+      ? live.BallPossession
+      : { Home: live.BallPossession.Away, Away: live.BallPossession.Home };
+  }
+
   return NextResponse.json({
     matched: true,
     attendance: live.Attendance ?? null,
-    possession: live.BallPossession ?? null,
-    tactics: { home: live.HomeTeam.Tactics ?? null, away: live.AwayTeam.Tactics ?? null },
+    possession,
+    tactics: { home: ourHome.Tactics ?? null, away: ourAway.Tactics ?? null },
     cardCounts: {
-      home: live.HomeTeam.Bookings?.length ?? 0,
-      away: live.AwayTeam.Bookings?.length ?? 0,
+      home: ourHome.Bookings?.length ?? 0,
+      away: ourAway.Bookings?.length ?? 0,
     },
     stats: {
       home: {
         attemptsAtGoal: attempts.home, corners: corners.home, fouls: fouls.home,
         offsides: offsides.home, saves: saves.home,
-        redCards: redCardCount(live.HomeTeam.Bookings ?? []),
+        redCards: redCardCount(ourHome.Bookings ?? []),
       },
       away: {
         attemptsAtGoal: attempts.away, corners: corners.away, fouls: fouls.away,
         offsides: offsides.away, saves: saves.away,
-        redCards: redCardCount(live.AwayTeam.Bookings ?? []),
+        redCards: redCardCount(ourAway.Bookings ?? []),
       },
     },
     momentum: buildMomentum(evs, homeTeamId),
     timeline: buildTimeline(evs, homeTeamId),
     events,
-    homeTeam: live.HomeTeam,
-    awayTeam: live.AwayTeam,
+    homeTeam: ourHome,
+    awayTeam: ourAway,
   });
 }
