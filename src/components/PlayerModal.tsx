@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Team, Game } from "@/lib/api";
-import { parseScorers } from "@/lib/api";
+import { parseScorers, PLAYER_NAME_ALIASES } from "@/lib/api";
 import { formatMatchDateNPT, formatTimeNPT } from "@/lib/date-utils";
 import CachedPlayerImage from "./CachedPlayerImage";
 import { getPlayerFifaRating, getPlayerTournamentRating } from "@/lib/player-ratings";
@@ -26,7 +26,9 @@ interface MatchScoredInfo {
   goalsCount: number;
 }
 
-export default function PlayerModal({ playerName, teamId, games, teams, onClose }: PlayerModalProps) {
+export default function PlayerModal({ playerName: rawPlayerName, teamId, games, teams, onClose }: PlayerModalProps) {
+  // Normalize abbreviated FIFA names (e.g. "K. Mbappé") to full names ("Kylian Mbappé")
+  const playerName = PLAYER_NAME_ALIASES[rawPlayerName] || rawPlayerName;
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -111,48 +113,11 @@ export default function PlayerModal({ playerName, teamId, games, teams, onClose 
     }
   }
 
-  // Helper: extract & normalize name to compare
+  // Helper: extract & normalize scorer string to a full player name using shared alias map
   function extractNameForCompare(scorerStr: string): string {
     const nameMatch = scorerStr.match(/^(.+?)\s+\d+/);
     const name = nameMatch ? nameMatch[1].trim() : scorerStr.trim();
-    // Replicate alias mappings
-    const aliases: { [k: string]: string } = {
-      "K. Mbappé": "Kylian Mbappé",
-      "Kylian Mbappé": "Kylian Mbappé",
-      "B. Barcola": "Bradley Barcola",
-      "H. Kane": "Harry Kane",
-      "Hri Kin": "Harry Kane",
-      "J. Bellingham": "Jude Bellingham",
-      "Jvd Blingham": "Jude Bellingham",
-      "V. Júnior": "Vinícius Júnior",
-      "Vinícius Júnior": "Vinícius Júnior",
-      "C. Summerville": "Crysencio Summerville",
-      "Kvdi Khakpv": "Cody Gakpo",
-      "Dniz Avndav": "Deniz Undav",
-      "D. Undav": "Deniz Undav",
-      "K. Havertz": "Kai Havertz",
-      "J. Musiala": "Jamal Musiala",
-      "Asmaail Saibari": "Ismael Saibari",
-      "I. Saibari": "Ismael Saibari",
-      "C. Larin": "Cyle Larin",
-      "Kail Larin": "Cyle Larin",
-      "Rvbn Vargas": "Rubén Vargas",
-      "Rubén Vargas": "Rubén Vargas",
-      "Jvhan Mnzambi": "Johan Minzambi",
-      "Paph Gviih": "Pape Gueye",
-      "Ailman Andiaih": "Iliman Ndiaye",
-      "Dnil Mvnvz": "Daniel Muñoz",
-      "Lviiz Diaz": "Luis Díaz",
-      "Jivani Lv Slsv": "Giovani Lo Celso",
-      "F. Balogun": "Folarin Balogun",
-      "G. Reyna": "Gio Reyna",
-      "Gvnzalv Plata": "Gonzalo Plata",
-      "Y. Wissa": "Yoane Wissa",
-      "“J. Quiñones": "Julián Quiñones",
-      "Jvlian Kviinvnz": "Julián Quiñones",
-      "”R. Jiménez": "Raúl Jiménez",
-    };
-    return aliases[name] || name;
+    return PLAYER_NAME_ALIASES[name] || name;
   }
 
   // Key Contributor Score: (goals - penalties) * 3 + penalties * 2

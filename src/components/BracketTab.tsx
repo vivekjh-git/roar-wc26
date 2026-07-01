@@ -4,7 +4,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Game, Team, Stadium } from "@/lib/api";
-import { parseScorers } from "@/lib/api";
+import { parseScorers, PLAYER_NAME_ALIASES } from "@/lib/api";
 import { formatMatchDateNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate, parseMatchDate } from "@/lib/date-utils";
 import { generateLiveBulletins } from "@/lib/news-utils";
 import { format, addDays } from "date-fns";
@@ -1452,20 +1452,22 @@ function LineupPitch({
       {layoutPlayers.map(({ player, x, y }) => {
         const pName = player.PlayerName?.[0]?.Description || player.ShortName?.[0]?.Description || "Player";
         const cleanName = cleanPlayerName(pName);
-        const rating = getPlayerMatchRating(pName, matchId);
+        // Normalize abbreviated FIFA names to full names for consistent lookups
+        const normalizedName = PLAYER_NAME_ALIASES[cleanName] || cleanName;
+        const rating = getPlayerMatchRating(normalizedName, matchId);
         const ratingBg = rating >= 7.5 ? "bg-green-500 text-white" : rating >= 6.5 ? "bg-yellow-500 text-black" : "bg-orange-500 text-white";
 
         return (
           <button
             key={player.IdPlayer}
-            onClick={() => onPlayerClick?.(pName, team.id)}
+            onClick={() => onPlayerClick?.(normalizedName, team.id)}
             className="absolute flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2 group cursor-pointer active:scale-95 transition-all z-10"
             style={{ left: `${x}%`, top: `${y}%` }}
           >
             {/* Player Head Container */}
             <div className="relative">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/80 group-hover:border-yellow-400 group-hover:scale-105 transition-all shadow-md overflow-hidden bg-black/40 flex items-center justify-center">
-                <CachedPlayerImage playerName={pName} className="w-full h-full object-cover" />
+                <CachedPlayerImage playerName={normalizedName} className="w-full h-full object-cover" />
               </div>
               <span className={`absolute -top-1 -right-1 text-[7px] font-black px-1 py-0.5 rounded border border-black/30 shadow-md leading-none z-20 ${ratingBg}`}>
                 {rating}
