@@ -1462,10 +1462,12 @@ function LineupPitch({
             className="absolute flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2 group cursor-pointer active:scale-95 transition-all z-10"
             style={{ left: `${x}%`, top: `${y}%` }}
           >
-            {/* Player Head */}
-            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/80 group-hover:border-yellow-400 group-hover:scale-105 transition-all shadow-md overflow-hidden bg-black/40 flex items-center justify-center">
-              <CachedPlayerImage playerName={pName} className="w-full h-full object-cover" />
-              <span className={`absolute -top-0.5 -right-0.5 text-[7px] font-black px-1 py-0.2 rounded-full border border-black/20 leading-none ${ratingBg}`}>
+            {/* Player Head Container */}
+            <div className="relative">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/80 group-hover:border-yellow-400 group-hover:scale-105 transition-all shadow-md overflow-hidden bg-black/40 flex items-center justify-center">
+                <CachedPlayerImage playerName={pName} className="w-full h-full object-cover" />
+              </div>
+              <span className={`absolute -top-1 -right-1 text-[7px] font-black px-1 py-0.5 rounded border border-black/30 shadow-md leading-none z-20 ${ratingBg}`}>
                 {rating}
               </span>
             </div>
@@ -2102,10 +2104,10 @@ function FeaturedLiveCard({
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex sm:grid sm:grid-cols-2 gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide w-full pb-2 px-1">
                   {/* Left (Home) Team */}
                   {lineups.home ? (
-                    <div className="space-y-2">
+                    <div className="w-[88vw] sm:w-auto shrink-0 snap-center space-y-2">
                       <div className="text-center bg-black/20 p-2 rounded-lg border border-white/5">
                         <div className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider flex items-center justify-center gap-1.5">
                           {homeTeam?.flag && <img src={homeTeam.flag} alt="" className="w-4 h-3 object-cover rounded-sm" />}
@@ -2145,14 +2147,14 @@ function FeaturedLiveCard({
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center text-xs text-gray-500 py-12 bg-black/10 border border-white/5 rounded-xl flex items-center justify-center">
+                    <div className="w-[88vw] sm:w-auto shrink-0 snap-center text-center text-xs text-gray-500 py-12 bg-black/10 border border-white/5 rounded-xl flex items-center justify-center">
                       Home Lineup Not Available
                     </div>
                   )}
 
                   {/* Right (Away) Team */}
                   {lineups.away ? (
-                    <div className="space-y-2">
+                    <div className="w-[88vw] sm:w-auto shrink-0 snap-center space-y-2">
                       <div className="text-center bg-black/20 p-2 rounded-lg border border-white/5">
                         <div className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider flex items-center justify-center gap-1.5">
                           {awayTeam?.flag && <img src={awayTeam.flag} alt="" className="w-4 h-3 object-cover rounded-sm" />}
@@ -2192,7 +2194,7 @@ function FeaturedLiveCard({
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center text-xs text-gray-500 py-12 bg-black/10 border border-white/5 rounded-xl flex items-center justify-center">
+                    <div className="w-[88vw] sm:w-auto shrink-0 snap-center text-center text-xs text-gray-500 py-12 bg-black/10 border border-white/5 rounded-xl flex items-center justify-center">
                       Away Lineup Not Available
                     </div>
                   )}
