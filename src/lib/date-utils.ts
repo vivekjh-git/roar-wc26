@@ -108,13 +108,18 @@ export function formatTimeNPT(localDate: string | null | undefined, stadiumId?: 
  * Assumes a match takes approximately 2 hours.
  * Output: "7:15 AM - 9:15 AM NPT"
  */
-export function getMatchTimeWindowNPT(localDate: string | null | undefined, stadiumId?: string): string {
+export function getMatchTimeWindowNPT(localDate: string | null | undefined, stadiumId?: string, isLive?: boolean): string {
   if (!localDate) return "";
   try {
     const date = parseMatchDate(localDate, stadiumId);
     if (isNaN(date.getTime())) return "";
-    const endDate = new Date(date.getTime() + 2 * 60 * 60 * 1000);
     const startStr = formatInTimeZone(date, NPT_TIMEZONE, "h:mm a");
+    
+    if (isLive) {
+      return `${startStr} - --:-- NPT`;
+    }
+
+    const endDate = new Date(date.getTime() + 2 * 60 * 60 * 1000);
     const endStr = formatInTimeZone(endDate, NPT_TIMEZONE, "h:mm a");
     return `${startStr} - ${endStr} NPT`;
   } catch {

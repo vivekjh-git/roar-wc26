@@ -1900,7 +1900,7 @@ function FeaturedLiveCard({
   })() : null;
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
-  const timeWindowNPT = getMatchTimeWindowNPT(game.local_date, game.stadium_id);
+  const timeWindowNPT = getMatchTimeWindowNPT(game.local_date, game.stadium_id, isLive);
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   useEffect(() => {
@@ -2013,7 +2013,7 @@ function FeaturedLiveCard({
           </div>
 
           <div className="flex flex-col items-center justify-center gap-1">
-            <div className="text-[7px] sm:text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5 z-10 whitespace-nowrap bg-black/40 px-2 py-0.5 rounded-full border border-white/5">
+            <div className="text-[7px] sm:text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-1.5 z-10 whitespace-nowrap bg-black/40 px-2 py-0.5 rounded-full border border-white/5">
               {timeWindowNPT}
             </div>
             <div className="flex items-center justify-center gap-1.5 sm:gap-3 relative z-10">
@@ -2332,7 +2332,7 @@ function MatchCarouselSection({
   onPlayerClick,
 }: {
   title: string;
-  icon?: string;
+  icon?: React.ReactNode;
   iconColor?: string;
   pulseColor?: string;
   emptyMessage?: string;
@@ -2733,7 +2733,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
           {activeTab === 'previous' && (
             <MatchCarouselSection
               title="Previous Matches"
-              icon="⏮️"
+              icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>}
               iconColor="text-gray-400"
               emptyMessage="No previous matches"
               games={previousGames}
@@ -2748,7 +2748,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
             <MatchCarouselSection
               title="Today's Matches"
               isLiveTitle="Live Now & Today"
-              icon="🔴"
+              icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>}
               iconColor="text-red-500"
               pulseColor="text-red-500"
               emptyMessage="No matches today"
@@ -2763,7 +2763,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
           {activeTab === 'tomorrow' && (
             <MatchCarouselSection
               title="Tomorrow's Matches"
-              icon="📅"
+              icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>}
               iconColor="text-blue-400"
               emptyMessage="No matches tomorrow"
               games={tomorrowGames}
@@ -2777,7 +2777,7 @@ export default function BracketTab({ games, teams, stadiums, onTeamClick, onPlay
           {activeTab === 'upcoming' && (
             <MatchCarouselSection
               title="Upcoming Matches"
-              icon="⏳"
+              icon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
               iconColor="text-[#ff5e00]"
               emptyMessage="No upcoming matches"
               games={upcomingGames}
