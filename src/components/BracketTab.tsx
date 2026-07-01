@@ -1208,6 +1208,11 @@ function MatchDetailsView({
                 <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Red Cards</span>
                 <span className="w-12 text-right font-black text-red-500 text-sm sm:text-base">{isPending ? "-" : (real?.away.redCards ?? "N/A")}</span>
               </div>
+              <div className="flex items-center justify-between border-t border-white/5 pt-2">
+                <span className="w-12 text-left font-black text-gray-300 text-sm sm:text-base">{isPending ? "-" : possession?.Home ? `${possession.Home}%` : "50%"}</span>
+                <span className="flex-1 text-center text-gray-500 uppercase text-[9px] sm:text-[10px] tracking-widest font-bold">Possession</span>
+                <span className="w-12 text-right font-black text-gray-300 text-sm sm:text-base">{isPending ? "-" : possession?.Away ? `${possession.Away}%` : "50%"}</span>
+              </div>
             </div>
           </div>
 

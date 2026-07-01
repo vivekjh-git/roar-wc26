@@ -247,8 +247,11 @@ export default function PlayerModal({ playerName: rawPlayerName, teamId, games, 
                   <div className="text-[8px] text-emerald-400 font-extrabold uppercase tracking-wider">Tournament Avg</div>
                   <div className="text-xl font-black text-white mt-0.5">{getPlayerTournamentRating(playerName, totalGoals, matchesCount)}</div>
                 </div>
-                <div className="w-8 h-8 rounded-full border-2 border-emerald-500/30 flex items-center justify-center text-[9px] font-black text-emerald-400 bg-emerald-500/5 select-none shadow-[0_0_8px_rgba(16,185,129,0.2)] shrink-0">
-                  ★ Tour
+                <div className="w-8 h-8 rounded-full border-2 border-emerald-500/30 flex flex-col items-center justify-center bg-emerald-500/5 select-none shadow-[0_0_8px_rgba(16,185,129,0.2)] shrink-0">
+                  <svg className="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.857 1.4-8.168L.132 9.31l8.2-1.192z"/>
+                  </svg>
+                  <span className="text-[6.5px] font-black uppercase tracking-widest text-emerald-300 mt-0.5 leading-none">Tour</span>
                 </div>
               </div>
             </div>
