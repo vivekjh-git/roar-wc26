@@ -108,7 +108,13 @@ export function formatTimeNPT(localDate: string | null | undefined, stadiumId?: 
  * Assumes a match takes approximately 2 hours.
  * Output: "7:15 AM - 9:15 AM NPT"
  */
-export function getMatchTimeWindowNPT(localDate: string | null | undefined, stadiumId?: string, isLive?: boolean): string {
+export function getMatchTimeWindowNPT(
+  localDate: string | null | undefined, 
+  stadiumId?: string, 
+  isLive?: boolean,
+  isFinished?: boolean,
+  hasPenalties?: boolean
+): string {
   if (!localDate) return "";
   try {
     const date = parseMatchDate(localDate, stadiumId);
@@ -119,7 +125,19 @@ export function getMatchTimeWindowNPT(localDate: string | null | undefined, stad
       return `${startStr} - --:-- NPT`;
     }
 
-    const endDate = new Date(date.getTime() + 2 * 60 * 60 * 1000);
+    // Estimate exact finish time for finished matches based on penalties/ET
+    // Upcoming matches get standard 2-hour window
+    let durationMins = 120; // 2 hours for upcoming
+    
+    if (isFinished) {
+      if (hasPenalties) {
+        durationMins = 150; // 2.5 hours for penalties
+      } else {
+        durationMins = 115; // ~1h 55m for regular 90-min game
+      }
+    }
+
+    const endDate = new Date(date.getTime() + durationMins * 60 * 1000);
     const endStr = formatInTimeZone(endDate, NPT_TIMEZONE, "h:mm a");
     return `${startStr} - ${endStr} NPT`;
   } catch {

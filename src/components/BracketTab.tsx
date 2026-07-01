@@ -1880,6 +1880,7 @@ function FeaturedLiveCard({
   const hp = Number.parseInt(game.home_penalty_score || '');
   const ap = Number.parseInt(game.away_penalty_score || '');
   const hasPenalties = !Number.isNaN(hp) && !Number.isNaN(ap);
+
   const homeWin = finished && (hs > as_ || (hasPenalties && hs === as_ && hp > ap));
   const awayWin = finished && (as_ > hs || (hasPenalties && hs === as_ && ap > hp));
 
@@ -1894,13 +1895,14 @@ function FeaturedLiveCard({
   const realEvents = fifaData?.matched && fifaData.events ? fifaData.events : [];
   const realPossession = fifaData?.matched ? (fifaData.possession ?? null) : null;
   const realAttendance = fifaData?.matched ? (fifaData.attendance ?? null) : null;
+
   const currentMinute = isLive ? (() => {
     const m = game.time_elapsed.replace(/live/i, '').trim().match(/(\d+)/);
     return m ? Number.parseInt(m[1], 10) : null;
   })() : null;
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
-  const timeWindowNPT = getMatchTimeWindowNPT(game.local_date, game.stadium_id, isLive);
+  const timeWindowNPT = getMatchTimeWindowNPT(game.local_date, game.stadium_id, isLive, finished, hasPenalties);
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   useEffect(() => {
