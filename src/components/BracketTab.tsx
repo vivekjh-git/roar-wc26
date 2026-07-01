@@ -525,7 +525,7 @@ function TimelineEventsModal({
             {events.length === 0 && (
               <p className="text-center text-xs text-gray-500 py-8">No events recorded yet.</p>
             )}
-            {events.map(entry => {
+            {[...events].reverse().map(entry => {
               const flag = entry.team === "home" ? homeFlag : entry.team === "away" ? awayFlag : undefined;
               return (
                 <div key={entry.id} className="flex items-center gap-2 bg-black/30 rounded-lg px-2.5 py-2 text-[11px] text-white">
