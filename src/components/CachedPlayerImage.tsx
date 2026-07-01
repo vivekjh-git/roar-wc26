@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getPlayerImageSources } from "@/lib/player-images";
 
 interface CachedPlayerImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -59,13 +60,12 @@ export default function CachedPlayerImage({ playerName, flag, teamName, primaryS
 
   return (
     <div className="relative w-full h-full flex items-center justify-center">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={currentSrc}
         alt={playerName}
         onError={handleError}
         onLoad={handleLoad}
-        className={`${className || ""} ${needsZoom ? "scale-[2.6] -translate-y-1 origin-[50%_15%]" : "object-cover"}`}
+        className={`${className || ""} ${needsZoom ? "object-top scale-[3.5] -translate-y-[15%] origin-top" : ""}`}
         {...props}
       />
       {flag && (

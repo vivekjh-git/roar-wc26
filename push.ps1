@@ -37,7 +37,9 @@ if (Test-Path $versionFile) {
         $patch = [int]$parts[2] + 1
         $newVersion = "$($parts[0]).$($parts[1]).$patch"
         $versionContent.version = $newVersion
-        $versionContent | ConvertTo-Json | Out-File $versionFile -Encoding utf8
+        $json = $versionContent | ConvertTo-Json
+        $utf8NoBom = New-Object System.Text.UTF8Encoding $False
+        [System.IO.File]::WriteAllText($versionFile, $json, $utf8NoBom)
         Write-Success "Version updated: $versionStr -> $newVersion"
     } else {
         Write-Fail "Invalid version format: $versionStr"

@@ -773,8 +773,11 @@ function MatchTimeline({
 
             {/* Density bars */}
             <div className="absolute top-7 bottom-7 left-0 right-0 flex items-center gap-px">
-              {momentum && momentum.length > 0 ? momentum.map((bucket) => (
-                <div key={bucket.bucketStart} className="flex flex-col justify-center h-full" style={{ width: `${(bucketSize / axisMax) * 100}%` }}>
+              {momentum && momentum.length > 0 ? Array.from({ length: axisMax / bucketSize }).map((_, i) => {
+                const bucketStart = i * bucketSize;
+                const bucket = momentum.find(b => b.bucketStart === bucketStart) || { bucketStart, home: 0, away: 0 };
+                return (
+                <div key={bucketStart} className="flex flex-col justify-center h-full" style={{ width: `${(bucketSize / axisMax) * 100}%` }}>
                   <div className="h-1/2 flex items-end">
                     {bucket.home > 0 && <div className="w-full bg-blue-400/70 rounded-t-[1px]" style={{ height: `${(bucket.home / maxBucket) * 100}%` }} />}
                   </div>
@@ -783,7 +786,7 @@ function MatchTimeline({
                     {bucket.away > 0 && <div className="w-full bg-orange-400/70 rounded-b-[1px]" style={{ height: `${(bucket.away / maxBucket) * 100}%` }} />}
                   </div>
                 </div>
-              )) : <div className="h-px w-full bg-white/20" />}
+              )}) : <div className="h-px w-full bg-white/20" />}
             </div>
 
             {/* Away icon lane */}
@@ -1084,10 +1087,24 @@ function MatchTrackerView({
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20">
                 <motion.div
                   animate={isLive ? { x: ballPos.x, y: ballPos.y } : { x: 0, y: 0 }}
-                  transition={{ type: "spring", stiffness: 50, damping: 10 }}
-                  className="text-base sm:text-lg drop-shadow-md"
+                  transition={{ 
+                    x: { type: "spring", stiffness: 50, damping: 10 },
+                    y: { type: "spring", stiffness: 50, damping: 10 }
+                  }}
+                  className="text-sm sm:text-base drop-shadow-md relative"
                 >
-                  ⚽
+                  <motion.div style={{ y: isLive ? 0 : 0 }} className="animate-bounce-slow">
+                    {(() => {
+                      const latestEvent = feed[0];
+                      if (!isLive || stageTag === "HT" || !latestEvent) return "⚽";
+                      switch (latestEvent.type) {
+                        case "goal": return <GoalIcon size={16} />;
+                        case "sub": return <SubIcon size={16} />;
+                        case "card": return <YellowCardIcon className="inline-block w-4 h-4" />;
+                        default: return "⚽";
+                      }
+                    })()}
+                  </motion.div>
                 </motion.div>
               </div>
 
@@ -1718,6 +1735,7 @@ function FeaturedLiveCard({
 
   const [fifaData, setFifaData] = useState<{
     matched: boolean;
+    matchTime?: string;
     events?: CommentaryEntry[];
     cardCounts?: { home: number; away: number };
     stats?: { home: RealTeamStats; away: RealTeamStats };
@@ -1850,43 +1868,51 @@ function FeaturedLiveCard({
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
   const timeWindowNPT = getMatchTimeWindowNPT(game.local_date, game.stadium_id, isLive, finished, hasPenalties);
 
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setElapsedSeconds(0);
-    }, 0);
-    if (!isLive || stageTag === "HT") {
-      return () => clearTimeout(timer);
-    }
-    const interval = setInterval(() => {
-      setElapsedSeconds(s => (s < 59 ? s + 1 : 59));
-    }, 1000);
-    return () => {
-      clearTimeout(timer);
-      clearInterval(interval);
-    };
-  }, [isLive, stageTag, game.time_elapsed]);
+  const [totalSeconds, setTotalSeconds] = useState(0);
+  const [prevMatchTime, setPrevMatchTime] = useState<string | undefined>(undefined);
+  const [prevGameTime, setPrevGameTime] = useState(game.time_elapsed);
 
-  const liveMatchMinute = useMemo(() => {
-    if (!isLive) return 0;
-    const matchMin = game.time_elapsed.toLowerCase().match(/(\d+)/);
-    if (matchMin) {
-      return parseInt(matchMin[1], 10);
+  // Sync our clock exactly to the FIFA API down to the second whenever it updates
+  if (fifaData?.matchTime !== prevMatchTime || game.time_elapsed !== prevGameTime) {
+    setPrevMatchTime(fifaData?.matchTime);
+    setPrevGameTime(game.time_elapsed);
+    
+    let base = 0;
+    if (fifaData?.matchTime && fifaData.matchTime !== "00:00") {
+      const parts = fifaData.matchTime.split(":").map(Number);
+      if (parts.length === 3) base = parts[0] * 3600 + parts[1] * 60 + parts[2];
+      else if (parts.length === 2) base = parts[0] * 60 + parts[1];
+    } else {
+      const matchMin = game.time_elapsed.toLowerCase().match(/(\d+)/);
+      if (matchMin) base = parseInt(matchMin[1], 10) * 60;
+      else if (realFeed.length > 0 && realFeed[0].minute) base = parseInt(realFeed[0].minute, 10) * 60;
     }
-    if (realFeed.length > 0) {
-      const latestMin = realFeed[0].minute;
-      if (latestMin) {
-        return parseInt(latestMin, 10);
-      }
+    
+    if (base > 0) {
+      // Only snap forward, or snap if it's completely out of sync (> 5s difference)
+      setTotalSeconds(current => {
+        if (current === 0 || base > current || Math.abs(base - current) > 5) {
+          return base;
+        }
+        return current;
+      });
     }
-    return 0;
-  }, [isLive, game.time_elapsed, realFeed]);
+  }
+
+  // Tick the seconds forward locally
+  useEffect(() => {
+    if (!isLive || stageTag === "HT") return;
+    const interval = setInterval(() => {
+      setTotalSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isLive, stageTag]);
 
   const timeWithSeconds = useMemo(() => {
-    const minStr = String(liveMatchMinute);
-    const secStr = String(elapsedSeconds).padStart(2, "0");
+    const minStr = String(Math.floor(totalSeconds / 60));
+    const secStr = String(totalSeconds % 60).padStart(2, "0");
     return `${minStr}:${secStr}`;
-  }, [liveMatchMinute, elapsedSeconds]);
+  }, [totalSeconds]);
 
   // Ball position: driven by the latest commentary event only (goal, card, sub, etc.).
   const ballPos = useMemo(() => {
@@ -1911,6 +1937,9 @@ function FeaturedLiveCard({
   })();
 
   const stateInfo = getGameStateAndTime(isLive, finished, stageTag, game.time_elapsed, realFeed, nptDate);
+
+  const liveHs = fifaData?.matched && fifaData.events ? fifaData.events.filter(e => e.type === "goal" && e.team === "home").length : hs;
+  const liveAs = fifaData?.matched && fifaData.events ? fifaData.events.filter(e => e.type === "goal" && e.team === "away").length : as_;
 
   return (
     <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border w-full h-full flex flex-col transition-all duration-300 ${
@@ -1965,9 +1994,9 @@ function FeaturedLiveCard({
               {timeWindowNPT}
             </div>
             <div className="flex items-center justify-center gap-1.5 sm:gap-3 relative z-10">
-              <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-white" : "text-gray-500"}`}>{finished || isLive ? hs : "-"}</span>
+              <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-white" : "text-gray-500"}`}>{finished || isLive ? liveHs : "-"}</span>
               <span className="text-lg sm:text-2xl text-gray-400 font-black mb-1">:</span>
-              <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-white" : "text-gray-500"}`}>{finished || isLive ? as_ : "-"}</span>
+              <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-white" : "text-gray-500"}`}>{finished || isLive ? liveAs : "-"}</span>
             </div>
             
             {/* Live Penalty Score Badge in Main Card (Visible even when collapsed) */}

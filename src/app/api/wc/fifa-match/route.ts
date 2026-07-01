@@ -154,6 +154,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     matched: true,
+    matchTime: live.MatchTime ?? null,
     attendance: live.Attendance ?? null,
     possession,
     tactics: { home: ourHome.Tactics ?? null, away: ourAway.Tactics ?? null },

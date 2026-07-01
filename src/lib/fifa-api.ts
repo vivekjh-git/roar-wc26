@@ -121,7 +121,7 @@ export interface FifaLiveMatch {
 export function fetchFifaLiveMatch(ref: FifaMatchRef): Promise<FifaLiveMatch | null> {
   return fifaFetch<FifaLiveMatch>(
     `live/football/${FIFA_COMPETITION_ID}/${FIFA_SEASON_ID}/${ref.idStage}/${ref.idMatch}?language=en`,
-    15
+    0
   );
 }
 
@@ -136,7 +136,7 @@ export interface FifaTimelineEvent {
 export async function fetchFifaTimeline(ref: FifaMatchRef): Promise<FifaTimelineEvent[] | null> {
   const data = await fifaFetch<{ Event: FifaTimelineEvent[] }>(
     `timelines/${FIFA_COMPETITION_ID}/${FIFA_SEASON_ID}/${ref.idStage}/${ref.idMatch}?language=en`,
-    15
+    0
   );
   return data?.Event ?? null;
 }
