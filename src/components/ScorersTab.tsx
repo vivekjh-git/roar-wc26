@@ -13,6 +13,7 @@ import type {
 } from "@/lib/api";
 import { getPlayerImageUrl } from "@/lib/player-images";
 import { getPlayerFifaRating, getPlayerTournamentRating } from "@/lib/player-ratings";
+import { GoalIcon, AttemptIcon, InfoIcon, RedCardIcon, CornerIcon } from "./FlatIcons";
 
 interface ScorersTabProps {
   data: AllData;
@@ -20,12 +21,12 @@ interface ScorersTabProps {
 }
 
 const TABS = [
-  { id: "scorers", icon: "⚽", label: "Goal Scorers" },
-  { id: "contributors", icon: "🎯", label: "Key Contributors" },
-  { id: "ratio", icon: "📊", label: "Goals per Game" },
-  { id: "cleansheets", icon: "🧤", label: "Clean Sheets" },
-  { id: "owngoals", icon: "🔴", label: "Own Goals" },
-  { id: "penalties", icon: "🎯", label: "Penalty Goals" },
+  { id: "scorers", icon: <GoalIcon size={12} className="inline-block" />, label: "Goal Scorers" },
+  { id: "contributors", icon: <AttemptIcon size={12} className="inline-block text-cyan-400" />, label: "Key Contributors" },
+  { id: "ratio", icon: <InfoIcon size={12} className="inline-block text-emerald-400" />, label: "Goals per Game" },
+  { id: "cleansheets", icon: <InfoIcon size={12} className="inline-block text-blue-400" />, label: "Clean Sheets" },
+  { id: "owngoals", icon: <RedCardIcon className="inline-block" />, label: "Own Goals" },
+  { id: "penalties", icon: <CornerIcon size={12} className="inline-block text-yellow-500" />, label: "Penalty Goals" },
 ];
 
 export default function ScorersTab({ data, onPlayerClick }: ScorersTabProps) {

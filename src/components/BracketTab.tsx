@@ -5,11 +5,11 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Game, Team, Stadium } from "@/lib/api";
 import { parseScorers } from "@/lib/api";
-import { formatMatchDateNPT, formatTimeNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate, parseMatchDate } from "@/lib/date-utils";
+import { formatMatchDateNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate, parseMatchDate } from "@/lib/date-utils";
 import { generateLiveBulletins } from "@/lib/news-utils";
 import { format, addDays } from "date-fns";
 import CachedPlayerImage from "./CachedPlayerImage";
-import { getPlayerFifaRating, getPlayerTournamentRating, getPlayerMatchRating } from "@/lib/player-ratings";
+import { getPlayerMatchRating } from "@/lib/player-ratings";
 import {
   GoalIcon,
   YellowCardIcon,
@@ -321,7 +321,13 @@ function MatchCard({
 function CompactMatchCard({
   game, homeTeam, awayTeam, homeName, awayName, homeFlag, awayFlag,
   hs, as_, homeWin, awayWin, finished, isLive, nptDate, onTeamClick
-}: any) {
+}: {
+  game: Game; homeTeam?: Team; awayTeam?: Team;
+  homeName: string; awayName: string; homeFlag?: string; awayFlag?: string;
+  hs: number; as_: number; homeWin: boolean; awayWin: boolean;
+  finished: boolean; isLive: boolean; nptDate: string;
+  onTeamClick: (team: Team) => void;
+}) {
   const cHasPen = !isNaN(parseInt(game.home_penalty_score || '')) && !isNaN(parseInt(game.away_penalty_score || ''));
   const isET = isLive && (() => {
     const t = (game.time_elapsed || '').toLowerCase().trim();
@@ -378,7 +384,13 @@ function CompactMatchCard({
 function DetailedMatchCard({
   game, homeTeam, awayTeam, stadium, homeName, awayName, homeFlag, awayFlag,
   hs, as_, homeWin, awayWin, finished, isLive, nptDate, onTeamClick
-}: any) {
+}: {
+  game: Game; homeTeam?: Team; awayTeam?: Team; stadium?: Stadium;
+  homeName: string; awayName: string; homeFlag?: string; awayFlag?: string;
+  hs: number; as_: number; homeWin: boolean; awayWin: boolean;
+  finished: boolean; isLive: boolean; nptDate: string;
+  onTeamClick: (team: Team) => void;
+}) {
   // Format scorers for display
   const homeScorersStr = parseScorers(game.home_scorers).map((s: string) => s.replace(/['"]/g, "").trim()).join(", ");
   const awayScorersStr = parseScorers(game.away_scorers).map((s: string) => s.replace(/['"]/g, "").trim()).join(", ");
@@ -391,22 +403,6 @@ function DetailedMatchCard({
   })();
   const liveTime = isLive ? game.time_elapsed.replace(/live/i, '').trim() : '';
 
-  // Simulated substitutions for live display
-  const currentMinNum = (() => {
-    const m = game.time_elapsed.replace(/live/i, '').trim().match(/(\d+)/);
-    return m ? parseInt(m[1]) : 0;
-  })();
-  const sid = parseInt(game.id || '0');
-  const genSubEvents = (forHome: boolean) => {
-    const base = forHome ? sid : sid + 7;
-    return [
-      { min: 46 + (base % 9),  out: `#${(base % 5) + 4}`,       inn: `#${(base % 4) + 15}` },
-      { min: 61 + ((base+3) % 11), out: `#${((base+1) % 5) + 4}`,   inn: `#${((base+1) % 4) + 15}` },
-      { min: 75 + ((base+6) % 10), out: `#${((base+2) % 5) + 4}`,   inn: `#${((base+2) % 4) + 15}` },
-    ].filter(e => e.min <= currentMinNum);
-  };
-  const homeSubs = isLive ? genSubEvents(true) : [];
-  const awaySubs = isLive ? genSubEvents(false) : [];
 
   return (
     <motion.div variants={itemVariants} className={`glass-card rounded-xl p-3 match-card border ${isLive ? (isET ? "border-orange-500/50 bg-orange-500/5" : "border-red-500/50 bg-red-500/5") : "border-white/10"}`}>
@@ -1281,6 +1277,26 @@ const COACH_LOOKUP: Record<string, string> = {
   "CRC": "Claudio Vivas",
 };
 
+interface FifaPlayerData {
+  PlayerName?: Array<{ Description: string }>;
+  ShortName?: Array<{ Description: string }>;
+  ShirtNumber: number;
+  Status: number;
+  Position?: number;
+  IdPlayer: string;
+}
+
+interface FifaTeamData {
+  Players: FifaPlayerData[];
+  Tactics?: string;
+  Coaches?: Array<{ Role: number; Name: Array<{ Description: string }> }>;
+  Substitutions?: Array<{
+    PlayerOnName?: Array<{ Description: string }>;
+    PlayerOffName?: Array<{ Description: string }>;
+    Minute?: number;
+  }>;
+}
+
 function LineupPitch({
   players,
   isHome,
@@ -1288,7 +1304,7 @@ function LineupPitch({
   onPlayerClick,
   matchId
 }: {
-  players: any[];
+  players: FifaPlayerData[];
   isHome: boolean;
   team: Team;
   onPlayerClick?: (name: string, teamId: string) => void;
@@ -1303,7 +1319,7 @@ function LineupPitch({
   const mids = starters.filter(p => p.Position === 2);
   const fwds = starters.filter(p => p.Position === 3 || p.Position === 4);
   
-  const layoutPlayers: Array<{ player: any; x: number; y: number }> = [];
+  const layoutPlayers: Array<{ player: FifaPlayerData; x: number; y: number }> = [];
   
   // GK (at bottom x=50, y=88)
   gks.forEach(p => {
@@ -1461,6 +1477,95 @@ function LineupPitch({
   );
 }
 
+function getGameStateAndTime(
+  isLive: boolean,
+  finished: boolean,
+  stageTag: string,
+  timeElapsed: string,
+  feed: CommentaryEntry[],
+  nptDate: string
+) {
+  if (finished) {
+    return {
+      label: "Full Time",
+      timeStr: nptDate.split(", ")[0],
+      icon: <WhistleIcon size={12} className="text-yellow-400 shrink-0" />
+    };
+  }
+  if (!isLive) {
+    return {
+      label: nptDate.split(", ")[0],
+      timeStr: nptDate.split(", ")[1],
+      icon: null
+    };
+  }
+
+  const raw = timeElapsed.toLowerCase().trim();
+  
+  // Extract time from time_elapsed or fall back to feed's most recent event
+  let minuteStr = "";
+  const matchMin = raw.match(/(\d+)/);
+  if (matchMin) {
+    minuteStr = `${matchMin[1]}'`;
+  } else if (feed.length > 0) {
+    const latestMin = feed[0].minute;
+    if (latestMin) {
+      minuteStr = `${latestMin}'`;
+    }
+  }
+
+  // Determine stage and labels
+  if (raw.includes("ht") || raw.includes("half") || stageTag === "HT") {
+    return {
+      label: "Half Time",
+      timeStr: "HT",
+      icon: <InfoIcon size={12} className="text-blue-300 shrink-0" />
+    };
+  }
+  if (raw.includes("pen") || raw.includes("penalty") || stageTag === "PEN") {
+    return {
+      label: "Penalties",
+      timeStr: minuteStr || "PEN",
+      icon: <WhistleIcon size={12} className="text-purple-400 shrink-0" />
+    };
+  }
+  if (raw.includes("et") || raw.includes("extra") || stageTag === "ET") {
+    return {
+      label: "Extra Time",
+      timeStr: minuteStr || "ET",
+      icon: <WhistleIcon size={12} className="text-orange-400 shrink-0" />
+    };
+  }
+
+  // Check feed detail for breaks
+  const latestDetail = feed.length > 0 ? feed[0].detail.toLowerCase() : "";
+  if (latestDetail.includes("hydration break") || latestDetail.includes("cooling break")) {
+    return {
+      label: "Hydration Break",
+      timeStr: minuteStr,
+      icon: <InfoIcon size={12} className="text-cyan-300 animate-pulse shrink-0" />
+    };
+  }
+
+  // Determine if 1st or 2nd half
+  let halfLabel = "Live";
+  const minNum = matchMin ? parseInt(matchMin[1], 10) : (feed.length > 0 ? parseInt(feed[0].minute, 10) : 0);
+  if (minNum > 0) {
+    halfLabel = minNum <= 45 ? "1st Half" : "2nd Half";
+  }
+
+  return {
+    label: halfLabel,
+    timeStr: minuteStr || "Live",
+    icon: (
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+      </span>
+    )
+  };
+}
+
 function FeaturedLiveCard({
   game,
   teamMap,
@@ -1482,8 +1587,8 @@ function FeaturedLiveCard({
   const [showTracker, setShowTracker] = useState(false);
   const [showLineup, setShowLineup] = useState(false);
   const [fallbackLineups, setFallbackLineups] = useState<{
-    home: { players: any[]; tactics: string; coach: string; isPrevious: boolean } | null;
-    away: { players: any[]; tactics: string; coach: string; isPrevious: boolean } | null;
+    home: { players: FifaPlayerData[]; tactics: string; coach: string; isPrevious: boolean } | null;
+    away: { players: FifaPlayerData[]; tactics: string; coach: string; isPrevious: boolean } | null;
   } | null>(null);
 
   // Reset expanded states when active status changes to false (swiped away)
@@ -1566,8 +1671,8 @@ function FeaturedLiveCard({
     timeline?: TimelineMarker[];
     possession?: { Home: number; Away: number } | null;
     attendance?: number | null;
-    homeTeam?: any;
-    awayTeam?: any;
+    homeTeam?: FifaTeamData;
+    awayTeam?: FifaTeamData;
   } | null>(null);
 
   // Fetch on mount, immediately again at key match-stage transitions (half time, extra time,
@@ -1613,9 +1718,9 @@ function FeaturedLiveCard({
   const liveLineups = useMemo(() => {
     if (!homeTeam || !awayTeam) return null;
 
-    function getCoachName(team: any, fallbackFifaCode?: string): string {
+    function getCoachName(team: FifaTeamData | null | undefined, fallbackFifaCode?: string): string {
       if (team?.Coaches && team.Coaches.length > 0) {
-        const headCoach = team.Coaches.find((c: any) => c.Role === 0);
+        const headCoach = team.Coaches.find((c) => c.Role === 0);
         const nameObj = headCoach?.Name?.[0] || team.Coaches[0]?.Name?.[0];
         if (nameObj?.Description) return nameObj.Description;
       }
@@ -1625,7 +1730,7 @@ function FeaturedLiveCard({
       return "Not available";
     }
 
-    if (fifaData?.matched && fifaData.homeTeam?.Players && fifaData.homeTeam.Players.length > 0) {
+    if (fifaData?.matched && fifaData.homeTeam?.Players?.length && fifaData.awayTeam?.Players?.length) {
       return {
         home: {
           players: fifaData.homeTeam.Players,
@@ -1649,9 +1754,9 @@ function FeaturedLiveCard({
     if (!homeTeam || !awayTeam) return;
     if (liveLineups) return; // Already have live data
 
-    function getCoachName(team: any, fallbackFifaCode?: string): string {
+    function getCoachName(team: FifaTeamData | null | undefined, fallbackFifaCode?: string): string {
       if (team?.Coaches && team.Coaches.length > 0) {
-        const headCoach = team.Coaches.find((c: any) => c.Role === 0);
+        const headCoach = team.Coaches.find((c) => c.Role === 0);
         const nameObj = headCoach?.Name?.[0] || team.Coaches[0]?.Name?.[0];
         if (nameObj?.Description) return nameObj.Description;
       }
@@ -1673,8 +1778,8 @@ function FeaturedLiveCard({
       (g.home_team_id === game.away_team_id || g.away_team_id === game.away_team_id)
     ).sort((a, b) => parseInt(b.id) - parseInt(a.id));
 
-    let homeLineup: any = null;
-    let awayLineup: any = null;
+    let homeLineup: { players: FifaPlayerData[]; tactics: string; coach: string; isPrevious: boolean } | null = null;
+    let awayLineup: { players: FifaPlayerData[]; tactics: string; coach: string; isPrevious: boolean } | null = null;
     const promises: Promise<void>[] = [];
 
     if (homePrevGames.length > 0) {
@@ -1801,7 +1906,7 @@ function FeaturedLiveCard({
       x: Math.max(-100, Math.min(100, base.x + ballDrift.x)),
       y: Math.max(-43, Math.min(43, base.y + ballDrift.y)),
     };
-  }, [realFeed, stageTag, ballDrift]);
+  }, [realFeed, stageTag, ballDrift, isLive]);
 
   const commentary = fifaData?.matched
     ? ""
@@ -1819,36 +1924,7 @@ function FeaturedLiveCard({
     return raw || (isET ? "ET" : "");
   })();
 
-  let matchStatusLabel;
-  if (finished) {
-    matchStatusLabel = (
-      <>
-        <span className="text-yellow-400">Full Time</span>
-        <span className="text-[7px] sm:text-[8px] text-gray-500 font-medium tracking-normal mt-0.5 normal-case">Played: {nptDate}</span>
-      </>
-    );
-  } else if (isLive) {
-    matchStatusLabel = (
-      <>
-        <span className="inline-flex items-center gap-1">
-          <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse inline-block" />
-          <span className={isET || hasPenalties ? "text-orange-300" : "text-white/80"}>
-            {hasPenalties ? "PEN" : isET ? "ET" : ""}
-          </span>
-        </span>
-        <span className={`font-black text-sm sm:text-base leading-none mt-0.5 ${isET || hasPenalties ? "text-orange-300" : "text-white"}`}>
-          {liveTimeDisplay}
-        </span>
-      </>
-    );
-  } else {
-    matchStatusLabel = (
-      <>
-        <span>{nptDate.split(", ")[0]}</span>
-        <span className="text-gray-400">{nptDate.split(", ")[1]}</span>
-      </>
-    );
-  }
+  const stateInfo = getGameStateAndTime(isLive, finished, stageTag, game.time_elapsed, realFeed, nptDate);
 
   return (
     <div className={`relative rounded-2xl overflow-hidden p-4 sm:p-6 match-card border w-full h-full flex flex-col transition-all duration-300 ${
@@ -1861,14 +1937,11 @@ function FeaturedLiveCard({
         boxShadow: "inset 0 1.5px 0px rgba(255, 255, 255, 0.1), 0 12px 30px rgba(0, 0, 0, 0.6)"
       }}
     >
-      {isLive && (
-        <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse pointer-events-none ${isET ? 'bg-orange-500/10' : 'bg-red-500/10'}`}></div>
-      )}
       
       {/* Header Info */}
       <div className="flex justify-between items-center mb-3 sm:mb-6 relative z-10">
         <span className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider bg-black/40 px-3 py-1 rounded-full border border-white/5">
-          Match {game.id} • {stadium?.name_en || "TBD"}
+          {stadium?.name_en || "TBD"}
         </span>
         {isLive && (
           <div className={`text-[10px] sm:text-sm font-black flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border ${
@@ -1876,11 +1949,8 @@ function FeaturedLiveCard({
               ? 'text-orange-300 bg-orange-500/10 border-orange-500/20'
               : 'text-white/80 bg-white/5 border-white/15'
           }`}>
-            <span className={`w-2.5 h-2.5 rounded-full live-pulse inline-block ${isET ? 'bg-orange-500' : 'bg-red-500'}`}></span>
-            {isET
-              ? `\u26A1 ET ${game.time_elapsed.replace(/live/i, '').trim()}`
-              : `LIVE ${game.time_elapsed.replace(/live/i, '').trim()}`
-            }
+            <span className={`w-2 h-2 rounded-full live-pulse inline-block ${isET ? 'bg-orange-500' : 'bg-red-500'}`}></span>
+            {game.time_elapsed.replace(/live/gi, '').trim()}{isET ? ' ET' : ''}
           </div>
         )}
       </div>
@@ -1916,8 +1986,19 @@ function FeaturedLiveCard({
               </div>
             )}
           </div>
-          <div className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1.5 bg-black/40 px-2.5 sm:px-3 py-1 rounded-full border border-white/5 text-center flex flex-col leading-tight relative z-10">
-            {matchStatusLabel}
+          <div className="flex items-center justify-center gap-1 mt-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-white/5 relative z-10 shrink-0 select-none">
+            {stateInfo.icon}
+            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-white ml-0.5 leading-none">
+              {stateInfo.label}
+            </span>
+            {stateInfo.timeStr && (
+              <>
+                <span className="text-gray-600 font-bold text-[8px] sm:text-[9px] leading-none select-none">•</span>
+                <span className="text-[8px] sm:text-[9px] font-bold text-yellow-400 font-mono leading-none">
+                  {stateInfo.timeStr}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -1987,7 +2068,7 @@ function FeaturedLiveCard({
           onClick={() => setShowLineup(!showLineup)}
           className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white hover:bg-white/5 px-4 py-1.5 rounded-full transition-colors flex items-center gap-1.5 cursor-pointer"
         >
-          <span>📋 Line-up</span>
+          <span>Line-up</span>
           <span>{showLineup ? "▲" : "▼"}</span>
         </button>
       </div>
@@ -2041,9 +2122,9 @@ function FeaturedLiveCard({
                       <div className="bg-black/35 rounded-xl p-2.5 border border-white/5 space-y-1">
                         <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Substitutes</div>
                         <div className="grid grid-cols-1 gap-1 text-[9px]">
-                          {lineups.home.players.filter((p: any) => p.Status === 2).slice(0, 8).map((p: any) => {
+                          {lineups.home.players.filter((p) => p.Status === 2).slice(0, 8).map((p) => {
                             const name = p.PlayerName?.[0]?.Description || "Player";
-                            const sub = fifaData?.homeTeam?.Substitutions?.find((s: any) => s.PlayerOnName?.[0]?.Description === name || s.PlayerOffName?.[0]?.Description === name);
+                            const sub = fifaData?.homeTeam?.Substitutions?.find((s) => s.PlayerOnName?.[0]?.Description === name || s.PlayerOffName?.[0]?.Description === name);
                             return (
                               <div key={p.IdPlayer} className="flex items-center justify-between text-gray-400 font-medium border-b border-white/5 pb-0.5 last:border-0 last:pb-0">
                                 <span>#{p.ShirtNumber} {name}</span>
@@ -2088,9 +2169,9 @@ function FeaturedLiveCard({
                       <div className="bg-black/35 rounded-xl p-2.5 border border-white/5 space-y-1">
                         <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Substitutes</div>
                         <div className="grid grid-cols-1 gap-1 text-[9px]">
-                          {lineups.away.players.filter((p: any) => p.Status === 2).slice(0, 8).map((p: any) => {
+                          {lineups.away.players.filter((p) => p.Status === 2).slice(0, 8).map((p) => {
                             const name = p.PlayerName?.[0]?.Description || "Player";
-                            const sub = fifaData?.awayTeam?.Substitutions?.find((s: any) => s.PlayerOnName?.[0]?.Description === name || s.PlayerOffName?.[0]?.Description === name);
+                            const sub = fifaData?.awayTeam?.Substitutions?.find((s) => s.PlayerOnName?.[0]?.Description === name || s.PlayerOffName?.[0]?.Description === name);
                             return (
                               <div key={p.IdPlayer} className="flex items-center justify-between text-gray-400 font-medium border-b border-white/5 pb-0.5 last:border-0 last:pb-0">
                                 <span>#{p.ShirtNumber} {name}</span>
@@ -2130,9 +2211,7 @@ function FeaturedLiveCard({
           <circle cx="12" cy="12" r="10" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8M12 8v8" />
         </svg>
-        {showTracker 
-          ? (finished ? "Hide Live Tracker" : "Hide Live Tracker") 
-          : (finished ? "View Live Tracker" : "View Live Tracker")}
+        {showTracker ? "Hide Live Tracker" : "View Live Tracker"}
       </button>
 
       {/* Live Match Tracker Section */}
@@ -2144,19 +2223,15 @@ function FeaturedLiveCard({
         hs={hs} as_={as_} stageTag={stageTag}
       />
 
-      {/* Details Extension Button — hidden when live (live tracker serves this purpose) */}
-      {!isLive && (
-        <button 
-          onClick={() => setShowDetails(!showDetails)}
-          className="mt-4 w-full relative z-10 bg-black/20 hover:bg-white/10 border border-white/10 rounded-xl py-3 flex items-center justify-center gap-2 transition-all text-[10px] sm:text-xs font-black text-gray-400 hover:text-white uppercase tracking-widest group shadow-inner"
-        >
-          {showDetails ? "Hide Match Details" : "View Match Details"} 
-          <span className={`text-yellow-400 transition-transform ${showDetails ? "-rotate-90" : "group-hover:translate-x-1"}`}>➔</span>
-        </button>
-      )}
+      <button
+        onClick={() => setShowDetails(!showDetails)}
+        className="mt-4 w-full relative z-10 bg-black/20 hover:bg-white/10 border border-white/10 rounded-xl py-3 flex items-center justify-center gap-2 transition-all text-[10px] sm:text-xs font-black text-gray-400 hover:text-white uppercase tracking-widest group shadow-inner"
+      >
+        {showDetails ? "Hide Match Details" : "View Match Details"}
+        <span className={`text-yellow-400 transition-transform ${showDetails ? "-rotate-90" : "group-hover:translate-x-1"}`}>➔</span>
+      </button>
 
-      {/* Expandable Details Section — only for non-live */}
-      {!isLive && <MatchDetailsView showDetails={showDetails} game={game} stadium={stadium} isPending={isPending} hs={hs} as_={as_} real={realStats} cardCounts={fifaData?.matched ? fifaData.cardCounts ?? null : null} />}
+      <MatchDetailsView showDetails={showDetails} game={game} stadium={stadium} isPending={isPending} hs={hs} as_={as_} real={realStats} cardCounts={fifaData?.matched ? fifaData.cardCounts ?? null : null} possession={realPossession} attendance={realAttendance} />
     </div>
   );
 }
