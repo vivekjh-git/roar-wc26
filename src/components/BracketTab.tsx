@@ -954,9 +954,13 @@ function getCommentaryIcon(type: CommentaryEntry["type"], detail = "") {
     case "sub":
       return <SubIcon className="inline-block" size={14} />;
     case "info":
+      if (d.includes("hydration") || d.includes("cooling")) {
+        return <InfoIcon className="inline-block text-cyan-300 animate-pulse" size={14} />;
+      }
       return <InfoIcon className="inline-block" size={14} />;
     case "marker":
-      if (d.includes("kick off")) return <WhistleIcon className="inline-block" size={14} />;
+      if (d.includes("kick off") || d.includes("start")) return <WhistleIcon className="inline-block text-emerald-400" size={14} />;
+      if (d.includes("half time") || d.includes("halftime")) return <WhistleIcon className="inline-block text-blue-400" size={14} />;
       return <MegaphoneIcon className="inline-block" size={14} />;
     default:
       return null;
