@@ -5,7 +5,7 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Game, Team, Stadium } from "@/lib/api";
 import { parseScorers, normalizePlayerAlias } from "@/lib/api";
-import { formatMatchDateNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate, parseMatchDate } from "@/lib/date-utils";
+import { formatMatchDateNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater, getCurrentNPTDate, parseMatchDate, getMatchTimeWindowNPT } from "@/lib/date-utils";
 import { generateLiveBulletins } from "@/lib/news-utils";
 import { format, addDays } from "date-fns";
 import CachedPlayerImage from "./CachedPlayerImage";
@@ -1900,6 +1900,7 @@ function FeaturedLiveCard({
   })() : null;
 
   const nptDate = formatMatchDateNPT(game.local_date, game.stadium_id);
+  const timeWindowNPT = getMatchTimeWindowNPT(game.local_date, game.stadium_id);
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   useEffect(() => {
@@ -2012,10 +2013,13 @@ function FeaturedLiveCard({
           </div>
 
           <div className="flex flex-col items-center justify-center gap-1">
+            <div className="text-[7px] sm:text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5 z-10 whitespace-nowrap bg-black/40 px-2 py-0.5 rounded-full border border-white/5">
+              {timeWindowNPT}
+            </div>
             <div className="flex items-center justify-center gap-1.5 sm:gap-3 relative z-10">
-              <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-yellow-400" : "text-gray-500"}`}>{finished || isLive ? hs : "-"}</span>
-              <span className="text-lg sm:text-2xl text-gray-600 font-black mb-1">:</span>
-              <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-yellow-400" : "text-gray-500"}`}>{finished || isLive ? as_ : "-"}</span>
+              <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-white" : "text-gray-500"}`}>{finished || isLive ? hs : "-"}</span>
+              <span className="text-lg sm:text-2xl text-gray-400 font-black mb-1">:</span>
+              <span className={`text-3xl sm:text-5xl font-black ${isLive ? "text-white" : finished ? "text-white" : "text-gray-500"}`}>{finished || isLive ? as_ : "-"}</span>
             </div>
             
             {/* Live Penalty Score Badge in Main Card (Visible even when collapsed) */}

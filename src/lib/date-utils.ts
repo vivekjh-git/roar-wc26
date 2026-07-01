@@ -104,6 +104,25 @@ export function formatTimeNPT(localDate: string | null | undefined, stadiumId?: 
 }
 
 /**
+ * Format match time window (start - end) in NPT
+ * Assumes a match takes approximately 2 hours.
+ * Output: "7:15 AM - 9:15 AM NPT"
+ */
+export function getMatchTimeWindowNPT(localDate: string | null | undefined, stadiumId?: string): string {
+  if (!localDate) return "";
+  try {
+    const date = parseMatchDate(localDate, stadiumId);
+    if (isNaN(date.getTime())) return "";
+    const endDate = new Date(date.getTime() + 2 * 60 * 60 * 1000);
+    const startStr = formatInTimeZone(date, NPT_TIMEZONE, "h:mm a");
+    const endStr = formatInTimeZone(endDate, NPT_TIMEZONE, "h:mm a");
+    return `${startStr} - ${endStr} NPT`;
+  } catch {
+    return "";
+  }
+}
+
+/**
  * Format match date with weekday
  * Output: "Sun, Jun 14, 7:15 AM NPT"
  */
