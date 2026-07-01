@@ -1,9 +1,5 @@
-/**
- * Player Ratings Utility
- * Handles deterministic lookup/generation of FIFA ratings, tournament ratings, and match ratings.
- */
-
-// Stable lookup of FIFA ratings for major players
+// Stable lookup of real FIFA 25 ratings for known World Cup 2026 players.
+// Only players in this table are considered to have a "real" rating.
 const FIFA_RATINGS_LOOKUP: Record<string, number> = {
   // Argentina
   "Lionel Messi": 90,
@@ -30,6 +26,8 @@ const FIFA_RATINGS_LOOKUP: Record<string, number> = {
   "Dayot Upamecano": 82,
   "Jules Koundé": 84,
   "Mike Maignan": 87,
+  "Adrien Rabiot": 82,
+  "Lucas Digne": 78,
 
   // Portugal
   "Cristiano Ronaldo": 86,
@@ -41,6 +39,7 @@ const FIFA_RATINGS_LOOKUP: Record<string, number> = {
   "Rúben Dias": 89,
   "João Cancelo": 86,
   "Diogo Costa": 84,
+  "Pedro Neto": 84,
 
   // England
   "Harry Kane": 90,
@@ -53,6 +52,7 @@ const FIFA_RATINGS_LOOKUP: Record<string, number> = {
   "John Stones": 85,
   "Jordan Pickford": 83,
   "Ollie Watkins": 82,
+  "Trent Alexander-Arnold": 84,
 
   // Germany
   "Jamal Musiala": 86,
@@ -65,6 +65,8 @@ const FIFA_RATINGS_LOOKUP: Record<string, number> = {
   "Antonio Rüdiger": 85,
   "Manuel Neuer": 87,
   "Deniz Undav": 81,
+  "Nico Schlotterbeck": 81,
+  "Felix Nmecha": 79,
 
   // Brazil
   "Vinícius Júnior": 89,
@@ -76,6 +78,7 @@ const FIFA_RATINGS_LOOKUP: Record<string, number> = {
   "Marquinhos": 87,
   "Éder Militão": 86,
   "Alisson": 89,
+  "Matheus Cunha": 82,
 
   // Netherlands
   "Cody Gakpo": 83,
@@ -87,10 +90,11 @@ const FIFA_RATINGS_LOOKUP: Record<string, number> = {
   "Nathan Aké": 84,
   "Brian Brobbey": 78,
   "Crysencio Summerville": 79,
+  "Tijjani Reijnders": 82,
 
   // Spain
   "Álvaro Morata": 83,
-  "Lamine Yamal": 80,
+  "Lamine Yamal": 82,
   "Nico Williams": 82,
   "Dani Olmo": 83,
   "Pedri": 86,
@@ -98,6 +102,7 @@ const FIFA_RATINGS_LOOKUP: Record<string, number> = {
   "Dani Carvajal": 84,
   "Aymeric Laporte": 84,
   "Unai Simón": 84,
+  "Mikel Merino": 82,
 
   // Belgium
   "Kevin De Bruyne": 91,
@@ -146,7 +151,6 @@ const FIFA_RATINGS_LOOKUP: Record<string, number> = {
   "César Montes": 77,
   "Johan Vásquez": 76,
   "Luis Malagón": 75,
-  "Raul Rangel": 73,
 
   // DR Congo
   "Yoane Wissa": 77,
@@ -154,12 +158,109 @@ const FIFA_RATINGS_LOOKUP: Record<string, number> = {
   // Switzerland
   "Rubén Vargas": 75,
   "Johan Minzambi": 68,
+  "Breel Embolo": 80,
+  "Granit Xhaka": 83,
+  "Manuel Akanji": 85,
+  "Yann Sommer": 85,
 
   // Senegal
   "Pape Gueye": 74,
   "Iliman Ndiaye": 75,
   "Ismaïla Sarr": 77,
+  "Sadio Mané": 83,
+  "Kalidou Koulibaly": 84,
+
+  // Sweden
+  "Alexander Isak": 84,
+  "Viktor Gyökeres": 85,
+  "Anthony Elanga": 79,
+  "Victor Lindelöf": 80,
+  "Emil Krafth": 74,
+  "Lucas Bergvall": 76,
+  "Dejan Kulusevski": 81,
+  "Emil Forsberg": 79,
+  "Robin Quaison": 75,
+  "Zlatan Ibrahimović": 81,
+
+  // Norway
+  "Erling Haaland": 91,
+  "Martin Ødegaard": 88,
+  "Alexander Sørloth": 81,
+  "Sander Berge": 80,
+  "Leo Østigård": 76,
+
+  // Japan
+  "Takumi Minamino": 80,
+  "Kaoru Mitoma": 82,
+  "Ritsu Doan": 80,
+  "Wataru Endō": 81,
+  "Daichi Kamada": 82,
+
+  // South Korea
+  "Heung-min Son": 87,
+  "Lee Kang-in": 82,
+  "Kim Min-jae": 86,
+
+  // Australia
+  "Mathew Leckie": 77,
+  "Ajdin Hrustic": 75,
+
+  // Ecuador
+  "Gonzalo Plata": 77,
+  "Enner Valencia": 78,
+
+  // Turkey
+  "Arda Güler": 82,
+  "Hakan Çalhanoğlu": 86,
+  "Kerem Aktürkoğlu": 80,
+
+  // Iran
+  "Mehdi Taremi": 82,
+
+  // Saudi Arabia
+  "Salem Al-Dawsari": 78,
+
+  // Qatar
+  "Akram Afif": 77,
+
+  // Algeria
+  "Riyad Mahrez": 82,
+  "Islam Slimani": 76,
+
+  // Austria
+  "Marko Arnautović": 78,
+  "Marcel Sabitzer": 82,
+  "David Alaba": 86,
+
+  // Bosnia
+  "Edin Džeko": 79,
+  "Miralem Pjanić": 80,
+  "Armin Hodžić": 74,
+
+  // New Zealand
+  "Chris Wood": 77,
+
+  // Iraq
+  "Mohanad Ali": 72,
+
+  // Haiti
+  "Frantzdy Pierrot": 72,
+
+  // Scotland
+  "Andrew Robertson": 84,
+  "Scott McTominay": 82,
+  "Che Adams": 75,
 };
+
+// Returns true only when we have a real FIFA 25 rating in the table.
+// Use this to decide whether to show or hide a rating badge.
+export function hasRealFifaRating(name: string): boolean {
+  const cleaned = name.trim();
+  if (FIFA_RATINGS_LOOKUP[cleaned] !== undefined) return true;
+  return Object.keys(FIFA_RATINGS_LOOKUP).some(
+    k => k.toLowerCase() === cleaned.toLowerCase()
+  );
+}
 
 // Helper: stable string hash code
 export function stringHashCode(str: string): number {
@@ -170,60 +271,24 @@ export function stringHashCode(str: string): number {
   return Math.abs(hash);
 }
 
-// Get FIFA rating dynamically
-export function getPlayerFifaRating(name: string): number {
+// Returns the real FIFA 25 rating, or null if the player is not in the lookup.
+// Never generates a fake hash-based number.
+export function getPlayerFifaRating(name: string): number | null {
   const cleaned = name.trim();
-  if (FIFA_RATINGS_LOOKUP[cleaned] !== undefined) {
-    return FIFA_RATINGS_LOOKUP[cleaned];
-  }
-
-  // Lookup case-insensitive
-  const matchKey = Object.keys(FIFA_RATINGS_LOOKUP).find(
-    k => k.toLowerCase() === cleaned.toLowerCase() ||
-         k.toLowerCase().includes(cleaned.toLowerCase()) ||
-         cleaned.toLowerCase().includes(k.toLowerCase())
+  if (FIFA_RATINGS_LOOKUP[cleaned] !== undefined) return FIFA_RATINGS_LOOKUP[cleaned]!;
+  const key = Object.keys(FIFA_RATINGS_LOOKUP).find(
+    k => k.toLowerCase() === cleaned.toLowerCase()
   );
-  if (matchKey) {
-    return FIFA_RATINGS_LOOKUP[matchKey];
-  }
-
-  // Fallback to deterministic hash between 70 and 84
-  const hash = stringHashCode(cleaned);
-  return 70 + (hash % 15);
+  return key !== undefined ? FIFA_RATINGS_LOOKUP[key]! : null;
 }
 
-// Get dynamic tournament rating — deterministic on name + goals only so every
-// call site (leaderboard, player card) shows the same number for the same player.
+// Tournament rating — hash-based, kept for internal use only.
+// Do NOT display this to users — it is not real performance data.
 export function getPlayerTournamentRating(name: string, totalGoals = 0, _matchesPlayed = 0): number {
   const hash = stringHashCode(name);
-  let baseRating = 6.4 + ((hash % 100) / 200); // 6.4 to 6.9
+  let baseRating = 6.4 + ((hash % 100) / 200);
   if (totalGoals > 0) {
     baseRating += Math.min(2.5, totalGoals * 0.5);
   }
   return parseFloat(Math.max(6, Math.min(9.8, baseRating)).toFixed(2));
-}
-
-// Get dynamic match rating (deterministic based on name + matchId)
-export function getPlayerMatchRating(name: string, matchId: string, goalsScored = 0, isWinner = false): number {
-  const key = `${name}-${matchId}`;
-  const hash = stringHashCode(key);
-
-  // Base rating 6.3
-  let matchRating = 6.0 + ((hash % 100) / 100) * 1.5; // 6.0 to 7.5
-
-  // Scored goals make a huge impact
-  if (goalsScored > 0) {
-    matchRating += goalsScored * 1.3;
-  }
-
-  // Winner team gets a boost
-  if (isWinner) {
-    matchRating += 0.4;
-  } else {
-    matchRating -= 0.3;
-  }
-
-  // Clamp between 5.0 and 10.0
-  const finalRating = Math.max(5.0, Math.min(10.0, matchRating));
-  return parseFloat(finalRating.toFixed(1));
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AllData } from "@/app/page";
 import { 
@@ -123,6 +123,35 @@ export default function ScorersTab({ data, onPlayerClick }: ScorersTabProps) {
   const [activeTab, setActiveTab] = useState(TABS[0]!.id);
   const [expanded, setExpanded] = useState(false);
 
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
+  const isDraggingTabs = useRef(false);
+  const tabsStartX = useRef(0);
+  const tabsScrollLeft = useRef(0);
+  const tabsHasMoved = useRef(false);
+
+  const onTabsMouseDown = (e: React.MouseEvent) => {
+    if (!tabsScrollRef.current) return;
+    isDraggingTabs.current = true;
+    tabsHasMoved.current = false;
+    tabsStartX.current = e.pageX - tabsScrollRef.current.offsetLeft;
+    tabsScrollLeft.current = tabsScrollRef.current.scrollLeft;
+  };
+
+  const onTabsMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingTabs.current || !tabsScrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - tabsScrollRef.current.offsetLeft;
+    const walk = (x - tabsStartX.current) * 1.8;
+    if (Math.abs(walk) > 3) {
+      tabsHasMoved.current = true;
+    }
+    tabsScrollRef.current.scrollLeft = tabsScrollLeft.current - walk;
+  };
+
+  const onTabsMouseUpOrLeave = () => {
+    isDraggingTabs.current = false;
+  };
+
   const teamMap = useMemo(() => Object.fromEntries(data.teams.map((t) => [t.id, t])), [data.teams]);
   const liveTopScorers = useMemo(() => computeTopScorers(data.games, teamMap), [data.games, teamMap]);
   const liveKeyContributors = useMemo(() => computeKeyContributors(data.games, teamMap), [data.games, teamMap]);
@@ -160,11 +189,25 @@ export default function ScorersTab({ data, onPlayerClick }: ScorersTabProps) {
   return (
     <div className="p-4 space-y-4">
       {/* Scrollable Sub-tabs with spacing and glowing borders */}
-      <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide snap-x px-0.5">
+      <div
+        ref={tabsScrollRef}
+        onMouseDown={onTabsMouseDown}
+        onMouseMove={onTabsMouseMove}
+        onMouseUp={onTabsMouseUpOrLeave}
+        onMouseLeave={onTabsMouseUpOrLeave}
+        className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide snap-x px-0.5 select-none cursor-grab active:cursor-grabbing"
+      >
         {TABS.map(tab => (
           <button
             key={tab.id}
-            onClick={() => { setActiveTab(tab.id); setExpanded(false); }}
+            onClick={(e) => {
+              if (tabsHasMoved.current) {
+                e.preventDefault();
+                return;
+              }
+              setActiveTab(tab.id);
+              setExpanded(false);
+            }}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap snap-start transition-all border ${
               activeTab === tab.id 
                 ? "bg-yellow-400/10 text-yellow-300 border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.4)]" 

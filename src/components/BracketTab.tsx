@@ -9,7 +9,6 @@ import { formatMatchDateNPT, isMatchToday, isMatchTomorrow, isMatchUpcomingLater
 import { generateLiveBulletins } from "@/lib/news-utils";
 import { format, addDays } from "date-fns";
 import CachedPlayerImage from "./CachedPlayerImage";
-import { getPlayerFifaRating } from "@/lib/player-ratings";
 import {
   GoalIcon,
   YellowCardIcon,
@@ -1470,8 +1469,6 @@ function LineupPitch({
         const cleanName = cleanPlayerName(pName);
         // Normalize abbreviated FIFA names to full names for consistent lookups
         const normalizedName = normalizePlayerAlias(cleanName);
-        const rating = getPlayerFifaRating(normalizedName);
-        const ratingBg = rating >= 85 ? "bg-green-500 text-white" : rating >= 75 ? "bg-yellow-500 text-black" : "bg-orange-500 text-white";
 
         return (
           <button
@@ -1485,9 +1482,6 @@ function LineupPitch({
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/80 group-hover:border-yellow-400 group-hover:scale-105 transition-all shadow-md overflow-hidden bg-black/40 flex items-center justify-center">
                 <CachedPlayerImage playerName={normalizedName} className="w-full h-full object-cover" />
               </div>
-              <span className={`absolute -top-1 -right-1 text-[7px] font-black px-1 py-0.5 rounded border border-black/30 shadow-md leading-none z-20 ${ratingBg}`}>
-                {rating}
-              </span>
             </div>
             
             {/* Player Label */}
